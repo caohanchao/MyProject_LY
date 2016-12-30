@@ -1,0 +1,99 @@
+//
+//  TemplateOnlineHeader.pch
+//  ProjectTemplate
+//
+//  Created by zeb－Apple on 16/9/12.
+//  Copyright © 2016年 Jomper Studio. All rights reserved.
+//
+
+#ifndef TemplateOnlineHeader_pch
+#define TemplateOnlineHeader_pch
+
+
+#ifdef __OBJC__
+#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+#import "LZXHelper.h"
+#import "UIView+Common.h"
+#import "NSString+Tools.h"
+#import "NSString+Tools.h"
+#import "ZEBEasyMacro.h"
+#import "ZEBEasyConstant.h"
+#import "AFNetworking.h"
+#import "HYBNetworking.h"
+#import "MJRefresh.h"
+#import "UIImageView+WebCache.h"
+#import "UIButton+WebCache.h"
+#import "OnlineURL.h"
+#import "NotificationCenter.h"
+#import "LZXHelper.h"
+#import "FMDB.h"
+#import "DBManager.h"
+#import "ZEBCache.h"
+#import "UIImageView+CornerRadius.h"
+#import "UIViewController+HUD.h"
+#import "Common.h"
+#import "HttpsManager.h"
+#import "ZMLKeyboardConst.h"
+#import "Masonry.h"
+#import "ZEBUtils.h"
+#import "TemplateColor.h"
+#import "AllCaches.h"
+#import "AppDelegate.h"
+#import "OnlineAPIKey.h"
+#import "ZEBDatabaseHelper.h"
+#import <BFKit.h>
+#import "UIImageView+Cache.h"
+#import "UIColor+Hex.h"
+#import "NSString+Time.h"
+#import "DCURLRouter.h"
+#import "LYRouter.h"
+#import "CHCUI.h" 
+#import "UINavigationItem+Extension.h"
+#import "NSUserDefaults+Category.h"
+#import "FMDBOnlineVersionHeader.h"
+#import "NSString+Emoji.h"
+
+#define kKeyWindow [UIApplication sharedApplication].keyWindow
+#define kScreen_Bounds [UIScreen mainScreen].bounds
+#define kScreen_Height [UIScreen mainScreen].bounds.size.height
+#define kScreen_Width [UIScreen mainScreen].bounds.size.width
+
+#define isNULL(string) [[LZXHelper isNullToString:string]  isEqualToString:@""]
+
+#define showHintRefresh  [self showloadingName:@"正在刷新..."];
+#define showHintLoading  [self showloadingName:@"加载中..."];
+#define hideHint [self hideHud];
+
+#define jsversion   @"jsversion"
+
+#define CONTENT_MAXLENGTH 50
+#define TITLE_MAXLENGTH 14
+
+//#define NonExpression_(text)  \
+//if ([[[UITextInputMode currentInputMode]primaryLanguage] isEqualToString:@"emoji"]) \
+//{\
+//return NO;\
+//}\
+//if ([NSString stringContainsEmoji:text]) \
+//{\
+//return NO;\
+//}
+
+#ifdef DEBUG // 处于开发阶段
+#define ZEBLog(format, ...) printf("\n[%s] %s [第%d行] %s\n", __TIME__, __FUNCTION__, __LINE__, [[NSString stringWithFormat:format, ## __VA_ARGS__] UTF8String])
+#else   // 处于发布阶段
+#define ZEBLog(format, ...)
+#endif
+
+#ifdef DEBUG// bugtags小球
+#define BTGInvocationEventType 2
+#else
+#define BTGInvocationEventType 0
+#endif
+
+#endif
+
+
+
+#endif /* TemplateOnlineHeader_pch */

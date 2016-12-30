@@ -1,0 +1,105 @@
+PODS:
+  - AFNetworking (3.1.0):
+    - AFNetworking/NSURLSession (= 3.1.0)
+    - AFNetworking/Reachability (= 3.1.0)
+    - AFNetworking/Security (= 3.1.0)
+    - AFNetworking/Serialization (= 3.1.0)
+    - AFNetworking/UIKit (= 3.1.0)
+  - AFNetworking/NSURLSession (3.1.0):
+    - AFNetworking/Reachability
+    - AFNetworking/Security
+    - AFNetworking/Serialization
+  - AFNetworking/Reachability (3.1.0)
+  - AFNetworking/Security (3.1.0)
+  - AFNetworking/Serialization (3.1.0)
+  - AFNetworking/UIKit (3.1.0):
+    - AFNetworking/NSURLSession
+  - AMap3DMap (4.1.0):
+    - AMapFoundation (~> 1.1)
+  - AMapFoundation (1.1.0)
+  - AMapLocation (2.1.0):
+    - AMapFoundation (~> 1.1)
+  - AMapSearch (4.2.0):
+    - AMapFoundation (~> 1.0)
+  - BFKit (1.9.2)
+  - Bugtags (2.0.2):
+    - Bugtags/Core (= 2.0.2)
+  - Bugtags/Core (2.0.2)
+  - FMDB (2.6.2):
+    - FMDB/standard (= 2.6.2)
+  - FMDB/standard (2.6.2)
+  - JLRoutes (1.5.5)
+  - JSPatch (1.1):
+    - JSPatch/Core (= 1.1)
+  - JSPatch/Core (1.1)
+  - JTSImageViewController (1.5.1)
+  - libqrencode (3.4.2)
+  - Mantle (2.0.7):
+    - Mantle/extobjc (= 2.0.7)
+  - Mantle/extobjc (2.0.7)
+  - Masonry (1.0.2)
+  - MBProgressHUD (0.9.2)
+  - MJRefresh (3.1.12)
+  - pop (1.0.9)
+  - PureLayout (3.0.2)
+  - ReactiveCocoa (2.5):
+    - ReactiveCocoa/UI (= 2.5)
+  - ReactiveCocoa/Core (2.5):
+    - ReactiveCocoa/no-arc
+  - ReactiveCocoa/no-arc (2.5)
+  - ReactiveCocoa/UI (2.5):
+    - ReactiveCocoa/Core
+  - SDWebImage (3.8.2):
+    - SDWebImage/Core (= 3.8.2)
+  - SDWebImage/Core (3.8.2)
+  - Toast (3.1.0)
+
+DEPENDENCIES:
+  - AFNetworking (~> 3.1.0)
+  - AMap3DMap
+  - AMapFoundation (~> 1.1.0)
+  - AMapLocation
+  - AMapSearch
+  - BFKit (~> 1.9.0)
+  - Bugtags
+  - FMDB (~> 2.6.2)
+  - JLRoutes (~> 1.5.5)
+  - JSPatch
+  - JTSImageViewController (~> 1.5.1)
+  - libqrencode (~> 3.4.2)
+  - Mantle (~> 2.0.6)
+  - Masonry (~> 1.0.1)
+  - MBProgressHUD (~> 0.9.2)
+  - MJRefresh (~> 3.1.0)
+  - pop (~> 1.0.9)
+  - PureLayout (~> 3.0.1)
+  - ReactiveCocoa (= 2.5)
+  - SDWebImage (~> 3.8.1)
+  - Toast (~> 3.0)
+
+SPEC CHECKSUMS:
+  AFNetworking: 5e0e199f73d8626b11e79750991f5d173d1f8b67
+  AMap3DMap: 048e1ef05ce87a486d6bf4f09a4e2285356b3a16
+  AMapFoundation: 15db20567e6512422a086a01b42a88b145bc2500
+  AMapLocation: 343abc9ccd971ad27e459f38b5b082eabebf8792
+  AMapSearch: 788020fca7ed18819e8bc2bfca716a6775a05ada
+  BFKit: c8f1a85a04f8d350089da8693806a472d475d1f8
+  Bugtags: 94646a8cc2cdcb0f2fe8818675d0f73ba9a26029
+  FMDB: 854a0341b4726e53276f2a8996f06f1b80f9259a
+  JLRoutes: d191a496b820f60d70225202d04289582da962df
+  JSPatch: ade285ad1d8f06146ed6054a39cef87509453299
+  JTSImageViewController: 1f8ce1cc93dab0d0af8e53badeea7528560cfec9
+  libqrencode: 43dc34b89af83ea4b07c409cd8e09c87aa3a1c9f
+  Mantle: bc40bb061d8c2c6fb48d5083e04d928c3b7f73d9
+  Masonry: 7c429b56da9d4ee0bbb3ed77a5ea710d6a5df39e
+  MBProgressHUD: 1569cf7ace17a8bac47aabfbb8580a49690386d1
+  MJRefresh: b96cdb21c4aa75a7b07654311ab2f315c497e806
+  pop: f667631a5108a2e60d9e8797c9b32ddaf2080bce
+  PureLayout: 4d550abe49a94f24c2808b9b95db9131685fe4cd
+  ReactiveCocoa: e2db045570aa97c695e7aa97c2bcab222ae51f4a
+  SDWebImage: 098e97e6176540799c27e804c96653ee0833d13c
+  Toast: 14a93686d6c8bfe2727afd342414e35660a8a1f3
+
+PODFILE CHECKSUM: b74d02b3d45fd6d19245ee0bfe1148c2961982c5
+
+COCOAPODS: 1.0.1

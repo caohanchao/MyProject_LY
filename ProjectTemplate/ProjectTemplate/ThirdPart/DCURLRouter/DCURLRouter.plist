@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>http</key>
+	<string>QRCodelWebController</string>
+	<key>https</key>
+	<string>QRCodelWebController</string>
+	<key>ly</key>
+	<dict>
+		<key>ly://workDesViewController</key>
+		<string>WorkDesViewController</string>
+		<key>ly://cameraMarkViewController</key>
+		<string>CameraMarkViewController</string>
+		<key>ly://draftsViewController</key>
+		<string>DraftsViewController</string>
+		<key>ly://VehicleDetectionSearchViewController</key>
+		<string>VehicleDetectionSearchViewController</string>
+		<key>ly://PhysicsViewController</key>
+		<string>PhysicsViewController</string>
+	</dict>
+</dict>
+</plist>
