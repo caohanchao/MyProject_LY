@@ -9,6 +9,8 @@
 
 #import <UIKit/UIKit.h>
 
+@class ZEBPickerView;
+
 @protocol ZEBPickViewDelegate <NSObject>
 
 -(void)didFinishPickView:(NSString*)date;
@@ -22,7 +24,7 @@
 @property (nonatomic, copy) NSString *province;
 @property(nonatomic,strong)NSDate*curDate;
 @property (nonatomic,strong)UIResponder *myResponder;
-@property(nonatomic,strong)id<ZEBPickViewDelegate>delegate;
+@property(nonatomic,weak)id<ZEBPickViewDelegate>delegate;
 - (void)showInView:(UIView *)view;
 - (void)hiddenPickerView;
 @end

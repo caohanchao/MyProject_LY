@@ -64,5 +64,12 @@
 - (BOOL)updateMsgTimeUserlist:(NSString *)msgid fire:(NSString *)timerStr;
 // 根据msgid查询消息
 - (chatModel *)selectChatMessageByMsgid:(NSString *)msgid;
-
+// 根据qid删除消息信息
+- (BOOL)deleteMessageForQid:(NSInteger)qid;
+// 根据ID找最大qid
+- (NSInteger)getMaxQidSingleByChatId:(NSString *)chatId;
+// 获取最大Qid
+- (NSInteger)getMaxQidGroupByChatId:(NSString *)chatId;
+// 清除表
+- (BOOL) clearMessage;
 @end

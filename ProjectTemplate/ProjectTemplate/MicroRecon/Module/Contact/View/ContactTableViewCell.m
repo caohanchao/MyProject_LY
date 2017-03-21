@@ -33,7 +33,9 @@
 }
 - (void)createUI {
 
-    _imageTU = [[UIImageView alloc] initWithCornerRadiusAdvance:20 rectCornerType:UIRectCornerAllCorners];
+    //_imageTU = [[UIImageView alloc] initWithCornerRadiusAdvance:20 rectCornerType:UIRectCornerAllCorners];
+    _imageTU = [[UIImageView alloc] initWithCornerRadiusAdvance:6 rectCornerType:UIRectCornerAllCorners];
+    
     _imageTU.frame = CGRectMake(LeftMargin, TopMargin, 40, 40);
     _imageTU.contentMode = UIViewContentModeScaleAspectFill;
 
@@ -90,8 +92,12 @@
 
 
     //[_imageTU sd_setImageWithURL:[NSURL URLWithString:_friendsLiModel.headpic] placeholderImage:[UIImage imageNamed:@"ph_s"]];
-    [_imageTU imageGetCacheForAlarm:_friendsLiModel.alarm forUrl:_friendsLiModel.headpic];
-    
+    NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+    if ([_friendsLiModel.alarm isEqualToString:alarm]) {
+        _imageTU.image = [UIImage imageNamed:@"wenjianzhushou"];
+    }else {
+        [_imageTU imageGetCacheForAlarm:_friendsLiModel.alarm forUrl:_friendsLiModel.headpic];
+    }
     _labelName.text = _friendsLiModel.name;
     
     if (self.isSelect) {

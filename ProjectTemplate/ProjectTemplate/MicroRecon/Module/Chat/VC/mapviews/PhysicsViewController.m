@@ -391,7 +391,7 @@
 {
     if (!_peasonImg) {
         _peasonImg = [[UIImageView alloc]init];
-        _peasonImg.layer.cornerRadius = 15;
+        _peasonImg.layer.cornerRadius = 6;
         _peasonImg.layer.masksToBounds = YES;
         
     }
@@ -501,7 +501,7 @@
    
     
     [self.topView addSubview:self.peasonImg];
-    [self.topView addSubview:self.peasonPost];
+ //   [self.topView addSubview:self.peasonPost];
     [self.topView addSubview:self.peasonName];
     
     [self.topView addSubview:line3];
@@ -590,15 +590,15 @@
         make.height.width.offset(30);
         
     }];
-    [self.peasonPost mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.centerY.equalTo(peason.mas_centerY).with.offset(0);
-        make.left.equalTo(self.peasonImg.mas_right).with.offset(10);
-        make.width.offset(width);
-        make.height.offset(20);
-    }];
+//    [self.peasonPost mas_makeConstraints:^(MASConstraintMaker *make) {
+//        make.centerY.equalTo(peason.mas_centerY).with.offset(0);
+//        make.left.equalTo(self.peasonImg.mas_right).with.offset(10);
+//        make.width.offset(width);
+//        make.height.offset(20);
+//    }];
     [self.peasonName mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(peason.mas_top).with.offset(0);
-        make.left.equalTo(self.peasonPost.mas_right).with.offset(8);
+        make.left.equalTo(self.peasonImg.mas_right).with.offset(10);
         make.width.mas_greaterThanOrEqualTo(100);
         make.height.offset(CellHeight-0.5);
     }];
@@ -1074,7 +1074,22 @@
 }
 
 - (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text {
-    
+    NSString *string = [NSString stringWithFormat:@"%@%@", textView.text, text];
+    if (string.length > CONTENT_MAXLENGTH){
+        [self showloadingError:@"字数不能大于50!"];
+        return NO;
+    }
+    if ([[[UITextInputMode currentInputMode]primaryLanguage] isEqualToString:@"emoji"])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    if ([NSString containEmoji:text])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+
     return YES;
 }
 
@@ -1329,6 +1344,30 @@
    
     return ret;
 }
+
+
+#pragma mark -
+#pragma mark textFieldDelegate
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    NSString *string1 = [NSString stringWithFormat:@"%@%@", textField.text, string];
+    if (string1.length > TITLE_MAXLENGTH){
+        [self showloadingError:@"字数不能大于14!"];
+        return NO;
+    }
+    if ([[[UITextInputMode currentInputMode]primaryLanguage] isEqualToString:@"emoji"])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    if ([NSString containEmoji:string])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    return YES;
+}
+
+
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.

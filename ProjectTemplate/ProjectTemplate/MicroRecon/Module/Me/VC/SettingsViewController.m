@@ -13,7 +13,7 @@
 #import "DBManager.h"
 #import "SystemUpdateController.h"
 #import "ChatLogic.h"
-
+#import "AccountAndSafeViewController.h"
 @interface SettingsViewController ()<UITableViewDelegate, UITableViewDataSource> {
     
     UITableView *_tableView;
@@ -47,7 +47,8 @@
     if (_titleDataArray == nil) {
         //备注:屏蔽
 //        _titleDataArray = @[@[@"系统更新"],@[@"退出登陆"]];
-        _titleDataArray = @[@[@"退出登陆"]];
+//        _titleDataArray = @[@[@"退出登陆"]];
+        _titleDataArray = @[@[@"账号与安全"],@[@"清除聊天记录",@"清除战友圈缓存"],@[@"退出登陆"]];
     }
     return _titleDataArray;
 }
@@ -66,6 +67,8 @@
     _tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 64, screenWidth(), height(self.view.frame)-64) style:UITableViewStyleGrouped];
     _tableView.delegate = self;
     _tableView.dataSource = self;
+    _tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
+    _tableView.separatorColor = LineColor;
     [self.view addSubview:_tableView];
 }
 #pragma mark -
@@ -111,19 +114,31 @@
 //        cell.textLabel.font = ZEBFont(16);
 //        return cell;
 //    }
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier2];
-    if (cell == nil) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:identifier2];
-        UILabel *loginOut = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 100, 45)];
-        loginOut.center = CGPointMake(screenWidth()/2, 45/2);
-        loginOut.textAlignment = NSTextAlignmentCenter;
-        loginOut.font = ZEBFont(16);
-        loginOut.tag = 10000;
-        [cell.contentView addSubview:loginOut];
+    if (indexPath.section == count-1) {
+        UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier2];
+        if (cell == nil) {
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:identifier2];
+            UILabel *loginOut = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 100, 45)];
+            loginOut.center = CGPointMake(screenWidth()/2, 45/2);
+            loginOut.textAlignment = NSTextAlignmentCenter;
+            loginOut.font = ZEBFont(16);
+            loginOut.tag = 10000;
+            [cell.contentView addSubview:loginOut];
+        }
+        UILabel *loginOut = [cell.contentView viewWithTag:10000];
+        loginOut.text = @"退出登陆";
+        return cell;
+    }else {
+        UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier1];
+        if (cell == nil) {
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier1];
+            cell.textLabel.text = self.titleDataArray[indexPath.section][indexPath.row];
+            [cell.textLabel setFont:ZEBFont(14)];
+            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        }
+        return cell;
     }
-    UILabel *loginOut = [cell.contentView viewWithTag:10000];
-    loginOut.text = @"退出登陆";
-    return cell;
+    
     
     return [[UITableViewCell alloc] init];
 }
@@ -133,11 +148,14 @@
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
-    return scaleHeight(10);
+    
+//    return scaleHeight(10);
+    return 10;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
-    return scaleHeight(10);
+//    return scaleHeight(10);
+    return 10;
 }
 
 CGFloat scaleHeight(CGFloat height) {
@@ -183,32 +201,46 @@ CGFloat scaleHeight(CGFloat height) {
 //        SystemUpdateController *sysUpdata = [[SystemUpdateController alloc] init];
 //        [self.navigationController pushViewController:sysUpdata animated:YES];
 //    }
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"您确定要退出吗？" message:nil preferredStyle:UIAlertControllerStyleAlert];
-    UIAlertAction *action1 = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
-        
-        [self showloadingName:@"正在退出"];
-        NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
-        NSString *token = [[NSUserDefaults standardUserDefaults] objectForKey:@"token"];
-        [[AccountLogic sharedManager] logicLogout:alarm token:token progress:^(NSProgress * _Nonnull progress) {
+    if (indexPath.section == count-1) {
+        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"您确定要退出吗？" message:nil preferredStyle:UIAlertControllerStyleAlert];
+        UIAlertAction *action1 = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
             
-        } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {
-            //退出登录
-            [self loginOut];
-            [self hideHud];
-        } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-            [self hideHud];
+            [self showloadingName:@"正在退出"];
+            NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+            NSString *token = [[NSUserDefaults standardUserDefaults] objectForKey:@"token"];
+            [[AccountLogic sharedManager] logicLogout:alarm token:token progress:^(NSProgress * _Nonnull progress) {
+                
+            } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {
+                //退出登录
+                [self loginOut];
+                [self hideHud];
+            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                [self hideHud];
+            }];
+            
+            
+        }];
+        UIAlertAction *action2 = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+            
         }];
         
+        [alertController addAction:action2];
+        [alertController addAction:action1];
         
-    }];
-    UIAlertAction *action2 = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
-        
-    }];
+        [self presentViewController:alertController animated:YES completion:nil];
+    }else {
+        if (indexPath.section == 0) {
+            [self pushAccountAndSafePage];
+        }else if (indexPath.section == 1) {
+            if (indexPath.row == 0) {
+                [self pushClearChatMessagePage];
+            }
+            else if (indexPath.row == 1) {
+                [self pushClearComradeCircle];
+            }
+        }
+    }
     
-    [alertController addAction:action2];
-    [alertController addAction:action1];
-    
-    [self presentViewController:alertController animated:YES completion:nil];
 }
 //退出登录
 - (void)loginOut {
@@ -234,6 +266,91 @@ CGFloat scaleHeight(CGFloat height) {
         appDelegate.tabbar = nil;
     }
 }
+
+- (void)pushAccountAndSafePage {
+    AccountAndSafeViewController *avc = [[AccountAndSafeViewController alloc] init];
+    [self.navigationController pushViewController:avc animated:YES];
+}
+// 清除聊天记录
+- (void)pushClearChatMessagePage {
+    
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"您确定要清除聊天记录？（包含消息列表和所有聊天）" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+    UIAlertAction *action1 = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        [self showloadingName:@"正在清除"];
+        
+        NSArray *userlist = [[[DBManager sharedManager] UserlistDAO] selectUserlists];
+        NSInteger maxQid = [[[DBManager sharedManager] MessageDAO] getMaxQid];
+        NSMutableArray *tempArr = [NSMutableArray arrayWithCapacity:userlist.count];
+        for (UserlistModel *model in userlist) {
+            ICometModel *iMolde = [[ICometModel alloc] init];
+            if ([@"S" isEqualToString:model.ut_type]) {
+                iMolde.qid = [[[DBManager sharedManager] MessageDAO] getMaxQidSingleByChatId:model.ut_alarm];
+            } else if ([@"G" isEqualToString:model.ut_type]) {
+                iMolde.qid = [[[DBManager sharedManager] MessageDAO] getMaxQidGroupByChatId:model.ut_alarm];
+            }
+            iMolde.rid = model.ut_alarm;
+            iMolde.sid = model.ut_sendid;
+            [tempArr addObject:iMolde];
+        }
+        [[[DBManager sharedManager] maxQidListSQ] clearMaxQidlist]; // 表数据清除
+        [[[DBManager sharedManager] maxQidListSQ] transactioninsertMaxQidlist:tempArr]; // 插入列表中每条对话的最大qid
+        [[[DBManager sharedManager] maxQidListSQ] insertMaxQid:maxQid]; // 所有对话中的最大qid
+        [ZEBCache clearAllChat]; // 清除聊天的文件  语音 视频 图片
+        [[[DBManager sharedManager] MessageDAO] clearMessage];
+        [[[DBManager sharedManager] UserlistDAO] clearUserlist];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"ReloadTableViewAndClearNewMessageCount" object:nil];
+        [self performSelector:@selector(loadingDisMiss) withObject:nil afterDelay:1.0f];
+        
+        
+    }];
+    UIAlertAction *action2 = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+        
+    }];
+    
+    [alertController addAction:action2];
+    [alertController addAction:action1];
+    
+    [self presentViewController:alertController animated:YES completion:nil];
+}
+//清除战友圈缓存
+- (void)pushClearComradeCircle {
+    
+    __block BOOL ret = YES;
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"您确定要清除战友圈缓存？" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+    UIAlertAction *action1 = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        [self showloadingName:@"正在清除"];
+        
+        ret = [[[DBManager sharedManager]postListSQ]clearPostList];
+        ret = [[[DBManager sharedManager]followPostListSQ]clearFollowPost];
+        ret = [[[DBManager sharedManager]privacyPostListSQ]clearPrivacyPostPost];
+        ret = [[[DBManager sharedManager]postCommentSQ]clearPostList];
+        ret = [[[DBManager sharedManager]postPraiseUserSQ]clearPostPraise];
+        ret = [[[DBManager sharedManager]userPostInfoSQ]clearUserPostInfo];
+        ret = [[[DBManager sharedManager]userFollowSQ]clearUserFollow];
+        ret = [[[DBManager sharedManager]userFansSQ]clearUserFans];
+        ret = [[[DBManager sharedManager]userCountInfoSQ]clearUserCount];
+        
+        [self performSelector:@selector(loadingDisMiss) withObject:nil afterDelay:1.0f];
+        
+    }];
+    UIAlertAction *action2 = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+        
+    }];
+    
+    [alertController addAction:action2];
+    [alertController addAction:action1];
+    
+    [self presentViewController:alertController animated:YES completion:nil];
+    
+    
+}
+
+- (void)loadingDisMiss
+{
+    [self hideHud];
+    [self showHint:@"清除成功"];
+}
+
 - (void)switchpushForCurl
 {
     [[ChatLogic sharedManager] switchPushLogicWithPushType:@"0" success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {

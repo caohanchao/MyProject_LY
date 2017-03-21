@@ -39,6 +39,8 @@ static DBManager *manager = nil;
     [[ZEBDatabaseHelper sharedInstance] inDatabase:^(FMDatabase *db) {
         //消息列表
         [db executeUpdate:@"CREATE TABLE IF NOT EXISTS 'tb_userlist' ( 'ut_id' INTEGER PRIMARY KEY AUTOINCREMENT, 'ut_cmd' TEXT , 'ut_sendid' TEXT, 'ut_alarm' TEXT unique,'ut_headpic' TEXT,'ut_name' TEXT,'ut_fire' TEXT,'ut_mode' TEXT,'ut_type' TEXT,'ut_mtype' TEXT,'ut_draft' TEXT, 'ut_message' TEXT, 'ut_time' TEXT, 'ut_newmsgcount' TEXT, 'ut_ptime' TEXT);"];
+        //消息列表最大qid
+        [db executeUpdate:@"CREATE TABLE IF NOT EXISTS 'tb_maxqidlist' ( 'max_id' INTEGER PRIMARY KEY AUTOINCREMENT, 'max_qid' TEXT , 'max_sid' TEXT, 'max_rid' TEXT unique);"];
         
         //聊天记录表
         [db executeUpdate:@"CREATE TABLE IF NOT EXISTS 'tb_message' ( 'me_id' INTEGER PRIMARY KEY AUTOINCREMENT, 'me_sid' TEXT , 'me_rid' TEXT, 'me_qid' INTEGER,'me_gps_h' TEXT,'me_gps_w' TEXT,'me_remote_mark_id' TEXT,'me_time' TEXT,'me_type' TEXT,'me_mtype' TEXT,'me_data' TEXT, 'me_ptime' TEXT, 'me_voicetime' TEXT, 'me_videopic' TEXT, 'me_cmd' TEXT, 'me_workname' TEXT, 'me_markDataId' TEXT, 'me_headpic' TEXT, 'me_sname' TEXT, 'me_DEType' TEXT, 'me_DEName' TEXT,'me_btime' TEXT);"];
@@ -330,5 +332,12 @@ static DBManager *manager = nil;
         _trajectoryListSQ = [TrajectoryListSQ trajectoryListSQ];
     }
     return _trajectoryListSQ;
+}
+// 最大qid列表
+- (MaxQidListSQ *)maxQidListSQ {
+    if (!_maxQidListSQ) {
+        _maxQidListSQ = [MaxQidListSQ maxQidlistSQ];
+    }
+    return _maxQidListSQ;
 }
 @end

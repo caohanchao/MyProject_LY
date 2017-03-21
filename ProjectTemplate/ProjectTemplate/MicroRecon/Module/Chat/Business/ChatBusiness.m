@@ -16,6 +16,7 @@
 #import "VideoViewController.h"
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <AVFoundation/AVFoundation.h>
+#import "UserInfoModel.h"
 
 @implementation ChatBusiness
 
@@ -204,13 +205,24 @@
 + (void)getHistoryReloadView:(NSMutableDictionary *)dict  chatModel:(chatModel *)iModel {
 
     dict[kXMNMessageConfigurationQIDKey] = @(iModel.QID);
-    dict[kXMNMessageConfigurationFireKey] = iModel.FIRE;
+    dict[kXMNMessageConfigurationFireKey] = iModel.MSG.FIRE;
     dict[kXMNMessageConfigurationTimerStrKey] = iModel.timeStr;
     
     if ([@"T" isEqualToString:iModel.MSG.MTYPE]) {
-        dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeText);
+        if ([iModel.MSG.DATA rangeOfString:@"[img]file:///storage/emulated/0/MicroRecon/Emoticons/"].location == NSNotFound) {
+            dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeText);;
+        }else {
+            dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeEmotions);
+        }
     } else if ([@"P" isEqualToString:iModel.MSG.MTYPE]) {
-        dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeImage);
+        if (![[LZXHelper isNullToString:iModel.MSG.FIRE] isEqualToString:@""]&&![iModel.MSG.FIRE isEqualToString:@"null"])
+        {
+            dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeFireImage);
+        }
+        else
+        {
+            dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeImage);
+        }
         dict[kXMNMessageConfigurationImageKey] = iModel.MSG.DATA;
     } else if ([@"S" isEqualToString:iModel.MSG.MTYPE]) {
         dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeVoice);
@@ -228,7 +240,28 @@
         dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeVideo);
         dict[kXMNMessageConfigurationVideoKey] = iModel.MSG.DATA;
         dict[kXMNMessageConfigurationImageKey] = iModel.MSG.VIDEOPIC;
-    } else {
+    } else if ([@"D" isEqualToString:iModel.MSG.MTYPE]) {
+        dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeFiles);
+        dict[kXMNMessageConfigurationFileKey] = iModel.MSG.DATA;
+        
+        NSDictionary *fileDict = [ChatBusiness jsonDataToDictionary:iModel.MSG.DATA];
+        NSString *filePath = fileDict[@"fileurl"];
+        NSString *filename = fileDict[@"filename"];
+        
+        if ( [[NSFileManager defaultManager] fileExistsAtPath:[HSCachesDirectory2 stringByAppendingPathComponent:filename]]){
+            dict[kXMNMessageConfigurationFileStateKey] = @(2);
+        }else {
+            dict[kXMNMessageConfigurationFileStateKey] = @(0);
+        }
+//        if ( [[NSFileManager defaultManager] fileExistsAtPath:[HomeFilePath stringByAppendingPathComponent:[filePath md5String]] ]) {
+//            dict[kXMNMessageConfigurationFileStateKey] = @(2);
+//        }else {
+//            dict[kXMNMessageConfigurationFileStateKey] = @(0);
+//        }
+
+        
+    
+    }else {
         dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeText);
     }
     NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
@@ -250,7 +283,14 @@
 //    dict[kXMNMessageConfigurationTimeScopeKey] = [self isTimeScopeType:iModel.TIME withDict:dict] ? @"begin" : @"during";
     
     UserAllModel *uModel = [[[DBManager sharedManager] personnelInformationSQ] selectDepartmentmemberlistById:iModel.SID];
-    dict[kXMNMessageConfigurationNicknameKey] = uModel.RE_name;
+    
+    UserInfoModel *uiMolde = [[[DBManager sharedManager] userDetailSQ] selectUserDetail];
+    
+    if ([iModel.SID isEqualToString:alarm]) {
+        dict[kXMNMessageConfigurationNicknameKey] = uiMolde.name;
+    }else {
+        dict[kXMNMessageConfigurationNicknameKey] = uModel.RE_name;
+    }
     
     dict[kXMNMessageConfigurationAvatarKey] = uModel.RE_headpic;
     if ([@"2" isEqualToString:iModel.CMD]) {
@@ -313,22 +353,48 @@
     NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
     NSString *alarm = [user objectForKey:@"alarm"];
 
+    
+    UserAllModel *uModel = [[[DBManager sharedManager] personnelInformationSQ] selectDepartmentmemberlistById:iModel.sid];
+    UserInfoModel *uiMolde = [[[DBManager sharedManager] userDetailSQ] selectUserDetail];
+    
+    
     dict[kXMNMessageConfigurationSendStateKey] = iModel.messageState;
     
     dict[kXMNMessageConfigurationQIDKey] =@(iModel.qid);
     dict[kXMNMessageConfigurationFireKey] = iModel.FIRE;
     dict[kXMNMessageConfigurationTimerStrKey] = iModel.timeStr;
+    if ([iModel.sid isEqualToString:alarm]) {
+        // 自己发送的消息
+        dict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSelf);
+        dict[kXMNMessageConfigurationNicknameKey] = uiMolde.name;
+    } else {
+        // 别人发送的消息
+        dict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerOther);
+        dict[kXMNMessageConfigurationNicknameKey] = uModel.RE_name;
+    }
     //消息发送失败通过唯一id判断存取
     if (StateMessage_FailState) {
         dict[kXMNMessageConfigurationCUIDKey] = iModel.cuid;
     }
 
     if ([@"T" isEqualToString:iModel.mtype]) {
-        dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeText);
+        if ([iModel.data rangeOfString:@"[img]file:///storage/emulated/0/MicroRecon/Emoticons/"].location == NSNotFound) {
+            dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeText);;
+        }else {
+            dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeEmotions);
+        }
+        
     } else if ([@"P" isEqualToString:iModel.mtype]) {
         
         dict[kXMNMessageConfigurationImageKey] = iModel.data;
-        dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeImage);
+         if (![[LZXHelper isNullToString:iModel.FIRE] isEqualToString:@""]&&![iModel.FIRE isEqualToString:@"null"])
+         {
+             dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeFireImage);
+         }
+        else
+        {
+            dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeImage);
+        }
         if (StateMessage_FailState) {
             __block UIImage *image;
             dispatch_async(dispatch_get_global_queue(0, 0), ^{
@@ -379,15 +445,34 @@
             
         }
         
-    } else {
+    }else if ([@"D" isEqualToString:iModel.mtype]) {
+        dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeFiles);
+        dict[kXMNMessageConfigurationFileKey] = iModel.data;
+        
+        NSDictionary *fileDict = [ChatBusiness jsonDataToDictionary:iModel.data];
+        NSString *filePath = fileDict[@"fileurl"];
+        NSString *filename = fileDict[@"filename"];
+        
+        if ( [[NSFileManager defaultManager] fileExistsAtPath:[HomeFilePath stringByAppendingPathComponent:filename]]) {
+            dict[kXMNMessageConfigurationFileStateKey] = @(2); //如果在路径下找到  说明已经下载
+        }else {
+            dict[kXMNMessageConfigurationFileStateKey] = @(0);
+        }
+        
+
+        
+    }else {
         dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeText);
     }
+    
     if ([iModel.sid isEqualToString:alarm]) {
         // 自己发送的消息
         dict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSelf);
+        dict[kXMNMessageConfigurationNicknameKey] = uiMolde.name;
     } else {
         // 别人发送的消息
         dict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerOther);
+        dict[kXMNMessageConfigurationNicknameKey] = uModel.RE_name;
     }
     
     
@@ -398,14 +483,14 @@
     
 //    dict[kXMNMessageConfigurationTimeScopeKey] = [self isTimeScopeType:iModel.time withDict:dict] ? @"begin" : @"during";
     
-    UserAllModel *uModel = [[[DBManager sharedManager] personnelInformationSQ] selectDepartmentmemberlistById:iModel.sid];
-    dict[kXMNMessageConfigurationNicknameKey] = uModel.RE_name;
+    
     dict[kXMNMessageConfigurationAvatarKey] = uModel.RE_headpic;
     dict[kXMNMessageConfigurationDETypeKey] = iModel.DE_type;
     dict[kXMNMessageConfigurationDENameKey] = iModel.DE_name;
     if ([@"2" isEqualToString:iModel.cmd]) {
         dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeSystem);
         dict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSystem);
+        
         
     }else if ([@"3" isEqualToString:iModel.cmd]) {
         dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeSystem);
@@ -423,9 +508,11 @@
         if ([iModel.sid isEqualToString:alarm]) {
             // 自己发送的消息
             dict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSelf);
+            dict[kXMNMessageConfigurationNicknameKey] = uiMolde.name;
         } else {
             // 别人发送的消息
             dict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerOther);
+            dict[kXMNMessageConfigurationNicknameKey] = uModel.RE_name;
         }
         
         if ([iModel.mtype isEqualToString:@"S"]) {//疑情
@@ -470,7 +557,17 @@
             
         }
         
+    }else if ([@"1" isEqualToString:iModel.cmd]) {
+        
+        if ([iModel.FIRE containsString:@"LOCK"]) {
+            if ([iModel.mtype isEqualToString:@"P"])
+            {
+                dict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeFireImage);
+            }
+            
+        }
     }
+    
 }
 // 返回消息列表消息
 + (NSString *)getLastMessage:(UserlistModel *)model {
@@ -502,6 +599,8 @@
                 lastMsg = @"[视频]";
             } else if ([@"L" isEqualToString:model.ut_mtype]) {
                 lastMsg = @"[位置]";
+            } else if ([@"D" isEqualToString:model.ut_mtype]) {
+                lastMsg = @"[文件]";
             }
         }else if ([model.ut_cmd isEqualToString:@"2"]){
             
@@ -535,6 +634,24 @@
                 lastMsg = @"上线提醒";
             }else if ([model.ut_mtype isEqualToString:@"P"]) {
                 lastMsg = @"发帖提醒";
+            }
+            else if ([model.ut_mtype isEqualToString:@"RP"])
+            {
+                lastMsg = [NSString stringWithFormat:@"%@发起点名并@了你",model.ut_name];
+            }
+            else if ([model.ut_mtype isEqualToString:@"RS"])
+            {
+                if ([model.ut_name isEqualToString:[[NSUserDefaults standardUserDefaults]objectForKey:@"name"]]) {
+                    lastMsg = @"你发起的点名已开始";
+                }
+                else
+                {
+                    lastMsg = [NSString stringWithFormat:@"%@发起点名已开始",model.ut_name];
+                }
+            }
+            else if ([model.ut_mtype isEqualToString:@"RR"])
+            {
+                lastMsg = [NSString stringWithFormat:@"%@已报道",model.ut_name];
             }
         }
     }
@@ -862,10 +979,16 @@
 // 处理时间的业务
 +(void)timeBusiness:(id)model
 {
+//    if ([model isKindOfClass:[ICometModel class]]) {
+//        ICometModel *iModel = model;
+//        [self timeBusinessOfICometModel:iModel];
+//        
+//    } else if ([model isKindOfClass:[chatModel class]]) {
+//        chatModel *iModel = model;
+//        [self timeBusinessOfChatModel:iModel];
+//    }
     ICometModel *iModel = model;
-    
     UserlistModel *userListModel;
-    
     if ([iModel.type isEqualToString:@"G"])
     {
         userListModel = [[[DBManager sharedManager] UserlistDAO] selectUserlistById:iModel.rid];
@@ -884,8 +1007,11 @@
         }
         else
         {
-            
-            iModel.time = iModel.beginTime;
+            if (isNULL(iModel.beginTime)) {
+                iModel.time = @"0";
+            } else {
+                iModel.time = iModel.beginTime;
+            }
         }
     }
     else
@@ -909,8 +1035,11 @@
             }
             else
             {
-                
-                iModel.time = iModel.beginTime;
+                if (isNULL(iModel.beginTime)) {
+                    iModel.time = @"0";
+                } else {
+                    iModel.time = iModel.beginTime;
+                }
             }
         }
         
@@ -932,14 +1061,110 @@
             }
             else
             {
+                if (isNULL(iModel.beginTime)) {
+                    iModel.time = @"0";
+                } else {
+                    iModel.time = iModel.beginTime;
+                }
                 
-                iModel.time = iModel.beginTime;
             }
         }
     }
-
-
 }
+
+//+ (void)timeBusinessOfChatModel:(chatModel *)iModel {
+//    UserlistModel *userListModel;
+//    if ([iModel.TYPE isEqualToString:@"G"])
+//    {
+//        userListModel = [[[DBManager sharedManager] UserlistDAO] selectUserlistById:iModel.RID];
+//        if (userListModel) {
+//            if ([ChatBusiness isTimeCompareWithTime:iModel.beginTime WithBtime:userListModel.ut_time]) {
+//                iModel.TIME = iModel.beginTime;
+//            } else{
+//                iModel.TIME = @"0";
+//            }
+//        } else {
+//            iModel.TIME = iModel.beginTime;
+//        }
+//    } else {
+//        //自己发的
+//        if ([iModel.SID isEqualToString:[[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"] ]) {
+//            userListModel = [[[DBManager sharedManager] UserlistDAO] selectUserlistById:iModel.RID];
+//            
+//            if (userListModel) {
+//                if ([ChatBusiness isTimeCompareWithTime:iModel.beginTime WithBtime:userListModel.ut_time]) {
+//                    
+//                    iModel.TIME = iModel.beginTime;
+//                } else {
+//                    iModel.TIME = @"0";
+//                }
+//            } else {
+//                
+//                iModel.TIME = iModel.beginTime;
+//            }
+//        } else {
+//            UserlistModel *userListModel = [[[DBManager sharedManager] UserlistDAO] selectUserlistById:iModel.SID];
+//            
+//            if (userListModel) {
+//                if ([ChatBusiness isTimeCompareWithTime:iModel.beginTime WithBtime:userListModel.ut_time]) {
+//                    iModel.TIME = iModel.beginTime;
+//                } else {
+//                    iModel.TIME = @"0";
+//                }
+//            } else {
+//                
+//                iModel.TIME = iModel.beginTime;
+//            }
+//        }
+//    }
+//}
+//
+//+ (void)timeBusinessOfICometModel:(ICometModel *)iModel{
+//    UserlistModel *userListModel;
+//    if ([iModel.type isEqualToString:@"G"])
+//    {
+//        userListModel = [[[DBManager sharedManager] UserlistDAO] selectUserlistById:iModel.rid];
+//        if (userListModel) {
+//            if ([ChatBusiness isTimeCompareWithTime:iModel.beginTime WithBtime:userListModel.ut_time]) {
+//                iModel.time = iModel.beginTime;
+//            } else{
+//                iModel.time = @"0";
+//            }
+//        } else {
+//            iModel.time = iModel.beginTime;
+//        }
+//    } else {
+//        //自己发的
+//        if ([iModel.sid isEqualToString:[[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"] ]) {
+//            userListModel = [[[DBManager sharedManager] UserlistDAO] selectUserlistById:iModel.rid];
+//            
+//            if (userListModel) {
+//                if ([ChatBusiness isTimeCompareWithTime:iModel.beginTime WithBtime:userListModel.ut_time]) {
+//                    
+//                    iModel.time = iModel.beginTime;
+//                } else {
+//                    iModel.time = @"0";
+//                }
+//            } else {
+//                
+//                iModel.time = iModel.beginTime;
+//            }
+//        } else {
+//            UserlistModel *userListModel = [[[DBManager sharedManager] UserlistDAO] selectUserlistById:iModel.sid];
+//            
+//            if (userListModel) {
+//                if ([ChatBusiness isTimeCompareWithTime:iModel.beginTime WithBtime:userListModel.ut_time]) {
+//                    iModel.time = iModel.beginTime;
+//                } else {
+//                    iModel.time = @"0";
+//                }
+//            } else {
+//                
+//                iModel.time = iModel.beginTime;
+//            }
+//        }
+//    }
+//}
 // 格式化摄像头方向
 + (NSInteger)getStandardDircation:(NSInteger)tag {
     NSInteger index = 0;
@@ -1046,4 +1271,24 @@
     }
     return image;
 }
++ (void) isMenuvisibleOfSystem {
+    if ([UIMenuController sharedMenuController].isMenuVisible) {
+        
+        [[UIMenuController sharedMenuController] setMenuVisible:NO animated:YES];
+    }
+}
+
++ (NSDictionary *) jsonDataToDictionary:(NSString *)jsondata{
+    jsondata = [jsondata stringByReplacingOccurrencesOfString:@"\\\"" withString:@"\""];
+    jsondata = [jsondata stringByReplacingOccurrencesOfString:@"\"{" withString:@"{"];
+    jsondata = [jsondata stringByReplacingOccurrencesOfString:@"}\"" withString:@"}"];
+    jsondata = [jsondata stringByReplacingOccurrencesOfString:@"\\\\/" withString:@"/"];
+    NSData *data = [jsondata dataUsingEncoding:NSUTF8StringEncoding];
+    
+    NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data
+                                                         options:NSJSONReadingMutableContainers error:nil];
+    return dict;
+    
+}
+
 @end

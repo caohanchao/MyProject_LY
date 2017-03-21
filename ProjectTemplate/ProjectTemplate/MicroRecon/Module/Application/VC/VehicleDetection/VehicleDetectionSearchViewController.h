@@ -8,10 +8,13 @@
 
 #import <UIKit/UIKit.h>
 
-
+typedef enum : NSUInteger {
+    TrafficMonitoring, // 通行监控
+    PathAnalysis, // 轨迹分析
+} AnalysisType;
 
 @interface VehicleDetectionSearchViewController : UIViewController
 
-
+@property (nonatomic, assign) AnalysisType analysisType;
 
 @end

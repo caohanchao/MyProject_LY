@@ -11,6 +11,10 @@
 //拉取历史消息
 #define AllMessageReloadNotification @"AllMessageReloadNotification"
 
+#define setupUnreadMessageCount     @"setupUnreadMessageCount" // 修改角标
+#define tabbarShowRedLabel     @"tabbarShowRedLabel" // 显示红点
+#define tabbarHiddenRedLabel     @"tabbarHiddenRedLabel" // 隐藏红点
+
 //改变tabbar的index
 #define SelectTabbarIndex       @"SelectTabbarIndex"
 
@@ -32,6 +36,8 @@
 #define CreateGroupNotification         @"CreateGroupNotification"
 //请求群列表
 #define ChatListReoloadGrouplistNotification @"ChatListReoloadGrouplistNotification"
+
+#define ChatListReoloadGrouplistNotificationForPullMes @"ChatListReoloadGrouplistNotificationForPullMes"
 //刷新消息列表组队名称
 #define ReloadChatGroupNameNotification     @"ReloadChatGroupNameNotification"
 #define RefreshGroupNameNotification    @"RefreshGroupNameNotification"

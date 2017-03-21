@@ -53,6 +53,9 @@
 @property (nonatomic, nonnull, copy) NSString *messageState;//消息状态
 
 @property(nonatomic,nonnull,copy)NSString *timeStr;
+
+@property(nonatomic,nonnull,copy)   NSString *messageNotShow; // 消息不显示在列表 默认显示 @"NO"
+
 /**
  * 根据字节数组获取 ICometModel 对象
  */

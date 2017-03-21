@@ -14,6 +14,7 @@
 #import "VehicleDetectionSearchViewController.h"
 #import "VehicleDetectionViewController.h"
 #import "ShakeViewController.h"
+#import "CallTheRollHomeViewController.h"
 
 @interface ApplicationViewController ()<UITableViewDelegate,UITableViewDataSource>
 @property (nonatomic,strong) UITableView *tableView;
@@ -89,7 +90,7 @@ static NSString * _tempNumStr;
 //        _titleArray = @[@[@"战友圈"],@[@"点名",@"签到"],@[@"摇一摇",@"扫一扫"],@[@"车侦",@"悬赏",@"数据统计"]];
 
 //        _titleArray = @[@[@"战友圈"],@[@"摇一摇",@"扫一扫"],@[@"车侦"]];
-        _titleArray = @[@[@"战友圈"],@[@"摇一摇",@"扫一扫"]];
+        _titleArray = @[@[@"战友圈"],@[@"点名"],@[@"摇一摇",@"扫一扫"],@[@"车侦"]];
 
     }
     return _titleArray;
@@ -102,7 +103,7 @@ static NSString * _tempNumStr;
 //        _imageArray = @[@[@"application_zhanyou"],@[@"",@""],@[@"",@"application_saoyisao"],@[@"application_chezhen",@"application_xuanshang",@"application_shuju"]];
 
 //        _imageArray = @[@[@"application_zhanyou"],@[@"shake",@"application_saoyisao"],@[@"application_chezhen"]];
-        _imageArray = @[@[@"application_zhanyou"],@[@"shake",@"application_saoyisao"]];
+        _imageArray = @[@[@"application_zhanyou"],@[@"rolllcal"],@[@"shake",@"application_saoyisao"],@[@"application_chezhen"]];
 
     }
     return _imageArray;
@@ -203,33 +204,45 @@ static NSString * _tempNumStr;
             [self.navigationController pushViewController:circleCtl animated:YES];
         }
             break;
+        //备注:屏蔽
         case 1:
+        {
+//            [self pushVehicleDetectionSearchVC];
+            CallTheRollHomeViewController *hvc = [[CallTheRollHomeViewController alloc] init];
+            hvc.hidesBottomBarWhenPushed = YES;
+            [self.navigationController pushViewController:hvc animated:YES];
+        }
+            break;
+        case 2:
         {
             if (indexPath.row == 0) {
                 
                 ShakeViewController *shake = [[ShakeViewController alloc] init];
                 shake.hidesBottomBarWhenPushed = YES;
                 [self.navigationController pushViewController:shake animated:YES];
-
+                
             }else if (indexPath.row == 1) {
                 [self scan];
             }
-         //   [self scan];
-        }
-            break;
-        //备注:屏蔽
-        case 2:
-        {
-            [self pushVehicleDetectionSearchVC];
+            //   [self scan];
         }
             break;
         case 3:
-//        {
-//            VehicleDetectionViewController *ve = [[VehicleDetectionViewController alloc] init];
-//            ve.hidesBottomBarWhenPushed = YES;
-//            [self.navigationController pushViewController:ve animated:YES];
-//        }
-            [self showHint:@"该功能开发中"];
+        {
+            VehicleDetectionSearchViewController *ve = [[VehicleDetectionSearchViewController alloc] init];
+            ve.hidesBottomBarWhenPushed = YES;
+            [self.navigationController pushViewController:ve animated:YES];
+        }
+        
+           // [self showHint:@"该功能开发中"];
+            break;
+        case 4:
+        {
+//            CallTheRollHomeViewController *hvc = [[CallTheRollHomeViewController alloc] init];
+//            [self.navigationController pushViewController:hvc animated:YES];
+            
+        }
+
             break;
         default:
             break;

@@ -51,8 +51,13 @@
         [self addSubview:self.pickerView];
         //盛放按钮的View
         UIView *upVeiw = [[UIView alloc]initWithFrame:CGRectMake(-2, 0, [UIScreen mainScreen].bounds.size.width+4, 40)];
-        upVeiw.backgroundColor = [UIColor grayColor];
+        upVeiw.backgroundColor = [UIColor lightGrayColor];
          [self addSubview:upVeiw];
+        
+        UILabel * lineLabel = [[UILabel alloc]initWithFrame:CGRectMake(0, 39.5,[UIScreen mainScreen].bounds.size.width , 0.5)];
+        lineLabel.backgroundColor = [UIColor colorWithRed:234/255.0f green:234/255.0f blue:234/255.0f alpha:1.0f];
+        [upVeiw addSubview:lineLabel];
+        
         //左边的取消按钮
         cancelButton = [UIButton buttonWithType:UIButtonTypeCustom];
         cancelButton.frame = CGRectMake(12, 0, 40, 40);
@@ -71,8 +76,9 @@
         [chooseButton addTarget:self action:@selector(hiddenPickerViewRight) forControlEvents:UIControlEventTouchUpInside];
         [upVeiw addSubview:chooseButton];
 
-        
-        
+        UILabel *line = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 0.5)];
+        line.backgroundColor = [UIColor colorWithRed:234/255.0f green:234/255.0f blue:234/255.0f alpha:1.0f];
+        [upVeiw addSubview:line];
         
         NSCalendar *calendar0 = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
         NSDateComponents *comps = [[NSDateComponents alloc] init];
@@ -275,7 +281,7 @@
 #pragma mark -- show and hidden
 - (void)showInView:(UIView *)view {
 
-    [UIView animateWithDuration:0.7f animations:^{
+    [UIView animateWithDuration:0.25f animations:^{
          self.frame = CGRectMake(0, view.frame.size.height-200, view.frame.size.width, 200);
        // self.backgroundColor = [UIColor redColor];
     } completion:^(BOOL finished) {
@@ -288,7 +294,7 @@
 //取消的隐藏
 - (void)hiddenPickerView
 {
-    [UIView animateWithDuration:0.3f animations:^{
+    [UIView animateWithDuration:0.25f animations:^{
         self.frame = CGRectMake(0, self.frame.origin.y + self.frame.size.height, self.frame.size.width, self.frame.size.height);
     } completion:^(BOOL finished) {
        // self.frame = CGRectMake(0, self.frame.origin.y + self.frame.size.height, self.frame.size.width, self.frame.size.height);

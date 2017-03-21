@@ -64,6 +64,8 @@
 }
 - (void)initNotification {
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(httpGroupList:) name:ChatListReoloadGrouplistNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(httpGetGroupInfoForPullMes) name:ChatListReoloadGrouplistNotificationForPullMes object:nil];
+    
 }
 
 #pragma mark -
@@ -89,7 +91,31 @@
        
     }];
 
+}
 
+- (void)httpGetGroupInfoForPullMes {
+    
+    NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+    NSString *token = [[NSUserDefaults standardUserDefaults] objectForKey:@"token"];
+    NSString *urlString = [NSString stringWithFormat:TeamList_URL,alarm,token];
+    
+    ZEBLog(@"%@",urlString);
+
+    [HYBNetworking getWithUrl:urlString refreshCache:YES success:^(id response) {
+        
+        TeamsModel *model = [TeamsModel getInfoWithData:(NSDictionary *)response];
+        
+        //事务插入
+        [[[DBManager sharedManager] GrouplistSQ] transactionInsertGrouplist:model.results];
+        
+        [[NSNotificationCenter defaultCenter] postNotificationName:CreateGroupNotification object:nil];
+        ZEBLog(@"---------5");
+
+    } fail:^(NSError *error) {
+
+    }];
     
 }
+
+
 @end

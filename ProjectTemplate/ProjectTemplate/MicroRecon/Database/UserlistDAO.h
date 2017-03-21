@@ -41,5 +41,6 @@
 - (NSInteger)selectNewMsgCountById:(NSString *)chatId;
 // 清除@我的消息
 - (void)clearAtAlarmMsg:(NSString *)chatId;
-
+// 清除表
+- (BOOL) clearUserlist;
 @end

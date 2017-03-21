@@ -13,6 +13,7 @@
 #import "ZEBTableView.h"
 #import "ChatMapTopTableViewCell.h"
 #import "AlView.h"
+#import "ChatTableView.h"
 
 #define topViewHeight 64
 

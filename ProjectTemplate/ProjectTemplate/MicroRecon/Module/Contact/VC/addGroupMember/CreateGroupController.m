@@ -378,12 +378,33 @@
     [self addImage:tempFRArray TMImageArray:tempTMArray UTImageArray:tempUTArray];
     
 }
-
+#pragma mark -
+#pragma mark textFieldDelegate
 - (BOOL)textFieldShouldReturn:(UITextField *)textField{
     [textField resignFirstResponder];
     return YES;
 }
 
+
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    NSString *string1 = [NSString stringWithFormat:@"%@%@", textField.text, string];
+    if (string1.length > TITLE_MAXLENGTH){
+        [self showloadingError:@"字数不能大于14!"];
+        return NO;
+    }
+    if ([[[UITextInputMode currentInputMode]primaryLanguage] isEqualToString:@"emoji"])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    if ([NSString containEmoji:string])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    return YES;
+}
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.

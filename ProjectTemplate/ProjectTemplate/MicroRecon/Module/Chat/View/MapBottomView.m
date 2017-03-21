@@ -49,6 +49,9 @@
         self.MHeight = 80;
         _photoArr = @[@"mark_goodw_1",@"mark_footw_1",@"mark_carw_1",@"mark_manw_1",@"mark_suspectw_1",@"mark_bannerw_1"];
         _titleArr = @[@"嫌疑物",@"案发地",@"嫌疑车",@"嫌疑人",@"受伤者",@"集合点"];
+//        _photoArr = @[@"mark_goodw_1",@"mark_carw_1",@"mark_manw_1",@"mark_suspectw_1"];
+//        _titleArr = @[@"嫌疑物",@"嫌疑车",@"嫌疑人",@"受伤者"];
+        // 0 2 3 4
     }
 }
 - (void)createUI {
@@ -68,6 +71,7 @@
         btn.frame = CGRectMake(leftM+(btnW+centerM)*(i%count), topM, btnW, btnW);
         [btn setBackgroundImage:[UIImage imageNamed:photo] forState:UIControlStateNormal];
         [btn addTarget:self action:@selector(choose:) forControlEvents:UIControlEventTouchUpInside];
+        
         btn.tag = 1000+i;
         [btn setEnlargeEdge:10];
         [self addSubview:btn];
@@ -83,6 +87,7 @@
 - (void)choose:(UIButton *)btn {
 
     NSInteger index = btn.tag-1000;
+   
     self.block(self.type,index);
 }
 - (void)showIn:(UIView *)view {

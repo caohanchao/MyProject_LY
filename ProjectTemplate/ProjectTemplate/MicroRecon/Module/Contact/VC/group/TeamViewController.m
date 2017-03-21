@@ -13,9 +13,10 @@
 #import "TeamsListModel.h"
 #import "TeamTableViewCell.h"
 
-
 @interface TeamViewController ()<UITableViewDelegate, UITableViewDataSource>
-
+{
+    TeamsListModel *_desGModel;
+}
 
 
 @end
@@ -144,6 +145,109 @@
     
     
 }
+
+#pragma mark -
+#pragma mark 删除某个组队
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return YES;
+}
+
+//删除某个组队
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    _desGModel = self.dataArray[indexPath.row];
+    
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"提示" message:@"是否删除并退出该群？" preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *action1 = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        
+        NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+        [self httpCommitGroupInfoRid:alarm gid:_desGModel.gid];
+        
+        
+    }];
+    UIAlertAction *action2 = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+    }];
+    
+    [alertController addAction:action2];
+    [alertController addAction:action1];
+    
+    [self presentViewController:alertController animated:YES completion:nil];
+}
+
+#pragma mark -
+#pragma mark 退群
+- (void)httpCommitGroupInfoRid:(NSString *)rid gid:(NSString *)gid{
+    
+    if ([self isGroupAdmin]) {
+        [self showHint:@"群主不能退群"];
+        return;
+    }
+    
+    [self.view endEditing:YES];
+    
+    NSArray *delArray = [NSArray arrayWithObject:rid];
+    
+    NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+    NSString *token = [[NSUserDefaults standardUserDefaults] objectForKey:@"token"];
+    
+    NSMutableDictionary *params = [[NSMutableDictionary alloc] init];
+    
+    params[@"action"] = @"groupdel";
+    params[@"sid"] = alarm;
+    params[@"rid"] = [LZXHelper objArrayToJSON:delArray];
+    params[@"gid"] = gid;
+    params[@"token"] = token;
+    params[@"alarm"] = alarm;
+    
+    [self showloadingName:@"正在提交"];
+    [HYBNetworking postWithUrl:delGroupMemberUrl refreshCache:YES params:params success:^(id response) {
+        
+        ZEBLog(@"--------%@",response);
+        if ([response[@"resultmessage"] isEqualToString:@"成功"]) {
+            
+            [[[DBManager sharedManager] MessageDAO] clearGroupMessage:gid];
+            
+            
+            [[[DBManager sharedManager] GrouplistSQ] deleteGrouplist:gid];
+            
+            
+            [[[DBManager sharedManager] UserlistDAO] deleteUserlist:gid];
+            
+            
+            
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"chatlistRefreshNotification" object:nil];
+            
+            
+            [[NSNotificationCenter defaultCenter] postNotificationName:CreateGroupNotification object:nil];
+            
+            
+            
+            [self.navigationController popToRootViewControllerAnimated:YES];
+            [self hideHud];
+            [self showHint:@"删除并退出成功"];
+            
+        }
+        
+    } fail:^(NSError *error) {
+        ZEBLog(@"%@",[error description]);
+        [self showHint:@"删除并退出失败"];
+        
+    }];
+}
+
+#pragma mark -
+#pragma mark 判断自己是不是群主
+- (BOOL)isGroupAdmin {
+    
+    BOOL ret = NO;
+    NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+    if ([alarm isEqualToString:_desGModel.admin]) {
+        ret = YES;
+    }
+    return ret;
+}
+
 #pragma mark -
 #pragma mark scrollViewDidScroll
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {

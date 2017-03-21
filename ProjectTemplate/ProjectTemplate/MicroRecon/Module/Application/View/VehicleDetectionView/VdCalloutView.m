@@ -24,7 +24,7 @@
     self = [super initWithFrame:frame];
     if (self)
     {
-        self.frame=CGRectMake(0, 0, kWidth, 95);
+        self.frame=CGRectMake(0, 0, kWidth, 95+20);
         self.backgroundColor = [UIColor clearColor];
         UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(skip:)];
         [self addGestureRecognizer:tap];
@@ -70,11 +70,19 @@
     self.LaneNumberLabel.textColor = CHCHexColor(@"000000");
     [self addSubview:self.LaneNumberLabel];
     
+    
+    // 经过次数
+    self.kknumLabel = [[UILabel alloc] init];
+    self.kknumLabel.frame = CGRectMake(leftMargin, maxY(self.LaneNumberLabel)+marginL, width(self.dateLabel.frame), 10);
+    self.kknumLabel.font = [UIFont systemFontOfSize:10];
+    self.kknumLabel.textColor = CHCHexColor(@"000000");
+    [self addSubview:self.kknumLabel];
+    
     CGFloat bw = [LZXHelper textWidthFromTextString:@"卡口名称：" height:15 fontSize:10];
     
     // 卡口名称
     self.bayonetNameLabel = [[UILabel alloc] init];
-    self.bayonetNameLabel.frame = CGRectMake(leftMargin, maxY(self.LaneNumberLabel)+marginD, bw, 10);
+    self.bayonetNameLabel.frame = CGRectMake(leftMargin, maxY(self.kknumLabel)+marginD, bw, 10);
     self.bayonetNameLabel.font = [UIFont systemFontOfSize:10];
     self.bayonetNameLabel.textColor = CHCHexColor(@"000000");
     self.bayonetNameLabel.text = @"卡口名称：";
@@ -91,8 +99,8 @@
     CGFloat iconW = 50;
     
     self.icon = [[UIImageView alloc] init];
-    self.icon.frame = CGRectMake(0, 0, iconW, iconW);
-    self.icon.center = CGPointMake(maxX(self)-iconW/2-5, 5+iconW/2);
+    self.icon.frame = CGRectMake(0, 0, iconW, iconW+10);
+    self.icon.center = CGPointMake(maxX(self)-iconW/2-5, (iconW+10)/2+12.5);
     self.icon.backgroundColor = [UIColor lightGrayColor];
     [self addSubview:self.icon];
     
@@ -142,6 +150,10 @@
     CGContextClosePath(context);
     
     
+}
+- (void)setKknum:(NSString *)kknum {
+    _kknum = kknum;
+    _kknumLabel.text = [NSString stringWithFormat:@"通行次数：%@次",_kknum];
 }
 - (void)setDate:(NSString *)date {
     _date = date;

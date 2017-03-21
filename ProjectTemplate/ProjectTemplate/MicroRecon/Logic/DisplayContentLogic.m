@@ -66,7 +66,9 @@
             case XMNMessageTypeReleaseTask:
                 return [NSString stringWithFormat:@"%@ : [任务消息]",tmodel.gname];
                 break;
-                
+            case XMNMessageTypeFiles:
+                return [NSString stringWithFormat:@"%@ : [文件]",tmodel.gname];
+                break;
             case XMNMessageTypeUnknow:
                 return [NSString stringWithFormat:@"您收到一条消息"];
                 break;
@@ -77,7 +79,7 @@
     }
     else if([chatType isEqualToString:@"S"])
     {
-        FriendsListModel*fmodel = [[[DBManager sharedManager] personnelInformationSQ]selectFrirndlistById:alarm];
+        UserInfoModel *fmodel = [[[DBManager sharedManager] userDetailSQ]selectUserDetail];
         switch (mType) {
             case XMNMessageTypeText:
                 return [NSString stringWithFormat:@"%@ : %@",fmodel.name,data];
@@ -96,6 +98,9 @@
                 break;
             case XMNMessageTypeSystem:
                 return [NSString stringWithFormat:@"%@ : [系统消息]",fmodel.name];
+                break;
+            case XMNMessageTypeFiles:
+                return [NSString stringWithFormat:@"%@ : [文件]",fmodel.name];
                 break;
             case XMNMessageTypeUnknow:
                 return [NSString stringWithFormat:@"您收到一条消息"];

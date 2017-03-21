@@ -267,7 +267,8 @@
     }
     switch (tag) {
         case 0:
-            [self delPost];
+            [self deletePostToSure];
+            
             break;
         case 1:
 
@@ -713,6 +714,24 @@ CGFloat ScalesHeight(CGFloat height) {
 }
 
 #pragma mark ---  -- 删除帖子
+- (void)deletePostToSure
+{
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"您确定要删除此条动态？" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+    UIAlertAction *action1 = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
+        [self showloadingName:@"正在删除"];
+        [self delPost];
+    }];
+    UIAlertAction *action2 = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+        
+    }];
+    
+    [alertController addAction:action2];
+    [alertController addAction:action1];
+    
+    [self presentViewController:alertController animated:YES completion:nil];
+}
+
+
 - (void)delPost
 {
     NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
@@ -728,43 +747,56 @@ CGFloat ScalesHeight(CGFloat height) {
         
     } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable response) {
         
-        if ([self.posttypes isEqualToString:@"all"])
+        NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:response
+                                                             options:NSJSONReadingMutableContainers error:nil];
+        
+        if ([dict[@"resultcode"] isEqualToString:@"0"])
         {
-            [[[DBManager sharedManager]postListSQ]deletePostListByPuid:self.model.postid];
-            [[NSNotificationCenter defaultCenter] postNotificationName:AllPostNotification object:nil];
-            [[[DBManager sharedManager]followPostListSQ]deleteFollowPostListByPFuid:self.model.postid];
-            [[NSNotificationCenter defaultCenter] postNotificationName:FollowPostNotification object:nil];
-        }
-        else if ([self.posttypes isEqualToString:@"follow"])
-        {
-            [[[DBManager sharedManager]postListSQ]deletePostListByPuid:self.model.postid];
-            [[NSNotificationCenter defaultCenter] postNotificationName:AllPostNotification object:nil];
-            [[[DBManager sharedManager]followPostListSQ]deleteFollowPostListByPFuid:self.model.postid];
-            [[NSNotificationCenter defaultCenter] postNotificationName:FollowPostNotification object:nil];
-        }
-        else if ([self.model.posttype isEqualToString:@"0"])
-        {
-            [[[DBManager sharedManager]privacyPostListSQ]deletePrivacyPostListByPPuid:self.model.postid];
-            [[NSNotificationCenter defaultCenter] postNotificationName:PrivacyPostNotification object:nil];
+            if ([self.posttypes isEqualToString:@"all"])
+            {
+                [[[DBManager sharedManager]postListSQ]deletePostListByPuid:self.model.postid];
+                [[NSNotificationCenter defaultCenter] postNotificationName:AllPostNotification object:nil];
+                [[[DBManager sharedManager]followPostListSQ]deleteFollowPostListByPFuid:self.model.postid];
+                [[NSNotificationCenter defaultCenter] postNotificationName:FollowPostNotification object:nil];
+            }
+            else if ([self.posttypes isEqualToString:@"follow"])
+            {
+                [[[DBManager sharedManager]postListSQ]deletePostListByPuid:self.model.postid];
+                [[NSNotificationCenter defaultCenter] postNotificationName:AllPostNotification object:nil];
+                [[[DBManager sharedManager]followPostListSQ]deleteFollowPostListByPFuid:self.model.postid];
+                [[NSNotificationCenter defaultCenter] postNotificationName:FollowPostNotification object:nil];
+            }
+            else if ([self.model.posttype isEqualToString:@"0"])
+            {
+                [[[DBManager sharedManager]privacyPostListSQ]deletePrivacyPostListByPPuid:self.model.postid];
+                [[NSNotificationCenter defaultCenter] postNotificationName:PrivacyPostNotification object:nil];
+            }
+            else
+            {
+                [[[DBManager sharedManager]privacyPostListSQ]deletePrivacyPostListByPPuid:self.model.postid];
+                [[NSNotificationCenter defaultCenter] postNotificationName:PrivacyPostNotification object:nil];
+            }
+            
+            [[[DBManager sharedManager]userPostInfoSQ]deleteUserPostInfoByPuid:self.model.postid];
+            [[NSNotificationCenter defaultCenter] postNotificationName:UserCardPostNotification object:nil];
+            
+            [[[DBManager sharedManager]postPraiseUserSQ]deletePostListWithPostid:self.model.postid];
+            [[[DBManager sharedManager]postCommentSQ]deletePostListByPuid:self.model.postid];
+            
+            [self.navigationController popViewControllerAnimated:YES];
+            
+            [self showHint:@"删除成功"];
+            [self hideHud];
         }
         else
         {
-            [[[DBManager sharedManager]privacyPostListSQ]deletePrivacyPostListByPPuid:self.model.postid];
-            [[NSNotificationCenter defaultCenter] postNotificationName:PrivacyPostNotification object:nil];
+            [self showHint:@"删除失败！"];
         }
-        
-         [[[DBManager sharedManager]userPostInfoSQ]deleteUserPostInfoByPuid:self.model.postid];
-         [[NSNotificationCenter defaultCenter] postNotificationName:UserCardPostNotification object:nil];
-        
-        [[[DBManager sharedManager]postPraiseUserSQ]deletePostListWithPostid:self.model.postid];
-        [[[DBManager sharedManager]postCommentSQ]deletePostListByPuid:self.model.postid];
-        
-        [self.navigationController popViewControllerAnimated:YES];
-        
-        [self showHint:@"删除成功"];
         
     } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
       //  [self showHint:@"点赞失败了，看看网络吧！"];
+         [self showHint:@"删除失败"];
+        [self hideHud];
     }];
 }
 
@@ -791,47 +823,58 @@ CGFloat ScalesHeight(CGFloat height) {
             
         } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable response) {
             
-            CommentModel * model = [[CommentModel alloc]init];
+            NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:response
+                                                                 options:NSJSONReadingMutableContainers error:nil];
             
-            UserInfoModel * userInfoModel = [[[DBManager sharedManager]userDetailSQ]selectUserDetail];
+            if ([dict[@"resultcode"] isEqualToString:@"0"])
+            {
+                CommentModel * model = [[CommentModel alloc]init];
+                
+                UserInfoModel * userInfoModel = [[[DBManager sharedManager]userDetailSQ]selectUserDetail];
+                
+                //获取当前时间并转为时间戳
+                NSDate* date = [NSDate dateWithTimeIntervalSinceNow:0];
+                NSTimeInterval a=[date timeIntervalSince1970];
+                NSString *timeString = [NSString stringWithFormat:@"%f", a];
+                NSString * string = [timeString substringToIndex:10];
+                
+                NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init];
+                [numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
+                NSNumber *numTemp = [numberFormatter numberFromString:string];
+                
+                model.alarm = alarm;
+                model.department = userInfoModel.department;
+                model.headpic = userInfoModel.headpic;
+                model.name = userInfoModel.name;
+                model.pushtime = numTemp ;
+                model.content = _commentTF.text;
+                model.postid = self.model.postid;
+                
+                self.model.comment  = [NSString stringWithFormat:@"%d",[self.model.comment intValue]+1];
+                
+                [self updateSQ];
+                
+                [[[DBManager sharedManager]postCommentSQ]insertPostComment:model];
+                
+                _commentArrayM = [[[DBManager sharedManager]postCommentSQ]selectPostCommentWithPostID:self.model.postid];
+                
+                [self transferNotification];
+                
+                [self.topTableView reloadData];
+                
+                [self commentTableViewTouchInSide];
+                
+                [self showHint:@"评论成功！"];
+                
+                _commentTF.text = nil;
+                
+                [self hideHud];
+            }
+            else
+            {
+                [self showHint:@"评论失败！"];
+            }
             
-            //获取当前时间并转为时间戳
-            NSDate* date = [NSDate dateWithTimeIntervalSinceNow:0];
-            NSTimeInterval a=[date timeIntervalSince1970];
-            NSString *timeString = [NSString stringWithFormat:@"%f", a];
-            NSString * string = [timeString substringToIndex:10];
-            
-            NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init];
-            [numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-            NSNumber *numTemp = [numberFormatter numberFromString:string];
-            
-            model.alarm = alarm;
-            model.department = userInfoModel.department;
-            model.headpic = userInfoModel.headpic;
-            model.name = userInfoModel.name;
-            model.pushtime = numTemp ;
-            model.content = _commentTF.text;
-            model.postid = self.model.postid;
-            
-            self.model.comment  = [NSString stringWithFormat:@"%d",[self.model.comment intValue]+1];
-            
-            [self updateSQ];
-            
-            [[[DBManager sharedManager]postCommentSQ]insertPostComment:model];
-            
-            _commentArrayM = [[[DBManager sharedManager]postCommentSQ]selectPostCommentWithPostID:self.model.postid];
-            
-            [self transferNotification];
-            
-            [self.topTableView reloadData];
-            
-            [self commentTableViewTouchInSide];
-            
-            [self showHint:@"评论成功！"];
-            
-             _commentTF.text = nil;
-            
-            [self hideHud];
             
         } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
             

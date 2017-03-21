@@ -26,6 +26,15 @@
         return NO;
     }
     
+//    [[[DBManager sharedManager] uploadingSQ] deleteUploading:model.cuid];
+
+//    if ([model.FIRE containsString:@"LOCK"]||[model.FIRE containsString:@"READ"]) {
+//
+//        if ([model.mtype isEqualToString:@"S"]||[model.mtype isEqualToString:@"P"]||[model.mtype isEqualToString:@"V"]) {
+//            return NO;
+//        }
+//    }
+    
     NSString *name = model.sname;
     if ([[LZXHelper isNullToString:name] isEqualToString:@""]) {
         name = model.cname;
@@ -65,7 +74,7 @@
     __block BOOL ret;
         [[ZEBDatabaseHelper sharedInstance] inDatabase:^(FMDatabase *db) {
             ret = [db executeUpdate:[NSString stringWithFormat:
-                                          @"INSERT INTO 'tb_message'('me_sid', 'me_rid', 'me_qid', 'me_gps_h', 'me_gps_w', 'me_time', 'me_type', 'me_mtype', 'me_data', 'me_voicetime', 'me_videopic', 'me_cmd', 'me_headpic', 'me_sname', 'me_workname', 'me_markDataId', 'me_DEType', 'me_DEName', 'me_btime', 'me_msgid', 'me_workid','me_msgfire','me_timeStr') values('%@', '%@', %ld, '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@','%@','%@','%@','%@','%@','%@','%@','%@')", model.sid, model.rid, model.qid, model.longitude, model.latitude, model.time, model.type, model.mtype, model.data, model.voicetime, model.videopic, model.cmd, model.headpic, name,workname,markDataId,model.DE_type,model.DE_name,model.beginTime,model.msGid,workid,model.FIRE,model.timeStr]];
+                                          @"INSERT INTO 'tb_message'('me_sid', 'me_rid', 'me_qid', 'me_gps_h', 'me_gps_w', 'me_time', 'me_type', 'me_mtype', 'me_data', 'me_voicetime', 'me_videopic', 'me_cmd', 'me_headpic', 'me_sname', 'me_workname', 'me_markDataId', 'me_DEType', 'me_DEName', 'me_btime', 'me_msgid', 'me_workid','me_msgfire','me_timeStr','me_msgNotShow') values('%@', '%@', %ld, '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@','%@','%@','%@','%@','%@','%@','%@','%@','%@')", model.sid, model.rid, model.qid, model.longitude, model.latitude, model.time, model.type, model.mtype, model.data, model.voicetime, model.videopic, model.cmd, model.headpic, name,workname,markDataId,model.DE_type,model.DE_name,model.beginTime,model.msGid,workid,model.FIRE,model.timeStr,@"NO"]];
         }];
        
         return ret;
@@ -107,8 +116,8 @@
             model.worId = [set stringForColumn:@"me_workid"];
             model.FIRE = [set stringForColumn:@"me_msgfire"];
             model.timeStr = [set stringForColumn:@"me_timeStr"];
+            model.messageNotShow = [set stringForColumn:@"me_msgNotShow"];
             tempModel = model;
-
         }
         [set close];
     }];
@@ -150,13 +159,37 @@
              model.worId = [set stringForColumn:@"me_workid"];
              model.FIRE = [set stringForColumn:@"me_msgfire"];
              model.timeStr = [set stringForColumn:@"me_timeStr"];
-            [array addObject:model];
+             model.messageNotShow = [set stringForColumn:@"me_msgNotShow"];
+             
+             if (![model.messageNotShow boolValue]) {
+                 [array addObject:model];
+             }
+
          }
          [set close];
          
      }];
-    
-    return array;
+    NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
+    NSString *alarm = [user objectForKey:@"alarm"];
+    NSMutableArray *arr = [NSMutableArray array];
+    for (ICometModel *model in array) {
+        // 消息过滤
+        if ([@"G" isEqualToString:model.type]) {
+            if ([[[DBManager sharedManager] GrouplistSQ] isExistGroupForGid:model.rid]) {
+                [arr addObject:model];
+            }
+        }else if ([@"S" isEqualToString:model.type]) {
+            if ([model.sid isEqualToString:alarm]) {
+                [arr addObject:model];
+            }else if ([[[DBManager sharedManager] personnelInformationSQ] isFriendExistForAlarm:model.sid]) {
+                [arr addObject:model];
+            }
+        }else if ([@"B" isEqualToString:model.type]) {
+            [arr addObject:model];
+        }
+    }
+    array = nil;
+    return arr;
 
 }
 
@@ -192,6 +225,7 @@
             model.worId = [set stringForColumn:@"me_workid"];
             model.FIRE = [set stringForColumn:@"me_msgfire"];
             model.timeStr = [set stringForColumn:@"me_timeStr"];
+            model.messageNotShow = [set stringForColumn:@"me_msgNotShow"];
             tempModel = model;
             
         }
@@ -215,7 +249,7 @@
     [[ZEBDatabaseHelper sharedInstance] inDatabase:^(FMDatabase *db) {
         if ([@"S" isEqualToString:chatType]) {
             //select count(*) from tb_message where (me_sid = ? and me_rid = ?) or (me_sid = ? and me_rid = ?)
-            set = [db executeQuery:@"select * from tb_message where (me_sid = ? and me_rid = ?) or (me_sid = ? and me_rid = ?) order by me_qid desc limit ?,?", alarm, chatId, chatId, alarm,@((page-1)*pagesize),@(pagesize)];
+            set = [db executeQuery:@"select * from tb_message where (me_sid = ? and me_rid = ?) or (me_sid = ? and me_rid = ?) order by me_btime desc limit ?,?", alarm, chatId, chatId, alarm,@((page-1)*pagesize),@(pagesize)];
         } else if ([@"G" isEqualToString:chatType]) {
             set = [db executeQuery:@"select * from tb_message where me_rid = ? order by me_btime desc limit ?,?",chatId,@((page-1)*pagesize),@(pagesize)];
         }
@@ -247,18 +281,35 @@
             model.worId = [set stringForColumn:@"me_workid"];
             model.FIRE = [set stringForColumn:@"me_msgfire"];
             model.timeStr = [set stringForColumn:@"me_timeStr"];
-            [array addObject:model];
+            model.messageNotShow = [set stringForColumn:@"me_msgNotShow"];
+            if (![model.messageNotShow boolValue]) {
+                [array addObject:model];
+            }
+            
         }
         
         [set close];
         
     }];
-    
-    
-    
-//    [self.db close];
- 
-    return array;
+    NSMutableArray *arr = [NSMutableArray array];
+    for (ICometModel *model in array) {
+        // 消息过滤
+        if ([@"G" isEqualToString:model.type]) {
+            if ([[[DBManager sharedManager] GrouplistSQ] isExistGroupForGid:model.rid]) {
+                [arr addObject:model];
+            }
+        }else if ([@"S" isEqualToString:model.type]) {
+            if ([model.sid isEqualToString:alarm]) {
+                [arr addObject:model];
+            }else if ([[[DBManager sharedManager] personnelInformationSQ] isFriendExistForAlarm:model.sid]) {
+                [arr addObject:model];
+            }
+        }else if ([@"B" isEqualToString:model.type]) {
+            [arr addObject:model];
+        }
+    }
+    array = nil;
+    return arr;
 }
 
 // 获取最大Qid
@@ -363,6 +414,25 @@
 
     return maxQid;
 }
+- (NSInteger)getMaxQidSingleByChatId:(NSString *)chatId {
+    __block NSInteger maxQid = 0;
+    NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
+    __block NSString *alarm = [user objectForKey:@"alarm"];
+    [[ZEBDatabaseHelper sharedInstance] inDatabase:^(FMDatabase *db) {
+        //得到结果集
+        FMResultSet *set = [db executeQuery:@"select max(me_qid) from tb_message where (me_sid = ? and me_rid = ?) or (me_sid = ? and me_rid = ?)", alarm, chatId, chatId, alarm];
+        
+        while (set.next) {
+            maxQid = [[set stringForColumn:@"max(me_qid)"] integerValue];
+        }
+        
+        [set close];
+        
+    }];
+    
+    
+    return maxQid;
+}
 // 获取最小Qid
 - (NSInteger)getMinQidSingle {
     __block NSInteger minQid = 0;
@@ -390,6 +460,24 @@
     [[ZEBDatabaseHelper sharedInstance] inDatabase:^(FMDatabase *db) {
         //得到结果集
         FMResultSet *set = [db executeQuery:@"select max(me_qid) from tb_message where me_rid = ?", qid];
+        
+        while (set.next) {
+            maxQid = [[set stringForColumn:@"max(me_qid)"] integerValue];
+        }
+        
+        [set close];
+    }];
+    
+    
+    return maxQid;
+}
+// 获取最大Qid
+- (NSInteger)getMaxQidGroupByChatId:(NSString *)chatId {
+    __block NSInteger maxQid = 0;
+
+    [[ZEBDatabaseHelper sharedInstance] inDatabase:^(FMDatabase *db) {
+        //得到结果集
+        FMResultSet *set = [db executeQuery:@"select max(me_qid) from tb_message where me_rid = ?", chatId];
         
         while (set.next) {
             maxQid = [[set stringForColumn:@"max(me_qid)"] integerValue];
@@ -496,6 +584,13 @@
     if ([self selectMessageByQid:model.QID] || [self selectMessageByMsgid:model.MSGID]) {
         return NO;
     }
+    
+    if ([model.MSG.FIRE containsString:@"LOCK"]||[model.MSG.FIRE containsString:@"READ"]) {
+        if ([model.MSG.MTYPE isEqualToString:@"S"]||[model.MSG.MTYPE isEqualToString:@"P"]||[model.MSG.MTYPE isEqualToString:@"V"]) {
+            return NO;
+        }
+    }
+    
     if ([model.CMD isEqualToString:@"1"]) {
         if ([model.MSG.MTYPE isEqualToString:@"T"]) {
             NSString *str = [model.MSG.DATA transferredMeaningWithEnter];
@@ -526,7 +621,7 @@
     [[ZEBDatabaseHelper sharedInstance] inDatabase:^(FMDatabase *db) {
     
         ret = [db executeUpdate:[NSString stringWithFormat:
-                                      @"INSERT INTO 'tb_message'('me_sid', 'me_rid', 'me_qid', 'me_gps_h', 'me_gps_w', 'me_time','me_btime', 'me_type', 'me_mtype', 'me_data', 'me_voicetime', 'me_videopic', 'me_cmd', 'me_headpic', 'me_sname','me_workname','me_markDataId', 'me_msgid','me_workid','me_msgfire','me_timeStr') values('%@', '%@', %ld, '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@','%@', '%@', '%@','%@','%@','%@','%@','%@','%@')", model.SID, model.RID, model.QID, model.GPS.H, model.GPS.W, model.TIME,model.beginTime, model.TYPE, model.MSG.MTYPE, model.MSG.DATA, model.MSG.VOICETIME, model.MSG.VIDEOPIC, model.CMD, model.HEADPIC,model.SNAME,workname,markDataId, model.MSGID,workid,model.FIRE,model.timeStr]];
+                                      @"INSERT INTO 'tb_message'('me_sid', 'me_rid', 'me_qid', 'me_gps_h', 'me_gps_w', 'me_time','me_btime', 'me_type', 'me_mtype', 'me_data', 'me_voicetime', 'me_videopic', 'me_cmd', 'me_headpic', 'me_sname','me_workname','me_markDataId', 'me_msgid','me_workid','me_msgfire','me_timeStr','me_msgNotShow') values('%@', '%@', %ld, '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@','%@', '%@', '%@','%@','%@','%@','%@','%@','%@','%@')", model.SID, model.RID, model.QID, model.GPS.H, model.GPS.W, model.TIME,model.beginTime, model.TYPE, model.MSG.MTYPE, model.MSG.DATA, model.MSG.VOICETIME, model.MSG.VIDEOPIC, model.CMD, model.HEADPIC,model.SNAME,workname,markDataId, model.MSGID,workid,model.MSG.FIRE,model.timeStr,@"NO"]];
         if (!ret) {
             ZEBLog(@"插入失败----%@",db.lastError);
         }
@@ -544,11 +639,25 @@
 
     __block BOOL ret;
    [[ZEBDatabaseHelper sharedInstance] inDatabase:^(FMDatabase *db) {
-   ret = [db executeUpdate:@"update tb_message set me_sid = ?,me_rid = ?, me_gps_h = ?, me_gps_w = ?, me_time = ?, me_btime = ?, me_type = ?, me_mtype = ?, me_data = ?, me_voicetime = ?, me_videopic = ?, me_cmd = ?, me_headpic = ?, me_sname = ?, me_msgid = ?, me_msgfire = ? ,me_timeStr = ? where me_qid = ?",model.SID,model.RID,model.GPS.H,model.GPS.W,model.TIME,model.beginTime,model.TYPE,model.MSG.MTYPE,model.MSG.DATA,model.MSG.VOICETIME, model.MSG.VIDEOPIC,model.CMD,model.HEADPIC,model.SNAME,model.MSGID,model.FIRE,model.timeStr,model.QID];
+   ret = [db executeUpdate:@"update tb_message set me_sid = ?,me_rid = ?, me_gps_h = ?, me_gps_w = ?, me_time = ?, me_btime = ?, me_type = ?, me_mtype = ?, me_data = ?, me_voicetime = ?, me_videopic = ?, me_cmd = ?, me_headpic = ?, me_sname = ?, me_msgid = ?, me_msgfire = ? ,me_timeStr = ? where me_qid = ?",model.SID,model.RID,model.GPS.H,model.GPS.W,model.TIME,model.beginTime,model.TYPE,model.MSG.MTYPE,model.MSG.DATA,model.MSG.VOICETIME, model.MSG.VIDEOPIC,model.CMD,model.HEADPIC,model.SNAME,model.MSGID,model.MSG.FIRE,model.timeStr,model.QID];
    }];
        
         return ret;
         
+}
+// 根据qid删除消息信息
+- (BOOL)deleteMessageForQid:(NSInteger)qid {
+    ICometModel *model = [self selectMessageByQid:qid];
+    if (!model.messageNotShow) {
+        return NO;
+    }
+    __block BOOL ret;
+    [[ZEBDatabaseHelper sharedInstance] inDatabase:^(FMDatabase *db) {
+        ret = [db executeUpdate:@"update tb_message set me_msgNotShow = ? where me_qid = ?",@"YES",[NSString stringWithFormat:@"%ld",qid]];
+    }];
+    
+    return ret;
+    
 }
 // 根据Msgid删除消息
 - (BOOL)deleteMessageForMsgid:(NSString *)msgid{
@@ -585,7 +694,7 @@
             model.SNAME = [set stringForColumn:@"me_sname"];
             model.beginTime =[set stringForColumn:@"me_btime"];
             model.MSGID = [set stringForColumn:@"me_msgid"];
-            model.FIRE = [set stringForColumn:@"me_msgfire"];
+            model.MSG.FIRE = [set stringForColumn:@"me_msgfire"];
             model.timeStr = [set stringForColumn:@"me_timeStr"];
             tempModel = model;
             
@@ -595,5 +704,19 @@
     
     return tempModel;
 }
-
+// 清除表
+- (BOOL) clearMessage
+{
+    __block BOOL ret;
+    [[ZEBDatabaseHelper sharedInstance] inDatabase:^(FMDatabase *db) {
+        NSString *sqlstr = [NSString stringWithFormat:@"DELETE FROM %@", @"tb_message"];
+        if (ret != [db executeUpdate:sqlstr])
+        {
+            ZEBLog(@"Erase table error!");
+            
+        }
+        
+    }];
+    return ret;
+}
 @end

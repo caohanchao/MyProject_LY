@@ -27,7 +27,8 @@ pod 'AMapLocation'
 pod 'FMDB', '~> 2.6.2'
 pod 'libqrencode', '~> 3.4.2'
 pod 'Bugtags'
-pod 'JSPatch'
+pod 'YYImage'
+pod 'MJExtension', '~> 3.0.10'
 end
 target :ProjectTemplateOnline do
 
@@ -51,7 +52,8 @@ pod 'AMapLocation'
 pod 'FMDB', '~> 2.6.2'
 pod 'libqrencode', '~> 3.4.2'
 pod 'Bugtags'
-pod 'JSPatch'
+pod 'YYImage'
+pod 'MJExtension', '~> 3.0.10'
 end
 
 

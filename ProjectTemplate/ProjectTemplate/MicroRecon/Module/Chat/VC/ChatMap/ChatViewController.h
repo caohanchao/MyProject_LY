@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "XMNChat.h"
 #import "XMNChatViewModel.h"
-
+@class ChatTableView;
 typedef enum : NSUInteger {
     ChatList1,
     GroupTeam1,
@@ -18,7 +18,7 @@ typedef enum : NSUInteger {
 
 @interface ChatViewController : UIViewController
 
-@property (strong, nonatomic) UITableView *tableView;
+@property (strong, nonatomic) ChatTableView *tableView;
 @property (strong, nonatomic) XMChatBar *chatBar;
 @property (copy, nonatomic) NSString *chatterName /**< 正在聊天的用户昵称 */;
 @property (copy, nonatomic) NSString *chatterThumb /**< 正在聊天的用户头像 */;

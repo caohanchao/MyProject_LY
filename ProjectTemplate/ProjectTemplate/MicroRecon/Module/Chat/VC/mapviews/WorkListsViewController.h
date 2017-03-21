@@ -13,6 +13,7 @@ typedef  NS_ENUM(NSInteger, ComeWorkListType){
     GroupDesPage = 0,    //群详情页面
     MarkPage = 1,        //标记页面
     PhysicsDesPage = 2,     //轨迹页面
+    ChatListPage = 3,       // 消息列表界面
 };
 
 typedef void (^TaskBlock)(NSMutableDictionary *param);

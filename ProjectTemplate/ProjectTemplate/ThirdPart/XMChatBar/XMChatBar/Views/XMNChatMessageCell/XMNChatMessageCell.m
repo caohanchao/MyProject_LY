@@ -14,6 +14,9 @@
 #import "XMNChatLocationMessageCell.h"
 #import "XMNChatVideoMessageCell.h"
 #import "XMNChatReleaseTaskMessageCell.h"
+#import "XMNChatFireImageMessageCell.h"
+#import "XMNChatEmotionsMessageCell.h"
+#import "XMNChatFileMessageCell.h"
 #import "Masonry.h"
 #import <objc/runtime.h>
 #import "UIImageView+CornerRadius.h"
@@ -89,12 +92,12 @@
             make.width.mas_lessThanOrEqualTo(@120);
             make.height.equalTo(self.messageChatType == XMNMessageChatGroup ? @16 : @0);
         }];
-        [self.postnameL mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.top.equalTo(self.headIV.mas_top);
-            make.right.equalTo(self.nicknameL.mas_left).offset(-5);
-            make.width.mas_lessThanOrEqualTo(@100);
-            make.height.equalTo(self.messageChatType == XMNMessageChatGroup ? @16 : @0);
-        }];
+//        [self.postnameL mas_makeConstraints:^(MASConstraintMaker *make) {
+//            make.top.equalTo(self.headIV.mas_top);
+//            make.right.equalTo(self.nicknameL.mas_left).offset(-5);
+//            make.width.mas_lessThanOrEqualTo(@100);
+//            make.height.equalTo(self.messageChatType == XMNMessageChatGroup ? @16 : @0);
+//        }];
         [self.messageContentV mas_makeConstraints:^(MASConstraintMaker *make) {
             make.right.equalTo(self.headIV.mas_left).with.offset(-9);
             make.top.equalTo(self.nicknameL.mas_bottom).with.offset(4);
@@ -141,15 +144,16 @@
             make.width.equalTo(@50);
             make.height.equalTo(@50);
         }];
-        [self.postnameL mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.top.equalTo(self.headIV.mas_top);
-            make.left.equalTo(self.headIV.mas_right).with.offset(9);
-            make.width.mas_lessThanOrEqualTo(@100);
-            make.height.equalTo(self.messageChatType == XMNMessageChatGroup ? @16 : @0);
-        }];
+//        [self.postnameL mas_makeConstraints:^(MASConstraintMaker *make) {
+//            make.top.equalTo(self.headIV.mas_top);
+//            make.left.equalTo(self.headIV.mas_right).with.offset(9);
+//            make.width.mas_lessThanOrEqualTo(@100);
+//            make.height.equalTo(self.messageChatType == XMNMessageChatGroup ? @16 : @0);
+//        }];
         [self.nicknameL mas_makeConstraints:^(MASConstraintMaker *make) {
             make.top.equalTo(self.headIV.mas_top);
-            make.left.equalTo(self.postnameL.mas_right).offset(5);
+//            make.left.equalTo(self.postnameL.mas_right).offset(5);
+            make.left.equalTo(self.headIV.mas_right).offset(9);
             make.width.mas_lessThanOrEqualTo(@120);
             make.height.equalTo(self.messageChatType == XMNMessageChatGroup ? @16 : @0);
         }];
@@ -199,7 +203,7 @@
     }
     
     [self.timeL mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.width.mas_equalTo(@200);
+        make.width.mas_lessThanOrEqualTo(@200);
         make.height.mas_equalTo(@14);
         make.centerX.equalTo(self.contentView.mas_centerX);
     }];
@@ -212,9 +216,9 @@
         [self.nicknameL mas_updateConstraints:^(MASConstraintMaker *make) {
             make.height.equalTo(@0);
         }];
-        [self.postnameL mas_updateConstraints:^(MASConstraintMaker *make) {
-            make.height.equalTo(@0);
-        }];
+//        [self.postnameL mas_updateConstraints:^(MASConstraintMaker *make) {
+//            make.height.equalTo(@0);
+//        }];
     }
 }
 
@@ -245,7 +249,7 @@
     [self.contentView addSubview:self.timeL];
     [self.contentView addSubview:self.headIV];
     [self.contentView addSubview:self.nicknameL];
-    [self.contentView addSubview:self.postnameL];
+   // [self.contentView addSubview:self.postnameL];
     [self.contentView addSubview:self.messageContentV];
     [self.contentView addSubview:self.messageReadStateIV];
     
@@ -273,45 +277,48 @@
     self.messageSendStateIV.hidden = YES;
     self.messageReadStateIV.hidden = YES;
     
-    if (self.messageOwner == XMNMessageOwnerSelf) {
+    if (self.messageType == XMNMessageTypeEmotions) {
+        self.messageContentBackgroundIV.image = [LZXHelper buttonImageFromColor:[UIColor colorWithRed:234.0f/255.0f green:234/255.0f blue:234/255.f alpha:1.0f]];
+    }else {
+        if (self.messageOwner == XMNMessageOwnerSelf) {
         if (self.messageType == XMNMessageTypeReleaseTask) {
             
-            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"chat_track_icon_right"] resizableImageWithCapInsets:UIEdgeInsetsMake(21, 32, 21, 33) resizingMode:UIImageResizingModeStretch]];
+            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"chat_track_icon_right11"] resizableImageWithCapInsets:UIEdgeInsetsMake(21, 32, 21, 33) resizingMode:UIImageResizingModeStretch]];
         }else if(self.messageType == XMNMessageTypeImage){
-            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"send_normal_3"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 16, 18, 19) resizingMode:UIImageResizingModeStretch]];
+            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"send_normal_31"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 16, 18, 19) resizingMode:UIImageResizingModeStretch]];
             
         }else if(self.messageType == XMNMessageTypeVideo){
-            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"send_normal_3"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 16, 18, 19) resizingMode:UIImageResizingModeStretch]];
+            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"send_normal_31"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 16, 18, 19) resizingMode:UIImageResizingModeStretch]];
         }else if (self.messageType == XMNMessageTypeLocation)
         {
-            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"send_normal_2"] resizableImageWithCapInsets:UIEdgeInsetsMake(17, 56.5, 18, 56.5) resizingMode:UIImageResizingModeStretch]];
+            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"send_normal_21"] resizableImageWithCapInsets:UIEdgeInsetsMake(17, 56.5, 18, 56.5) resizingMode:UIImageResizingModeStretch]];
 //            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"send_normal_3"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 16, 18, 19) resizingMode:UIImageResizingModeStretch]];
         
         }else {
-            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"send_normal_1"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 16, 18, 19) resizingMode:UIImageResizingModeStretch]];
-            [self.messageContentBackgroundIV setHighlightedImage:[[UIImage imageNamed:@"send_hight_1"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 16, 18, 19) resizingMode:UIImageResizingModeStretch]];
+            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"send_normal_11"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 16, 18, 19) resizingMode:UIImageResizingModeStretch]];
+            [self.messageContentBackgroundIV setHighlightedImage:[[UIImage imageNamed:@"send_hight_11"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 16, 18, 19) resizingMode:UIImageResizingModeStretch]];
         }
     }else if (self.messageOwner == XMNMessageOwnerOther){
         if (self.messageType == XMNMessageTypeReleaseTask) {
-            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"chat_track_icon_left"] resizableImageWithCapInsets:UIEdgeInsetsMake(21, 32, 21, 33) resizingMode:UIImageResizingModeStretch]];
+            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"chat_track_icon_left11"] resizableImageWithCapInsets:UIEdgeInsetsMake(21, 32, 21, 33) resizingMode:UIImageResizingModeStretch]];
             
-        }else if(self.messageType == XMNMessageTypeImage){
-        [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"rec_normal_3"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 19, 18, 16) resizingMode:UIImageResizingModeStretch]];
+        }else if(self.messageType == XMNMessageTypeImage||self.messageType == XMNMessageTypeFireImage){
+        [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"rec_normal_31"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 19, 18, 16) resizingMode:UIImageResizingModeStretch]];
             
         }else if(self.messageType == XMNMessageTypeVideo){
-            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"rec_normal_3"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 19, 18, 16) resizingMode:UIImageResizingModeStretch]];
+            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"rec_normal_31"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 19, 18, 16) resizingMode:UIImageResizingModeStretch]];
         }
         else if (self.messageType == XMNMessageTypeLocation)
         {
-            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"rec_normal_2"] resizableImageWithCapInsets:UIEdgeInsetsMake(17, 56.5, 18, 56.5) resizingMode:UIImageResizingModeStretch]];
+            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"rec_normal_21"] resizableImageWithCapInsets:UIEdgeInsetsMake(17, 56.5, 18, 56.5) resizingMode:UIImageResizingModeStretch]];
 //            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"rec_normal_3"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 19, 18, 16) resizingMode:UIImageResizingModeStretch]];
             
         }else {
-            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"rec_normal_1"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 19, 18, 16) resizingMode:UIImageResizingModeStretch]];
-            [self.messageContentBackgroundIV setHighlightedImage:[[UIImage imageNamed:@"rec_hight_1"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 19, 18, 16) resizingMode:UIImageResizingModeStretch]];
+            [self.messageContentBackgroundIV setImage:[[UIImage imageNamed:@"rec_normal_11"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 19, 18, 16) resizingMode:UIImageResizingModeStretch]];
+            [self.messageContentBackgroundIV setHighlightedImage:[[UIImage imageNamed:@"rec_hight_11"] resizableImageWithCapInsets:UIEdgeInsetsMake(18, 19, 18, 16) resizingMode:UIImageResizingModeStretch]];
         }
     }
-    
+    }
     self.messageContentV.maskView = [[UIImageView alloc] initWithImage:self.messageContentBackgroundIV.image highlightedImage:self.messageContentBackgroundIV.highlightedImage];
 //    self.messageContentV.layer.mask.contents = (__bridge id _Nullable)(self.messageContentBackgroundIV.image.CGImage);
 
@@ -384,30 +391,38 @@
         DE_type = uModel.DE_type;
         DE_name = [LZXHelper isNullToString:model.RE_post];
     }
-    if ([[LZXHelper isNullToString:DE_type] isEqualToString:@""]) {
-        self.postnameL.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"];
-        self.postnameL.text = @" 武汉市公安局 ";
-    }else {
-        if ([DE_type isEqualToString:@"0"]) {//0警察公务组织紫，1技术支持绿
-            self.postnameL.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"];
-            self.postnameL.text = [NSString stringWithFormat:@" %@ ",DE_name];
-        }else if ([DE_type isEqualToString:@"1"]) {
-            self.postnameL.backgroundColor = [UIColor colorWithHexString:@"#6cd9a3"];
-            self.postnameL.text = [NSString stringWithFormat:@" %@ ",DE_name];
-        }
-
-    }
+//    if ([[LZXHelper isNullToString:DE_type] isEqualToString:@""]) {
+//        self.postnameL.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"];
+//        self.postnameL.text = @" 武汉市公安局 ";
+//    }else {
+//        if ([DE_type isEqualToString:@"0"]) {//0警察公务组织紫，1技术支持绿
+//            self.postnameL.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"];
+//            self.postnameL.text = [NSString stringWithFormat:@" %@ ",DE_name];
+//        }else if ([DE_type isEqualToString:@"1"]) {
+//            self.postnameL.backgroundColor = [UIColor colorWithHexString:@"#6cd9a3"];
+//            self.postnameL.text = [NSString stringWithFormat:@" %@ ",DE_name];
+//        }
+//
+//    }
 
 //    self.timeL.text =[self timeChage:data[kXMNMessageConfigurationTimeKey]];
 
     
-    if ([data[kXMNMessageConfigurationTimeKey]isEqualToString:@"0"]) {
+    if ([data[kXMNMessageConfigurationTimeKey]isEqualToString:@"0"] || isNULL(data[kXMNMessageConfigurationTimeKey])) {
         
         self.timeL.text = nil;
+        self.timeL.backgroundColor = zClearColor;
     }
     else
     {
-        self.timeL.text =[ data[kXMNMessageConfigurationTimeKey] timeChage];
+        NSString *time = [NSString stringWithFormat:@"%@",[data[kXMNMessageConfigurationTimeKey] timeChage]];
+        
+        CGFloat w = [LZXHelper textWidthFromTextString:time height:14 fontSize:9.0];
+        [self.timeL mas_updateConstraints:^(MASConstraintMaker *make) {
+            make.width.mas_equalTo(w+10);
+        }];
+        self.timeL.text = time;
+        self.timeL.backgroundColor = CHCHexColor(@"bebebe");
     }
     
     
@@ -448,6 +463,10 @@
 #pragma mark - Private Methods
 - (void)handleTap:(UITapGestureRecognizer *)tap {
     if (tap.state == UIGestureRecognizerStateEnded) {
+        
+        if ([UIMenuController sharedMenuController].isMenuVisible) {
+            [[UIMenuController sharedMenuController] setMenuVisible:NO animated:YES];
+        }
         CGPoint tapPoint = [tap locationInView:self.contentView];
         if (CGRectContainsPoint(self.messageContentV.frame, tapPoint)) {
             [self.delegate messageCellTappedMessage:self];
@@ -517,7 +536,10 @@
     if (!_timeL) {
         _timeL = [[UILabel alloc] init];
         _timeL.font = [UIFont systemFontOfSize:9.0f];
-        _timeL.textColor = [UIColor grayColor];
+        _timeL.backgroundColor = CHCHexColor(@"bebebe");
+        _timeL.layer.cornerRadius = 3;
+        _timeL.layer.masksToBounds = YES;
+        _timeL.textColor = [UIColor whiteColor];
         _timeL.textAlignment = NSTextAlignmentCenter;
     }
     return _timeL;
@@ -525,7 +547,8 @@
 
 - (UIImageView *)headIV {
     if (!_headIV) {
-        _headIV = [[UIImageView alloc] initWithCornerRadiusAdvance:25 rectCornerType:UIRectCornerAllCorners];
+//        _headIV = [[UIImageView alloc] initWithCornerRadiusAdvance:25 rectCornerType:UIRectCornerAllCorners];
+        _headIV = [[UIImageView alloc] initWithCornerRadiusAdvance:6 rectCornerType:UIRectCornerAllCorners];
         _headIV.contentMode = UIViewContentModeScaleAspectFill;
     }
     return _headIV;
@@ -540,16 +563,16 @@
     }
     return _nicknameL;
 }
-- (UILabel *)postnameL {
-    if (!_postnameL) {
-        _postnameL = [[UILabel alloc] init];
-        _postnameL.font = [UIFont systemFontOfSize:8.0f];
-        _postnameL.textColor = [UIColor whiteColor];
-        _postnameL.layer.masksToBounds = YES;
-        _postnameL.layer.cornerRadius = 3;
-    }
-    return _postnameL;
-}
+//- (UILabel *)postnameL {
+//    if (!_postnameL) {
+//        _postnameL = [[UILabel alloc] init];
+//        _postnameL.font = [UIFont systemFontOfSize:8.0f];
+//        _postnameL.textColor = [UIColor whiteColor];
+//        _postnameL.layer.masksToBounds = YES;
+//        _postnameL.layer.cornerRadius = 3;
+//    }
+//    return _postnameL;
+//}
 - (XMNContentView *)messageContentV {
     if (!_messageContentV) {
         _messageContentV = [[XMNContentView alloc] init];
@@ -621,6 +644,12 @@
         return XMNMessageTypeVideo;
     }else if ([self isKindOfClass:[XMNChatReleaseTaskMessageCell class]]) {
         return XMNMessageTypeReleaseTask;
+    }else if ([self isKindOfClass:[XMNChatEmotionsMessageCell class]]) {
+        return XMNMessageTypeEmotions;
+    }else if ([self isKindOfClass:[XMNChatFireImageMessageCell class]]) {
+        return XMNMessageTypeFireImage;
+    }else if ([self isKindOfClass:[XMNChatFileMessageCell class]]) {
+        return XMNMessageTypeFiles;
     }
     return XMNMessageTypeUnknow;
 }
@@ -671,18 +700,18 @@ NSString * const kXMNChatMessageCellMenuControllerKey;
  */
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
     
-    if (self.messageType == XMNMessageTypeText) {
+    if (self.messageType == XMNMessageTypeText || self.messageType == XMNMessageTypeEmotions) {
         
         if (self.messageOwner == XMNMessageOwnerSelf) {
              if ([self.fire containsString:@"LOCK"])
              {
-                 if (action == @selector(menuWithdrawAction)) {
+                 if (action == @selector(menuWithdrawAction) || action == @selector(menuDeleteAction)) {
                      return YES;
                  }
              }
             else
             {
-                if (action == @selector(menuRelayAction) || action == @selector(menuCopyAction) || action == @selector(menuWithdrawAction)) {
+                if (action == @selector(menuRelayAction) || action == @selector(menuCopyAction) || action == @selector(menuWithdrawAction) || action == @selector(menuDeleteAction)) {
                     return YES;
                 }
             }
@@ -690,7 +719,7 @@ NSString * const kXMNChatMessageCellMenuControllerKey;
         }else {
             if (![self.fire containsString:@"LOCK"])
             {
-                if (action == @selector(menuRelayAction) || action == @selector(menuCopyAction)) {
+                if (action == @selector(menuRelayAction) || action == @selector(menuCopyAction) || action == @selector(menuDeleteAction)) {
                     return YES;
                 }
             }
@@ -699,16 +728,21 @@ NSString * const kXMNChatMessageCellMenuControllerKey;
     }else if (self.messageType == XMNMessageTypeImage ||self.messageType ==XMNMessageTypeLocation)
     {
         if (self.messageOwner == XMNMessageOwnerSelf) {
-            if (action == @selector(menuRelayAction) || action == @selector(menuWithdrawAction)) {
+            if (action == @selector(menuRelayAction) || action == @selector(menuWithdrawAction) || action == @selector(menuDeleteAction)) {
                 return YES;
             }
         }else {
-            if (action == @selector(menuRelayAction)) {
+            if (action == @selector(menuRelayAction) || action == @selector(menuDeleteAction)) {
                 return YES;
             }
         }
         
-    }else {
+    }else if (self.messageType == XMNMessageTypeFiles) {
+        if (action == @selector(menuRelayAction) || action == @selector(menuDeleteAction)) {
+            return YES;
+        }
+    }
+    else {
         return [super canPerformAction:action withSender:sender];
     }
     
@@ -779,6 +813,17 @@ NSString * const kXMNChatMessageCellMenuControllerKey;
         [self.delegate messageCell:self withActionType: XMNChatMessageCellMenuActionTypeWithdraw textField:[NSString stringWithFormat:@"%ld",(long)self.qid]];
     }
 }
+- (void)menuDeleteAction {
+    NSInteger messageOwner = 0;
+    if (self.messageOwner == XMNMessageOwnerOther) {
+        messageOwner = 1;
+    }else if (self.messageOwner == XMNMessageOwnerSelf) {
+        messageOwner = 2;
+    }
+    if (self.delegate && [self.delegate respondsToSelector:@selector(messageCell:withActionType:textField:)]) {
+        [self.delegate messageCell:self withActionType: XMNChatMessageCellMenuActionTypeDelete textField:[NSString stringWithFormat:@"%ld,%ld",(long)self.qid,(long)self.index]];
+    }
+}
 #pragma mark - Getters
 
 
@@ -789,7 +834,8 @@ NSString * const kXMNChatMessageCellMenuControllerKey;
         UIMenuItem *copyItem = [[UIMenuItem alloc] initWithTitle:@"复制" action:@selector(menuCopyAction)];
         UIMenuItem *shareItem = [[UIMenuItem alloc] initWithTitle:@"转发" action:@selector(menuRelayAction)];
         UIMenuItem *withdrawItem = [[UIMenuItem alloc] initWithTitle:@"撤回" action:@selector(menuWithdrawAction)];
-        [menuController setMenuItems:@[copyItem,shareItem,withdrawItem]];
+        UIMenuItem *deleteItem = [[UIMenuItem alloc] initWithTitle:@"删除" action:@selector(menuDeleteAction)];
+        [menuController setMenuItems:@[copyItem,shareItem,withdrawItem,deleteItem]];
         [menuController setArrowDirection:UIMenuControllerArrowDown];
         objc_setAssociatedObject(self, &kXMNChatMessageCellMenuControllerKey, menuController, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }

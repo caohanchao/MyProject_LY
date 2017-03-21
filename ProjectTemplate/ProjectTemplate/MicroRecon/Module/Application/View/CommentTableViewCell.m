@@ -36,7 +36,8 @@
     
     //头像
     self.iconImage = [[UIImageView alloc] initWithFrame:CGRectMake(LeftMargin, TopMargin, 36, 36)];
-    self.iconImage.layer.cornerRadius = 18;
+//    self.iconImage.layer.cornerRadius = 18;
+     self.iconImage.layer.cornerRadius = 6;
     self.iconImage.layer.masksToBounds = YES;
     [self.contentView addSubview: self.iconImage];
     
@@ -121,14 +122,15 @@
     fromLabWidth = [LZXHelper textWidthFromTextString:_model.department height:15 fontSize:fromFont];
     contentHight = [LZXHelper textHeightFromTextString:_model.content width: screenWidth() - LeftMargin*2 fontSize:textFont];
     
-    if ([[LZXHelper isNullToString:DE_type]isEqualToString:@""])
-    {
-        postLabWidth = [LZXHelper textWidthFromTextString:@"武汉市公安局" height:18 fontSize:identityFont];
-    }
-    else
-    {
-        postLabWidth = [LZXHelper textWidthFromTextString:userModel.RE_post height:18 fontSize:identityFont];
-    }
+//    if ([[LZXHelper isNullToString:DE_type]isEqualToString:@""])
+//    {
+//        postLabWidth = [LZXHelper textWidthFromTextString:@"武汉市公安局" height:18 fontSize:identityFont];
+//    }
+//    else
+//    {
+//        postLabWidth = [LZXHelper textWidthFromTextString:userModel.RE_post height:18 fontSize:identityFont];
+//    }
+    postLabWidth = 0;
     
     if (fromLabWidth > kScreenWidth - LeftMargin*3 - _iconImage.width)
     {
@@ -165,7 +167,7 @@
     
     _timeLabel.frame = CGRectMake(screenWidth()-LeftMargin-timeLabWidth-10, minY(self.identitylabel), timeLabWidth+10, 12);
     
-    _nameLabel.frame = CGRectMake(maxX(self.identitylabel)+4, minY(self.identitylabel), nameLabWidth, 15);
+    _nameLabel.frame = CGRectMake(maxX(self.identitylabel), minY(self.identitylabel), nameLabWidth, 15);
     
     _fromLabel.frame = CGRectMake(minX(self.identitylabel), maxY(self.identitylabel)+6, fromLabWidth, 15);
     

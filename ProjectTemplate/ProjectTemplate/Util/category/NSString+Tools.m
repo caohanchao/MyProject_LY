@@ -130,8 +130,8 @@ NSString * MD5Hash(NSString *aString) {
 
 - (NSString *)transferredMeaningWithEnter {
     
-    NSArray *transArray = @[@"\\a",@"\\b",@"\\f",@"\\n",@"\\r",@"\\t",@"\\v",@"\\'",@"%%"];
-    NSArray *arr = @[@"\a",@"\b",@"\f",@"\n",@"\r",@"\t",@"\v",@"\'",@"%"];
+    NSArray *transArray = @[@"\\a",@"\\b",@"\\f",@"\\n",@"\\r",@"\\t",@"\\v",@"\\'",@"%%",@"\\\\\""];
+    NSArray *arr = @[@"\a",@"\b",@"\f",@"\n",@"\r",@"\t",@"\v",@"\'",@"%",@"\""];
     
 
     NSString *str;

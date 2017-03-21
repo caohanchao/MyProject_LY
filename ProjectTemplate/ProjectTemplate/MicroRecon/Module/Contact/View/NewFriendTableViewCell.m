@@ -36,7 +36,8 @@
 - (void)createUI {
 
     _txImageView = [[UIImageView alloc] initWithFrame:CGRectMake(LeftMargin, TopMargin, 40, 40)];
-    _txImageView.layer.cornerRadius = 20;
+//    _txImageView.layer.cornerRadius = 20;
+    _txImageView.layer.cornerRadius = 6;
     _txImageView.layer.masksToBounds = YES;
     [self.contentView addSubview:_txImageView];
     
@@ -45,9 +46,10 @@
     _postnameL.font = [UIFont systemFontOfSize:10];
     _postnameL.layer .cornerRadius = 4;
     _postnameL.layer.masksToBounds = YES;
-    [self.contentView addSubview:_postnameL];
+   // [self.contentView addSubview:_postnameL];
     
-    _dataLabel =[[UILabel alloc]initWithFrame:CGRectMake(minX(_postnameL), maxY(_postnameL)+8, 100, 15)];
+//    _dataLabel =[[UILabel alloc]initWithFrame:CGRectMake(minX(_postnameL), maxY(_postnameL)+8, 100, 15)];
+    _dataLabel =[[UILabel alloc]initWithFrame:CGRectMake(maxX(_txImageView)+TopMargin, maxY(_postnameL)+8, 100, 15)];
     _dataLabel.font = [UIFont systemFontOfSize:13];
     _dataLabel.backgroundColor = [UIColor whiteColor];
     _dataLabel.textColor =[UIColor lightGrayColor];
@@ -171,7 +173,8 @@
     }
      _postnameL.frame = CGRectMake(maxX(_txImageView)+TopMargin, TopMargin, width+5, 20);
     _postnameL.textAlignment =NSTextAlignmentCenter;
-    _nameLabel.frame = CGRectMake(maxX(_postnameL)+TopMargin, TopMargin, 100, 20);
+//    _nameLabel.frame = CGRectMake(maxX(_postnameL)+TopMargin, TopMargin, 100, 20);
+    _nameLabel.frame = CGRectMake(maxX(_txImageView)+TopMargin, TopMargin, 100, 20);
 }
 
 #pragma mark - Action 

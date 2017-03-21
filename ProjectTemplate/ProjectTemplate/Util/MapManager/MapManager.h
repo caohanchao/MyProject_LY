@@ -12,5 +12,6 @@
 @interface MapManager : NSObject
 
 + (MAMapView *)shareMAMapView;
-
+//返回不带MAUserLocation的大头针数组
+- (NSMutableArray *)getMapAnnotations;
 @end

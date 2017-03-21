@@ -7,9 +7,7 @@
 //
 
 #import "XMChatBar.h"
-
 #import "XMLocationController.h"
-
 #import "XMChatMoreView.h"
 #import "XMChatFaceView.h"
 #import "XMProgressHUD.h"
@@ -17,18 +15,24 @@
 #import "MBProgressHUD.h"
 #import "VideoRecorderViewController.h"
 #import "Masonry.h"
-#import "ZMLEmotionListView.h"
 #import "ZMLPlaceholderTextView.h"
-#import "ZMLEmotion.h"
-#import "NSString+ZMLEmoji.h"
 #import "ZEBPhotoTool.h"
 #import "NearestImage.h"
 #import "NewTaskController.h"
 #import "ZEBVoiceView.h"
 #import "ZLPhotoActionSheet.h"
 #import "ZLDefine.h"
+#import "UIImage+Property.h"
+#import "TZImagePickerController.h"
+#import "TZImageManager.h"
+#import "UIImage+UIImageScale.h"
+// 带gif的键盘
+#import "ZEBEmotionsKeyboardView.h"
+#import "ZEBEmotionsKeyboardViewModel.h"
 
-@interface XMChatBar ()<UITextViewDelegate,UINavigationControllerDelegate,UIImagePickerControllerDelegate,Mp3RecorderDelegate,XMChatMoreViewDelegate,XMChatMoreViewDataSource,XMChatFaceViewDelegate,XMLocationControllerDelegate,VideoRecorderViewControllerDelegate>
+#import "CJFileManagerVC.h"
+
+@interface XMChatBar ()<UITextViewDelegate,UINavigationControllerDelegate,UIImagePickerControllerDelegate,Mp3RecorderDelegate,XMChatMoreViewDelegate,XMChatMoreViewDataSource,XMChatFaceViewDelegate,XMLocationControllerDelegate,VideoRecorderViewControllerDelegate, TZImagePickerControllerDelegate, ZEBEmotionsKeyboardViewDelegate,FileSelectVcDelegate>
 
 @property (strong, nonatomic) Mp3Recorder *MP3;
 @property (strong, nonatomic) UIButton *voiceButton; /**< 切换录音模式按钮 */
@@ -37,7 +41,7 @@
 @property (strong, nonatomic) UIButton *faceButton; /**< 表情按钮 */
 @property (strong, nonatomic) UIButton *moreButton; /**< 更多按钮 */
 //@property (strong, nonatomic) XMChatFaceView *faceView; /**< 当前活跃的底部view,用来指向faceView */
-@property (strong, nonatomic) ZMLEmotionListView *faceView; /**< 当前活跃的底部view,用来指向faceView */
+@property (strong, nonatomic) ZEBEmotionsKeyboardView *faceView; /**< 当前活跃的底部view,用来指向faceView */
 @property (strong, nonatomic) XMChatMoreView *moreView; /**< 当前活跃的底部view,用来指向moreView */
 
 //@property (strong, nonatomic) UITextView *textView;
@@ -49,6 +53,7 @@
 @property (copy, nonatomic) NSString *inputText;
 @property (nonatomic, strong) NSMutableArray *aTArray;
 @property (nonatomic,strong) ZLPhotoActionSheet *actionSheet;
+@property (nonatomic,strong) TZImagePickerController *pickerController;
 @end
 
 @implementation XMChatBar
@@ -60,7 +65,7 @@
     if (!_actionSheet) {
         _actionSheet = [[ZLPhotoActionSheet alloc] init];
         //设置照片最大选择数
-        _actionSheet.maxSelectCount = 10;
+        _actionSheet.maxSelectCount = 6;
         //设置照片最大预览数
         _actionSheet.maxPreviewCount = 500;
     }
@@ -143,7 +148,7 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillHideNotification object:nil];
 }
 #pragma mark textView delegate
--(BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text{
+-(BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text {
     if(![textView hasText] && [text isEqualToString:@""]) {
         return NO;
     }
@@ -219,9 +224,9 @@
     addBarFrame.origin.y = self.screenHeight - self.bottomHeight - addBarFrame.size.height;
 //    self.frame = addBarFrame;
     [self setFrame:addBarFrame animated:NO];
-    if (textView.scrollEnabled) {
-        [textView scrollRangeToVisible:NSMakeRange(textView.text.length - 2, 1)];
-    }
+//    if (textView.scrollEnabled) {
+//        [textView scrollRangeToVisible:NSMakeRange(textView.text.length - 2, 1)];
+//    }
 
 }
 
@@ -255,7 +260,8 @@
         //对话框显示时需要执行的操作
         
     } completionBlock:^{
-        [self sendImageMessage:image];//初始化进度框，置于当前的View当中
+        
+        [self sendImageMessage:[image compressionImageToDataMaxFileSize:300]];//初始化进度框，置于当前的View当中
         [self.rootViewController dismissViewControllerAnimated:YES completion:nil];
         //操作执行完后取消对话框
         [HUD removeFromSuperview];
@@ -329,6 +335,9 @@
 //    [self.rootViewController showloadingName:@"正在上传"];
     for (int i = 0; i < count; i++) {
         UIImage *imageView = images[i];
+        if (self.actionSheet.isSelectOriginalPhoto) {
+            imageView.type = @"original";
+        }
         dispatch_queue_t q = dispatch_queue_create("uploadingImage", DISPATCH_QUEUE_SERIAL);
         
         dispatch_sync(q, ^{
@@ -338,6 +347,72 @@
         
     }
 }
+#pragma mark -
+#pragma mark ZEBEmotionsKeyboardViewDelegate
+//点击表情回调
+- (void)emotionsKeyboardView:(id)emojiKeyboardView
+                 emotionType:(ZEBEmotionType)type
+                 didUseEmoji:(NSString *)emoji
+                   didUseGIF:(NSDictionary *)gifDict
+{
+    NSLog(@"%s", __func__);
+    
+    switch (type) {
+        case ZEBEmotionTypeGIF:
+        {
+            NSString *gifName = [gifDict valueForKey:GIFNameKey];
+            NSData   *gifData = [gifDict valueForKey:GIFDatakey];
+            
+            //...
+         //   NSLog(@"点击了gif表情！\n gifName ==> %@ \n gifData ==> %@", gifName, gifData);
+            [self sendTextMessage:[NSString stringWithFormat:@"[img]file:///storage/emulated/0/MicroRecon/Emoticons/emojipolice/%@",gifName]];
+        }
+            break;
+        case ZEBEmotionTypePNG:
+        {
+            NSString *pngName = [gifDict valueForKey:PNGNameKey];
+            NSData   *pngData = [gifDict valueForKey:PNGDatakey];
+            
+            //...
+          //  NSLog(@"点击了png表情！\n gifName ==> %@ \n gifData ==> %@", gifName, gifData);
+            [self sendTextMessage:[NSString stringWithFormat:@"[img]file:///storage/emulated/0/MicroRecon/Emoticons/emojinj/%@.png",pngName]];
+        }
+            break;
+        case ZEBEmotionTypeEmoji:
+        {
+            //NSLog(@"点击了emoji表情！\n ==> %@", emoji);
+            self.textView.text = [self.textView.text stringByAppendingString:emoji];
+            
+            [self textViewDidChange:self.textView];
+        }
+            break;
+        default:
+            break;
+    }
+    
+    
+}
+//点击删除回调
+- (void)emotionsKeyboardView:(ZEBEmotionsKeyboardView *)emojiKeyboardView emotionType:(ZEBEmotionType)type didDelete:(BOOL)didDelete
+{
+    if (didDelete)
+    {
+        //目前只有emoji页面需要删除按钮
+        NSLog(@"emoji点击了删除...");
+      
+        [self emotionDidDelete];
+    }
+}
+- (void)emotionsKeyboardView:(ZEBEmotionsKeyboardView *)emojiKeyboardView didClickSend:(BOOL)isSend
+{
+    if (isSend)
+    {
+        NSLog(@"点击了发送按钮!");
+        [self emotionDidSend];
+    }
+}
+
+
 
 #pragma mark - XMChatMoreViewDelegate & XMChatMoreViewDataSource
 
@@ -352,10 +427,21 @@
 //            pickerC.delegate = self;
 //            [self.rootViewController presentViewController:pickerC animated:YES completion:nil];
             weakify(self);
-            [self.actionSheet showPhotoLibraryWithSender:self.rootViewController lastSelectPhotoModels:nil completion:^(NSArray<UIImage *> * _Nonnull selectPhotos, NSArray<ZLSelectPhotoModel *> * _Nonnull selectPhotoModels) {
-                strongify(weakSelf);
-                [strongSelf sendPic:selectPhotos];
-            }];
+//            [self.actionSheet showPhotoLibraryWithSender:self.rootViewController lastSelectPhotoModels:nil completion:^(NSArray<UIImage *> * _Nonnull selectPhotos, NSArray<ZLSelectPhotoModel *> * _Nonnull selectPhotoModels) {
+//                strongify(weakSelf);
+//                [strongSelf sendPic:selectPhotos];
+//            }];
+            _pickerController = [[TZImagePickerController alloc] initWithMaxImagesCount:6 delegate:self];;
+            // _actionSheet.allowPickingOriginalPhoto = NO;
+            _pickerController.allowPickingVideo = NO;
+            _pickerController.allowTakePicture = NO;
+           // _pickerController.autoDismiss = NO;
+//            __weak typeof(_pickerController) pickerController = _pickerController;
+//            [_pickerController setDidFinishPickingPhotosHandle:^(NSArray<UIImage *> *photos, NSArray *assets, BOOL isSelectOriginalPhoto) {
+//             });
+            
+            [self.rootViewController presentViewController:_pickerController animated:YES completion:nil];
+
         }
             break;
         case XMChatMoreItemCamera:
@@ -401,6 +487,14 @@
             [self.rootViewController presentViewController:vrVC animated:YES completion:nil];
         }
             break;
+        case XMchatMoreItemFile: {
+            //文件
+            CJFileManagerVC *fileVC = [[CJFileManagerVC alloc] init];
+            fileVC.fileSelectVcDelegate = self;
+            [self.rootViewController presentViewController:[[UINavigationController alloc] initWithRootViewController:fileVC] animated:YES completion:nil];
+            
+        }
+            break;
             
         case XMChatMoreItemPublicTask: {
             if (self.chatBarType == ChatBarShowMapGroup) {
@@ -418,12 +512,20 @@
             }
             else
             {
-                
+                //普通群点名
+               [self gotoCallRoll];
             }
             
         }
             break;
-            
+        case XMChatMoreItemCallRoll: {
+            //地图群点名
+             if (self.chatBarType == ChatBarShowMapGroup)
+             {
+                 [self mapGroupGotoCallRoll];
+             }
+        }
+            break;
         default:
             break;
     }
@@ -433,25 +535,48 @@
 - (NSArray *)titlesOfMoreView:(XMChatMoreView *)moreView{
     
     if (self.chatBarType == ChatBarShowMapGroup){
-        return @[@"拍摄",@"照片",@"位置",@"视频",@"发布任务"];
+
+        return @[@"拍摄",@"照片",@"位置",@"视频",@"文件",@"发布任务",@"点名"];
+      //  return @[@"拍摄",@"照片",@"位置",@"视频",@"发布任务"];
+
+//        return @[@"拍摄",@"照片",@"位置",@"视频",@"发布任务",@"点名"];
+       // return @[@"拍摄",@"照片",@"位置",@"视频",@"发布任务"];
+
     }
     else if (self.chatBarType == ChatBarShowNomalSingel)
     {
-        return @[@"拍摄",@"照片",@"位置",@"视频",@"阅后即焚"];
+        return @[@"拍摄",@"照片",@"位置",@"视频",@"文件",@"阅后即焚"];
     }
-    return @[@"拍摄",@"照片",@"位置",@"视频"];
+
+    return @[@"拍摄",@"照片",@"位置",@"视频",@"文件",@"点名"];
+  //  return @[@"拍摄",@"照片",@"位置",@"视频"];
+
+//    return @[@"拍摄",@"照片",@"位置",@"视频",@"点名"];
+    //return @[@"拍摄",@"照片",@"位置",@"视频"];
+
 }
 
 - (NSArray *)imageNamesOfMoreView:(XMChatMoreView *)moreView{
     
     if (self.chatBarType == ChatBarShowMapGroup){
-        return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location",@"chat_bar_icons_video",@"chat_bar_icons_task"];
+
+        return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location",@"chat_bar_icons_video",@"chat_bar_icons_file",@"chat_bar_icons_task",@"dianming"];
+      //  return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location",@"chat_bar_icons_video",@"chat_bar_icons_task"];
+
+//        return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location",@"chat_bar_icons_video",@"chat_bar_icons_task",@"dianming"];
+       // return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location",@"chat_bar_icons_video",@"chat_bar_icons_task"];
+
     }
     else if (self.chatBarType == ChatBarShowNomalSingel)
     {
-       return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location",@"chat_bar_icons_video",@"fire"];
+       return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location",@"chat_bar_icons_video",@"chat_bar_icons_file",@"fire"];
     }
-    return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location",@"chat_bar_icons_video"];
+
+    return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location",@"chat_bar_icons_video",@"chat_bar_icons_file",@"dianming"];
+   // return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location",@"chat_bar_icons_video"];
+
+//    return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location",@"chat_bar_icons_video",@"dianming"];
+  //  return @[@"chat_bar_icons_camera",@"chat_bar_icons_pic",@"chat_bar_icons_location",@"chat_bar_icons_video"];
 
 }
 //
@@ -527,22 +652,9 @@
         make.height.mas_equalTo(@.5f);
     }];
     
-    __weak typeof(self) weakSelf = self;
+
     
-    [self.faceView setEmotions:[self loadEmojiEmotions] deleteBlock:^{
-        // 表情键盘删除
-        [weakSelf emotionDidDelete];
-        
-    } sendBlock:^{
-        // 表情键盘发送
-        [weakSelf emotionDidSend];
-        
-    } selectBlock:^(ZMLEmotion *emotion){
-        // 表情键盘选中
-        [weakSelf emotionDidSelect:emotion];
-        
-        
-    }];
+    
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(addAtMemeber:) name:ChatGroupAtNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardFrameWillChange:) name:UIKeyboardWillChangeFrameNotification object:nil];
@@ -553,24 +665,7 @@
     //FIX 修复首次初始化页面 页面显示不正确 textView不显示bug
     [self layoutIfNeeded];
 }
-#pragma mark - 加载表情包
 
-/**
- *  加载emoji表情包
- */
-- (NSArray <ZMLEmotion *>*)loadEmojiEmotions{
-    
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"Resourse.bundle/emoji.plist" ofType:nil];
-    
-    NSArray *emotions = [NSArray arrayWithContentsOfFile:path];
-    NSMutableArray *emotionsMul = @[].mutableCopy;
-    for (NSDictionary *dic in emotions) {
-        ZMLEmotion *emotion = [[ZMLEmotion alloc] init];
-        [emotion setValuesForKeysWithDictionary:dic];
-        [emotionsMul addObject:emotion];
-    }
-    return emotionsMul.copy;
-}
 /**
  *  开始录音
  */
@@ -649,6 +744,7 @@
             self.textView.text = self.inputText;
             [self textViewDidChange:self.textView];
             self.inputText = nil;
+            [self.textView becomeFirstResponder];
             break;
             
         case XMFunctionViewCloseRead:
@@ -671,19 +767,22 @@
 {
     self.fireMessageType = messageLock;
     
-    [self.textView mas_updateConstraints:^(MASConstraintMaker *make) {
-        make.left.equalTo(self.voiceButton.mas_left);
-        make.right.equalTo(self.moreButton.mas_left).with.offset(-9);
-        make.top.equalTo(self.mas_top).with.offset(5);
-        make.bottom.equalTo(self.mas_bottom).with.offset(-5);
-    }];
+//    [self.textView mas_updateConstraints:^(MASConstraintMaker *make) {
+//        make.left.equalTo(self.voiceButton.mas_left);
+//        make.right.equalTo(self.moreButton.mas_left).with.offset(-9);
+//        make.top.equalTo(self.mas_top).with.offset(5);
+//        make.bottom.equalTo(self.mas_bottom).with.offset(-5);
+//    }];
     
     _moreButton.tag = XMFunctionViewCloseRead;
     [_moreButton setBackgroundImage:[UIImage imageNamed:@"chatclose"] forState:UIControlStateNormal];
-    
+    [_voiceButton setBackgroundImage:[UIImage imageNamed:@"firevoice"] forState:UIControlStateNormal];
+    [_voiceButton setBackgroundImage:[UIImage imageNamed:@"firekeyb"] forState:UIControlStateSelected];
+    [_faceButton setBackgroundImage:[UIImage imageNamed:@"fireimage"] forState:UIControlStateNormal];
+    [_faceButton setBackgroundImage:[UIImage imageNamed:@"fireimage"] forState:UIControlStateSelected];
     _textView.layer.borderColor = [CHCHexColor(@"ff7200") CGColor];
     
-    [self.textView becomeFirstResponder];
+   // [self.textView becomeFirstResponder];
     [self showViewWithType:XMFunctionViewShowKeyboard];
 }
 
@@ -706,6 +805,11 @@
     _moreButton.tag = XMFunctionViewShowMore;
     _moreButton.selected = NO;
     [_moreButton setBackgroundImage:[UIImage imageNamed:@"chat_bar_more_normal"] forState:UIControlStateNormal];
+    
+    [_voiceButton setBackgroundImage:[UIImage imageNamed:@"chat_bar_voice_normal"] forState:UIControlStateNormal];
+    [_voiceButton setBackgroundImage:[UIImage imageNamed:@"chat_bar_input_normal"] forState:UIControlStateSelected];
+    [_faceButton setBackgroundImage:[UIImage imageNamed:@"chat_bar_face_normal"] forState:UIControlStateNormal];
+    [_faceButton setBackgroundImage:[UIImage imageNamed:@"chat_bar_input_normal"] forState:UIControlStateSelected];
     
     self.textView.layer.borderColor = [UIColor colorWithRed:204.0/255.0f green:204.0/255.0f blue:204.0/255.0f alpha:1.0f].CGColor;
     
@@ -752,7 +856,23 @@
         self.inputText = self.textView.text;
     }
     
-    [self showViewWithType:showType];
+    if (button == self.faceButton) {
+        if (self.fireMessageType == messageLock) {
+            weakify(self);
+            _pickerController = [[TZImagePickerController alloc] initWithMaxImagesCount:6 delegate:self];
+            _pickerController.allowPickingVideo = NO;
+            _pickerController.allowTakePicture = NO;
+            [self.rootViewController presentViewController:_pickerController animated:YES completion:nil];
+        }
+        else
+        {
+            [self showViewWithType:showType];
+        }
+    }
+    else
+    {
+        [self showViewWithType:showType];
+    }
     
     
     
@@ -835,6 +955,29 @@
     //self.voiceRecordButton.selected = show;
     self.voiceRecordButton.hidden = !show;
     self.textView.scrollEnabled = !show;
+    if (self.fireMessageType == messageLock) {
+        if (show == YES) {
+            [self.textView mas_updateConstraints:^(MASConstraintMaker *make) {
+                make.left.equalTo(self.voiceButton.mas_right).with.offset(9);
+                make.right.equalTo(self.moreButton.mas_left).with.offset(-9);
+                make.top.equalTo(self.mas_top).with.offset(5);
+                make.bottom.equalTo(self.mas_bottom).with.offset(-5);
+            }];
+        }
+        else
+        {
+            [self.textView removeFromSuperview];
+            
+            [self addSubview:self.textView];
+            [self.textView mas_makeConstraints:^(MASConstraintMaker *make) {
+                make.left.equalTo(self.voiceButton.mas_right).with.offset(9);
+                make.right.equalTo(self.faceButton.mas_left).with.offset(-9);
+                make.top.equalTo(self.mas_top).with.offset(5);
+                make.bottom.equalTo(self.mas_bottom).with.offset(-5);
+            }];
+        }
+    }
+
 }
 
 
@@ -869,7 +1012,7 @@
     self.inputText = @"";
     self.textView.text = @"";
     [self setFrame:CGRectMake(0, self.screenHeight - self.bottomHeight - kMinHeight, self.frame.size.width, kMinHeight) animated:NO];
-    [self showViewWithType:XMFunctionViewShowKeyboard];
+   // [self showViewWithType:XMFunctionViewShowKeyboard]; // 没必要 屏蔽掉
 }
 
 /**
@@ -879,8 +1022,8 @@
  *  @param seconds   语音时长
  */
 - (void)sendVoiceMessage:(NSString *)voiceFileName seconds:(NSTimeInterval)seconds{
-    if (self.delegate && [self.delegate respondsToSelector:@selector(chatBar:sendVoice:seconds:)]) {
-        [self.delegate chatBar:self sendVoice:voiceFileName seconds:seconds];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatBar:sendVoice:seconds:withType:)]) {
+        [self.delegate chatBar:self sendVoice:voiceFileName seconds:seconds withType:self.fireMessageType];
     }
 }
 
@@ -901,8 +1044,8 @@
  *  @param image 发送的图片
  */
 - (void)sendImageMessage:(UIImage *)image{
-    if (self.delegate && [self.delegate respondsToSelector:@selector(chatBar:sendPictures:)]) {
-        [self.delegate chatBar:self sendPictures:@[image]];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatBar:sendPictures:withType:)]) {
+        [self.delegate chatBar:self sendPictures:@[image] withType:self.fireMessageType];
     }
 }
 
@@ -918,9 +1061,14 @@
 //}
 #pragma mark - 懒加载
 
-- (ZMLEmotionListView *)faceView{
+- (ZEBEmotionsKeyboardView *)faceView{
     if (_faceView == nil) {
-        _faceView = [[ZMLEmotionListView alloc] initWithFrame:CGRectMake(0, self.screenHeight , self.frame.size.width, kFunctionViewHeight)];
+        
+        NSArray *gifs   = [ZEBEmotionsKeyboardViewModel getAllGifs];
+        NSArray *emojis = [ZEBEmotionsKeyboardViewModel getAllEmojis];
+        NSArray *pngs = [ZEBEmotionsKeyboardViewModel getAllPNGs];
+        
+        _faceView = [[ZEBEmotionsKeyboardView alloc] initWithFrame:CGRectMake(0, 0, SCREEN_WIDTH, kFunctionViewHeight) delegate:self gifImageNames:gifs emojiNames:emojis pngImageNames:pngs];
         _faceView.backgroundColor = self.backgroundColor;
         
     }
@@ -940,6 +1088,7 @@
     if (!_textView) {
         _textView = [[ZMLPlaceholderTextView alloc] init];
         _textView.font = [UIFont systemFontOfSize:16.0f];
+        _textView.enablesReturnKeyAutomatically = YES; //这里设置为无文字就灰色不可点
         _textView.delegate = self;
         _textView.layer.cornerRadius = 4.0f;
         _textView.layer.borderColor = [UIColor colorWithRed:204.0/255.0f green:204.0/255.0f blue:204.0/255.0f alpha:1.0f].CGColor;
@@ -1083,12 +1232,12 @@
 /**
  *  选中了表情键盘中的某一个表情回调
  */
-- (void)emotionDidSelect:(ZMLEmotion *)emotion{
-    
-    self.textView.text = [self.textView.text stringByAppendingString:emotion.code.emoji];
-    
-    [self textViewDidChange:self.textView];
-}
+//- (void)emotionDidSelect:(ZMLEmotion *)emotion{
+//    
+//    self.textView.text = [self.textView.text stringByAppendingString:emotion.code.emoji];
+//    
+//    [self textViewDidChange:self.textView];
+//}
 /**
  *  表情页发送
  *
@@ -1113,7 +1262,7 @@
         }
         else
         {
-            [self.delegate chatBar:self sendMessage:text withType:nil];
+            [self.delegate chatBar:self sendMessage:text withType:messageUnknow];
         }
     }
    
@@ -1125,10 +1274,18 @@
 }
 - (void)addAtMemeber:(NSNotification *)notification {
     
+    NSRange range = self.textView.selectedRange;
     NSDictionary *atDic= notification.object;
-    NSMutableString *textString = self.textView.text;
-    textString = [textString stringByAppendingString:atDic[@"name"]];
+    NSMutableString *textString = [NSMutableString stringWithString:[LZXHelper isNullToString:self.textView.text]];
+    
+    NSString *atname = atDic[@"name"];
+    [textString insertString:atname atIndex:range.location];
+  //  textString = [textString stringByAppendingString:];
     self.textView.text = textString;
+//    
+    NSRange newRange = NSMakeRange(range.location+atname.length, 0);
+    self.textView.selectedRange = newRange;
+    
     if ([atDic[@"alarm"] isKindOfClass:[NSMutableArray class]]) {
         [self.aTArray addObjectsFromArray:atDic[@"alarm"]];
     }else {
@@ -1137,6 +1294,57 @@
         [self.aTArray addObject:alarm];
     }
     [self.textView becomeFirstResponder];
+}
+#pragma mark - TZImagePickerControllerDelegate
+
+/// User click cancel button
+/// 用户点击了取消
+- (void)tz_imagePickerControllerDidCancel:(TZImagePickerController *)picker {
+    // NSLog(@"cancel");
+}
+
+// The picker should dismiss itself; when it dismissed these handle will be called.
+// If isOriginalPhoto is YES, user picked the original photo.
+// You can get original photo with asset, by the method [[TZImageManager manager] getOriginalPhotoWithAsset:completion:].
+// The UIImage Object in photos default width is 828px, you can set it by photoWidth property.
+// 这个照片选择器会自己dismiss，当选择器dismiss的时候，会执行下面的代理方法
+// 如果isSelectOriginalPhoto为YES，表明用户选择了原图
+// 你可以通过一个asset获得原图，通过这个方法：[[TZImageManager manager] getOriginalPhotoWithAsset:completion:]
+// photos数组里的UIImage对象，默认是828像素宽，你可以通过设置photoWidth属性的值来改变它
+- (void)imagePickerController:(TZImagePickerController *)picker didFinishPickingPhotos:(NSArray *)photos sourceAssets:(NSArray *)assets isSelectOriginalPhoto:(BOOL)isSelectOriginalPhoto {
+    if (isSelectOriginalPhoto) {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSInteger count = assets.count;
+            for (int i = 0; i < count; i++) {
+                PHAsset *asset = assets[i];
+                dispatch_queue_t q = dispatch_queue_create("uploadingImage", DISPATCH_QUEUE_SERIAL);
+                dispatch_sync(q, ^{
+                    [[TZImageManager manager] getOriginalPhotoDataWithAsset:asset completion:^(NSData *data, NSDictionary *info) {
+                        UIImage *image = [[TZImageManager manager] fixOrientation:[UIImage imageWithData:data]];
+                        NSData *tempdata = UIImageJPEGRepresentation(image, 1);
+                        UIImage *tempImage = image;
+                        tempImage = [tempImage newOriginalOfChat];
+                        tempImage.Bytes = [NSString stringWithFormat:@"%ld",data.length];
+                        tempImage.imageData = tempdata;
+                        tempImage.type = @"original";
+                        [self sendImageMessage:tempImage];
+                    }];
+
+                });
+            }
+        });
+        
+    }else {
+        NSInteger count = photos.count;
+        for (int i = 0; i < count; i++) {
+            UIImage *image = photos[i];
+            dispatch_queue_t q = dispatch_queue_create("uploadingImage", DISPATCH_QUEUE_SERIAL);
+            dispatch_sync(q, ^{
+                [self sendImageMessage:[image compressionImageToDataMaxFileSize:300]];
+            });
+           
+        }
+    }
 }
 //- (void)setFrame:(CGRect)frame{
 //    [super setFrame:frame];
@@ -1147,5 +1355,46 @@
 //        [self.delegate chatBarFrameDidChange:self frame:frame];
 //    }
 //}
+
+//- (void)chatBar:(XMChatBar *)chatBar sendfile:(NSString *)fileURL withName:(NSString *)fileName withSize:(NSString *)fileSize;
+
+#pragma mark - 发送文件
+- (void)fileViewControlerSelected:(NSArray <CJFileObjModel *> *)fileModels {
+    
+    [fileModels enumerateObjectsUsingBlock:^(CJFileObjModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        
+        if (self.delegate &&[self.delegate respondsToSelector:@selector(chatBar:sendfile:)]) {
+            [self.delegate chatBar:self sendfile:obj];
+        }
+        
+//        if (!obj.asset) {
+//         
+//            if (self.delegate && [self.delegate respondsToSelector:@selector(chatBar:sendfile:withName:withSize:orAsset:)]) {
+//                [self.delegate chatBar:self sendfile:obj.fileUrl withName:obj.name withSize:obj.fileSize orAsset:nil];
+//            }
+//        }else {
+//            if (self.delegate && [self.delegate respondsToSelector:@selector(chatBar:sendfile:withName:withSize:orAsset:)]) {
+//                [self.delegate chatBar:self sendfile:nil withName:obj.name withSize:obj.fileSize orAsset:obj.asset];
+//            }
+//        }
+    }];
+    
+    
+    
+    
+}
+
+
+#pragma mark ----- 点名
+//普通群
+- (void)gotoCallRoll
+{
+    [LYRouter openURL:@"ly://gotoCallRoll"];
+}
+//地图聊天
+- (void)mapGroupGotoCallRoll
+{
+     [LYRouter openURL:@"ly://mapGroupGotoCallRoll"];
+}
 
 @end

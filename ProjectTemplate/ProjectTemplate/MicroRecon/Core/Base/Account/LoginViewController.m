@@ -135,8 +135,10 @@
        [_usernameField setValue:[UIColor colorWithHexString:@"#808080"]forKeyPath:@"_placeholderLabel.textColor"];
         [_usernameField setFont:[UIFont systemFontOfSize:16]];
         _usernameField.clearButtonMode = UITextFieldViewModeWhileEditing;
-        _usernameField.keyboardType = UIKeyboardTypeDefault;
+        _usernameField.keyboardType = UIKeyboardTypeASCIICapable;
         _usernameField.borderStyle =  UITextBorderStyleNone;
+        _usernameField.delegate = self;
+        _usernameField.returnKeyType = UIReturnKeyNext;
         _usernameField.text = [[NSUserDefaults standardUserDefaults] objectForKey:UIUseralarm];
         _usernameField.textColor = [UIColor colorWithHexString:@"808080"];
         
@@ -460,9 +462,24 @@
 
 #pragma mark - UITextFieldDelegate
 - (BOOL)textFieldShouldReturn:(UITextField *)textField{
-    [self login];
+    if (textField == self.passwordField) {
+        [self login];
+    }
+    else if (textField == self.usernameField) {
+        [self.passwordField becomeFirstResponder];
+    }
     return YES;
 }
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    
+    if ([NSString containEmoji:string]) {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    return YES;
+}
+
 
 #pragma mark 请求好友列表数据
 - (void)httpGetInfo {
@@ -470,8 +487,6 @@
     
     NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
     NSString *token = [[NSUserDefaults standardUserDefaults] objectForKey:@"token"];
-    NSString *urlString = [NSString stringWithFormat:FriendsLise_URL,alarm,@"1",alarm,token];
-    ZEBLog(@"%@",urlString);
     
     //组织列表的数据库数据清空
     [[DBManager sharedManager] eraseTable:@"tb_departmentlist"];

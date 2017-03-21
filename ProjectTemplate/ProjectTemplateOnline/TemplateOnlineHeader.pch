@@ -54,6 +54,8 @@
 #import "FMDBOnlineVersionHeader.h"
 #import "NSString+Emoji.h"
 
+
+
 #define kKeyWindow [UIApplication sharedApplication].keyWindow
 #define kScreen_Bounds [UIScreen mainScreen].bounds
 #define kScreen_Height [UIScreen mainScreen].bounds.size.height
@@ -69,7 +71,7 @@
 
 #define CONTENT_MAXLENGTH 50
 #define TITLE_MAXLENGTH 14
-
+#define CALL_MAXLENGTH 30
 //#define NonExpression_(text)  \
 //if ([[[UITextInputMode currentInputMode]primaryLanguage] isEqualToString:@"emoji"]) \
 //{\
@@ -79,6 +81,9 @@
 //{\
 //return NO;\
 //}
+
+#define HomeFilePath [[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:@"LYFileCache1"]
+#define HSCachesDirectory2 [[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:@"LYFileCache2"]
 
 #ifdef DEBUG // 处于开发阶段
 #define ZEBLog(format, ...) printf("\n[%s] %s [第%d行] %s\n", __TIME__, __FUNCTION__, __LINE__, [[NSString stringWithFormat:format, ## __VA_ARGS__] UTF8String])

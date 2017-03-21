@@ -188,21 +188,44 @@ static NSString *postName = @"武汉市公安局";
 
 - (GetAudioView *)getAudioView {
     if (!_getAudioView) {
+        
+        WeakSelf
         _getAudioView = [[GetAudioView alloc] initWithFrame:CGRectMake(0, kScreenHeight, kScreenWidth, 0) startBlock:^(GetAudioView *view) {//开始录音
-            [self.descriptionView setEditable:NO];
+            
+            if (weakSelf.audioUrlArray.count == 12) {
+                [weakSelf showHint:@"语音最多十二条"];
+            }else {
+            [weakSelf.descriptionView setEditable:NO];
             [XMProgressHUD show];
-            [self.MP3 startRecord];
+            [weakSelf.MP3 startRecord];
+            }
         } cancelBlock:^(GetAudioView *view) {//取消录音
-            [self.descriptionView setEditable:YES];
+            if (weakSelf.audioUrlArray.count == 12) {
+                [weakSelf showHint:@"语音最多十二条"];
+            }else {
+            [weakSelf.descriptionView setEditable:YES];
             [XMProgressHUD dismissWithMessage:@"取消录音"];
-            [self.MP3 cancelRecord];
+                [weakSelf.MP3 cancelRecord];
+            }
         } confimBlock:^(GetAudioView *view) {//录音结束
-            [self.descriptionView setEditable:YES];
-            [self.MP3 stopRecord];
+            if (weakSelf.audioUrlArray.count == 12) {
+                [weakSelf showHint:@"语音最多十二条"];
+            }else {
+            [weakSelf.descriptionView setEditable:YES];
+            [weakSelf.MP3 stopRecord];
+            }
         } updateCancelBlock:^(GetAudioView *view) {//更新录音显示状态,手指向上滑动后提示松开取消录音
+            if (weakSelf.audioUrlArray.count == 12) {
+                [weakSelf showHint:@"语音最多十二条"];
+            }else {
              [XMProgressHUD changeSubTitle:@"松开手指取消录音"];
+            }
         } updateContinueBlock:^(GetAudioView *view) {//更新录音状态,手指重新滑动到范围内,提示向上取消录音
+            if (weakSelf.audioUrlArray.count == 12) {
+                [weakSelf showHint:@"语音最多十二条"];
+            }else {
             [XMProgressHUD changeSubTitle:@"向上滑动取消录音"];
+            }
         }];
     }
     return _getAudioView;
@@ -211,7 +234,7 @@ static NSString *postName = @"武汉市公安局";
     if (!_actionSheet) {
         _actionSheet = [[ZLPhotoActionSheet alloc] init];
         //设置照片最大选择数
-        _actionSheet.maxSelectCount = 10;
+        _actionSheet.maxSelectCount = 12;
         //设置照片最大预览数
         _actionSheet.maxPreviewCount = 500;
     }
@@ -355,7 +378,7 @@ static NSString *postName = @"武汉市公安局";
 {
     if (!_peasonImg) {
         _peasonImg = [[UIImageView alloc]init];
-        _peasonImg.layer.cornerRadius = 15;
+        _peasonImg.layer.cornerRadius = 6;
         _peasonImg.layer.masksToBounds = YES;
         
     }
@@ -586,7 +609,7 @@ static NSString *postName = @"武汉市公安局";
     [self.topView addSubview:line2];
     
     [self.topView addSubview:self.peasonImg];
-    [self.topView addSubview:self.peasonPost];
+  //  [self.topView addSubview:self.peasonPost];
     [self.topView addSubview:self.peasonName];
     [self.topView addSubview:line3];
     
@@ -736,17 +759,17 @@ static NSString *postName = @"武汉市公安局";
         
     }];
     
-    [self.peasonPost mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.centerY.equalTo(peason.mas_centerY).with.offset(0);
-        make.left.equalTo(self.peasonImg.mas_right).with.offset(10);
-        make.width.offset(width);
-        make.height.offset(20);
-    }];
+//    [self.peasonPost mas_makeConstraints:^(MASConstraintMaker *make) {
+//        make.centerY.equalTo(peason.mas_centerY).with.offset(0);
+//        make.left.equalTo(self.peasonImg.mas_right).with.offset(10);
+//        make.width.offset(width);
+//        make.height.offset(20);
+//    }];
     
     
     [self.peasonName mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerY.equalTo(peason.mas_centerY).with.offset(0);
-        make.left.equalTo(self.peasonPost.mas_right).with.offset(8);
+        make.left.equalTo(self.peasonImg.mas_right).with.offset(10);
         make.width.mas_greaterThanOrEqualTo(100);
         make.height.equalTo(peason.mas_height).with.offset(0);
     }];
@@ -1215,17 +1238,27 @@ static NSString *postName = @"武汉市公安局";
         [self.getAudioView showIn:self.view];
     }
     else if (btn.tag == 90001){//图片
-        weakify(self);
-        [self.actionSheet showPreviewPhotoWithSender:self animate:YES lastSelectPhotoModels:nil completion:^(NSArray<UIImage *> * _Nonnull selectPhotos, NSArray<ZLSelectPhotoModel *> * _Nonnull selectPhotoModels) {
-            strongify(weakSelf);
-           [strongSelf sendPic:selectPhotos];
-        }];
+        if (self.picUrlArray.count == 12) {
+            [self showHint:@"图片最多十二个"];
+        }else {
+            self.actionSheet.maxSelectCount = 12 - self.picUrlArray.count;
+            weakify(self);
+            [self.actionSheet showPreviewPhotoWithSender:self animate:YES lastSelectPhotoModels:nil completion:^(NSArray<UIImage *> * _Nonnull selectPhotos, NSArray<ZLSelectPhotoModel *> * _Nonnull selectPhotoModels) {
+                strongify(weakSelf);
+                [strongSelf sendPic:selectPhotos];
+            }];
+        }
+        
     }
     else if (btn.tag == 90002){//视频
         //录制视频
-        VideoRecorderViewController *vrVC = [[VideoRecorderViewController alloc] init];
-        vrVC.delegate = self;
+        if (self.videoUrlArray.count == 12) {
+            [self showHint:@"视频最多十二个"];
+        }else {
+            VideoRecorderViewController *vrVC = [[VideoRecorderViewController alloc] init];
+            vrVC.delegate = self;
         [self presentViewController:vrVC animated:YES completion:nil];
+        }
     }
     
 }
@@ -1334,19 +1367,45 @@ static NSString *postName = @"武汉市公安局";
 }
 
 - (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text {
-    
+    NSString *string = [NSString stringWithFormat:@"%@%@", textView.text, text];
+    if (string.length > CONTENT_MAXLENGTH){
+        [self showloadingError:@"字数不能大于50!"];
+        return NO;
+    }
+    if ([[[UITextInputMode currentInputMode]primaryLanguage] isEqualToString:@"emoji"])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    if ([NSString containEmoji:text])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+
+    return YES;
+}
+#pragma mark -
+#pragma mark textFieldDelegate
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    NSString *string1 = [NSString stringWithFormat:@"%@%@", textField.text, string];
+    if (string1.length > TITLE_MAXLENGTH){
+        [self showloadingError:@"字数不能大于14!"];
+        return NO;
+    }
+    if ([[[UITextInputMode currentInputMode]primaryLanguage] isEqualToString:@"emoji"])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    if ([NSString containEmoji:string])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
     return YES;
 }
 
-//-(void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
-//    [self.view endEditing:YES];
-//    [self.getAudioView dismiss];
-//    if ([self.descriptionView.text isEqualToString:@""]) {
-//        self.descriptionView.text = TextFildPLText;
-//    }
-//    
-//    
-//}
 
 //请求当前时间
 -(NSString *)requestTime{
@@ -1567,12 +1626,12 @@ static NSString *postName = @"武汉市公安局";
 }
 #pragma mark -
 #pragma mark 视频代理
-- (void)videoView:(VideoView *)view index:(NSInteger)index {
+- (void)videoView:(VideoView *)view index:(NSInteger)index videlUrl:(NSString *)videoUrl{
     NSInteger tag = index - 10000;
     
-    NSString *videoUrl = self.videoUrlArray[tag];
+    NSString *videourl = self.videoUrlArray[tag];
     
-    VideoViewController *vc = [[VideoViewController alloc] initWithVideoUrl:videoUrl];
+    VideoViewController *vc = [[VideoViewController alloc] initWithVideoUrl:videourl];
     [self presentViewController:vc animated:YES completion:nil];
 }
 - (void)videoView:(VideoView *)view deleteVideoIndex:(NSInteger)index {

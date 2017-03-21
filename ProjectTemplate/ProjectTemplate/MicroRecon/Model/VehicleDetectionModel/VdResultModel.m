@@ -31,7 +31,8 @@
              @"clsd"        : @"clsd",
              @"sbbh"        : @"sbbh",
              @"xszt"        : @"xszt",
-             @"clxxbh"        : @"clxxbh"
+             @"clxxbh"        : @"clxxbh",
+             @"kknum"        : @"kknum"
              };
     
 

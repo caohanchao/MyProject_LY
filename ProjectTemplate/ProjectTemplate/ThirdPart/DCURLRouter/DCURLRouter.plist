@@ -18,6 +18,8 @@
 		<string>VehicleDetectionSearchViewController</string>
 		<key>ly://PhysicsViewController</key>
 		<string>PhysicsViewController</string>
+		<key>ly://NewMarkViewController</key>
+		<string>NewMarkViewController</string>
 	</dict>
 </dict>
 </plist>

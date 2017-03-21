@@ -267,6 +267,7 @@ static CGFloat viewOffset = 64;
     self.searchBar.delegate = self;
     self.searchBar.placeholder = _str;
     self.searchBar.returnKeyType = UIReturnKeySearch;
+    self.searchBar.enablesReturnKeyAutomatically = YES; //这里设置为无文字就灰色不可点
     self.searchBar.tintColor = [UIColor colorWithRed:0.22 green:0.38 blue:0.94 alpha:1.00];
     [self.searchBar becomeFirstResponder];
     self.navigationItem.titleView = self.searchBar;
@@ -371,7 +372,7 @@ static CGFloat viewOffset = 64;
     if (cell == nil) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:identifier];
         
-        UIImageView *imageview = [[UIImageView alloc] initWithCornerRadiusAdvance:19 rectCornerType:UIRectCornerAllCorners];
+        UIImageView *imageview = [[UIImageView alloc] initWithCornerRadiusAdvance:6 rectCornerType:UIRectCornerAllCorners];
         imageview.frame = CGRectMake(12, 6, 38, 38);
         imageview.tag = 10000;
         imageview.contentMode = UIViewContentModeScaleAspectFill;
@@ -404,22 +405,27 @@ static CGFloat viewOffset = 64;
         NSString *imageStr;
         switch ([model.type integerValue]) {
             case 0:
-                imageStr = @"group_zhencha";
+                // imageStr = @"group_zhencha";
+                imageStr = @"G_zhencha";
                 break;
             case 1:
-                imageStr = @"group_qunliao";
+                // imageStr = @"group_qunliao";
+                imageStr = @"G_zudui";
                 break;
             case 2:
-                imageStr = @"group_anbao";
+                // imageStr = @"group_anbao";
+                imageStr = @"G_pancha";
                 break;
             case 3:
-                imageStr = @"group_xunkong";
+                //imageStr = @"group_xunkong";
+                imageStr = @"G_xunkong";
                 break;
             case 4:
-                imageStr = @"group_sos";
+                //  imageStr = @"group_sos";
+                imageStr = @"G_zengyuan";
                 break;
             case 5:
-                
+                imageStr = @"G_duikang";
                 break;
                 
             default:

@@ -58,7 +58,7 @@
     UIView *topView = [[UIView alloc] init];
     topView.backgroundColor = zGroupTableViewBackgroundColor;
     
-    self.headPic  = [[UIImageView alloc] initWithCornerRadiusAdvance:18 rectCornerType:UIRectCornerAllCorners];
+    self.headPic  = [[UIImageView alloc] initWithCornerRadiusAdvance:6 rectCornerType:UIRectCornerAllCorners];
     
     self.poLabel = [CHCUI createLabelWithbackGroundColor:nil textAlignment:NSTextAlignmentCenter font:ZEBFont(8) textColor:zWhiteColor text:@""];
     self.poLabel.layer.masksToBounds = YES;
@@ -79,7 +79,7 @@
     
     [self.contentView addSubview:topView];
     [self.contentView addSubview:self.headPic];
-    [self.contentView addSubview:self.poLabel];
+  //  [self.contentView addSubview:self.poLabel];
     [self.contentView addSubview:self.nameLabel];
     [self.contentView addSubview:self.imageBtn];
     [self.contentView addSubview:line1];
@@ -104,15 +104,15 @@
         make.left.equalTo(self.mas_left).offset(12);
         make.size.mas_equalTo(CGSizeMake(36, 36));
     }];
-    [self.poLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.centerY.equalTo(self.headPic.mas_centerY);
-        make.left.equalTo(self.headPic.mas_right).offset(12);
-        make.height.equalTo(@15);
-        make.width.mas_lessThanOrEqualTo(100);
-    }];
+//    [self.poLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+//        make.centerY.equalTo(self.headPic.mas_centerY);
+//        make.left.equalTo(self.headPic.mas_right).offset(12);
+//        make.height.equalTo(@15);
+//        make.width.mas_lessThanOrEqualTo(100);
+//    }];
     [self.nameLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerY.equalTo(self.headPic.mas_centerY);
-        make.left.equalTo(self.poLabel.mas_right).offset(4);
+        make.left.equalTo(self.headPic.mas_right).offset(12);
         make.height.equalTo(@15);
         make.width.mas_lessThanOrEqualTo(100);
     }];

@@ -16,5 +16,6 @@
  */
 @property (weak, nonatomic) UIImageView *imageView;
 @property (nonatomic, strong) SuspectlistModel *model;
+@property (weak, nonatomic) UIView *bgView;
 
 @end

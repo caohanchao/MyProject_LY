@@ -77,7 +77,8 @@
 /// 检查照片大小是否满足最小要求
 - (BOOL)isPhotoSelectableWithAsset:(id)asset;
 - (CGSize)photoSizeWithAsset:(id)asset;
-
+/// 修正图片转向
+- (UIImage *)fixOrientation:(UIImage *)aImage;
 @end
 
 

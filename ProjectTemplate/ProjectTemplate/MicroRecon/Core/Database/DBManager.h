@@ -31,6 +31,8 @@
 #import "UserCountInfoSQ.h"
 #import "MessageResendSQ.h"
 #import "TrajectoryListSQ.h"
+#import "MaxQidListSQ.h"
+
 @interface DBManager : NSObject
 
 @property (nonatomic ,retain) MessageDAO *MessageDAO; //对聊天记录表操作的DAO
@@ -56,6 +58,8 @@
 @property (nonatomic, strong) UserCountInfoSQ *userCountInfoSQ;//数量
 @property (nonatomic, strong) MessageResendSQ *messageResendSQ; //消息重发dao
 @property (nonatomic, strong) TrajectoryListSQ *trajectoryListSQ; //轨迹列表
+@property (nonatomic, strong) MaxQidListSQ *maxQidListSQ; //最大qid列表
+
 + (DBManager *)sharedManager;
 /**
  *  关闭数据库

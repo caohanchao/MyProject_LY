@@ -68,7 +68,8 @@
     if (cell == nil) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:identifier];
         
-        UIImageView *imageView = [[UIImageView alloc] initWithCornerRadiusAdvance:35.f/2 rectCornerType:UIRectCornerAllCorners];
+//        UIImageView *imageView = [[UIImageView alloc] initWithCornerRadiusAdvance:35.f/2 rectCornerType:UIRectCornerAllCorners];
+        UIImageView *imageView = [[UIImageView alloc] initWithCornerRadiusAdvance:6 rectCornerType:UIRectCornerAllCorners];
         imageView.frame = CGRectMake(10, 10, 35, 35);
         imageView.tag = 1001;
         imageView.contentMode = UIViewContentModeScaleAspectFill;

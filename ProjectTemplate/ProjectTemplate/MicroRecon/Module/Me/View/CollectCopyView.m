@@ -8,7 +8,7 @@
 
 #import "CollectCopyView.h"
 #import "CollectCopyCell.h"
-#define ButtonHeight 40.5
+#define ButtonHeight 50.5
 #define HeadHeight 10
 
 @interface CollectCopyView ()<UITableViewDataSource, UITableViewDelegate> {

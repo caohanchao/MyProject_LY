@@ -59,6 +59,13 @@
 - (void)requestImageForAsset:(PHAsset *)asset scale:(CGFloat)scale resizeMode:(PHImageRequestOptionsResizeMode)resizeMode completion:(void (^)(UIImage *image))completion;
 
 /**
+ 返回图片转换后的大小
+
+ @param dataLength 长度
+ @return 长度
+ */
+- (NSString *)transformDataLength:(NSInteger)dataLength;
+/**
  * @brief 获取数组内图片的字节大小
  */
 - (void)getPhotosBytesWithArray:(NSArray *)photos completion:(void (^)(NSString *photosBytes))completion;

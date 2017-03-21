@@ -23,6 +23,10 @@ static NSString * VD_Search_EndTime = @"结束时间:";
 #import <MAMapKit/MAMapKit.h>
 #import "VehicleDetectionMapManager.h"
 #import "ZEBUtils.h"
+#import "ZEBSearchTextField.h"
+#import "ProvinceListAlertView.h"
+#import "VehicleDetectionListViewController.h"
+
 @interface VehicleDetectionSearchViewController ()<ZEBPickViewDelegate,UITextFieldDelegate>
 
 {
@@ -38,15 +42,19 @@ static NSString * VD_Search_EndTime = @"结束时间:";
 
 @property(nonatomic,strong)UIView *bottomView;
 
+@property(nonatomic,strong)UIView *chooseView; // 选项view
+
 @property(nonatomic,strong)UIButton *oneDayBtn;
 
 @property(nonatomic,strong)UIButton *threeDayBtn;
 
 @property(nonatomic,strong)UIButton *oneWeekBtn;
 
-@property(nonatomic,strong)UITextField *searchTextfield;
+@property (nonatomic, strong) UIButton *provinceBtn;
 
-@property(nonatomic,strong)UITextField *searchBar;
+@property(nonatomic,strong)ZEBSearchTextField *searchTextfield;
+
+@property(nonatomic,strong)ZEBSearchTextField *searchBar;
 
 @property(nonatomic,strong)UIButton *startTime;
 
@@ -61,6 +69,12 @@ static NSString * VD_Search_EndTime = @"结束时间:";
 @property(nonatomic,strong) ZEBPickerView *cuiPickerView;
 
 @property (nonatomic, weak) MAMapView *mapView;
+
+@property (nonatomic, weak) UIImageView *TrafficMonitoringImage;
+@property (nonatomic, weak) UIImageView *PathAnalysisImage;
+
+@property (nonatomic, strong) ProvinceListAlertView *provinceListAlertView;
+
 @end
 
 
@@ -69,6 +83,26 @@ static NSString * VD_Search_EndTime = @"结束时间:";
 @implementation VehicleDetectionSearchViewController
 
 
+- (ProvinceListAlertView *)provinceListAlertView {
+    if (!_provinceListAlertView) {
+        _provinceListAlertView = [[ProvinceListAlertView alloc] init];
+        _provinceListAlertView.backgroundColor = zClearColor;
+        _provinceListAlertView.frame = CGRectMake(0, 0, kScreenWidth-24, HEIGHT_H);
+        _provinceListAlertView.direction = TriangleDirection_Up;
+        _provinceListAlertView.borderWidth = 0.5;
+        _provinceListAlertView.borderColor = CHCHexColor(@"eeeeee");
+        _provinceListAlertView.cornerRadius = 5;
+        _provinceListAlertView.color = CHCHexColor(@"f5f5f5");
+        _provinceListAlertView.triangleXY = 20;
+        WeakSelf
+        _provinceListAlertView.block = ^(ProvinceListAlertView *view, NSString *province){
+            ZEBLog(@"------%@",province);
+    
+            [weakSelf.provinceBtn setTitle:province forState:UIControlStateNormal];
+        };
+    }
+    return _provinceListAlertView;
+}
 - (ZEBPickerView *)cuiPickerView {
     if (!_cuiPickerView) {
         _cuiPickerView = [ZEBPickerView new];
@@ -78,7 +112,13 @@ static NSString * VD_Search_EndTime = @"结束时间:";
     }
     return _cuiPickerView;
 }
-
+- (UIView *)chooseView {
+    if (!_chooseView) {
+        _chooseView = [[UIView alloc] init];
+        _chooseView.backgroundColor = zWhiteColor;
+    }
+    return _chooseView;
+}
 - (UIView *)topView {
     if (!_topView) {
         _topView = [UIView new];
@@ -94,10 +134,16 @@ static NSString * VD_Search_EndTime = @"结束时间:";
     }
     return _bottomView;
 }
-
-- (UITextField *)searchBar {
+- (UIButton *)provinceBtn {
+    if (!_provinceBtn) {
+        _provinceBtn = [CHCUI createButtonWithtarg:self sel:@selector(chooseProvince:) titColor:zBlackColor font:ZEBFont(14) image:nil backGroundImage:nil title:@"鄂"];
+        _provinceBtn.titleEdgeInsets = UIEdgeInsetsMake(0, 0, 2.5, 0);
+    }
+    return _provinceBtn;
+}
+- (ZEBSearchTextField *)searchBar {
     if (!_searchBar) {
-        _searchBar = [UITextField new];
+        _searchBar = [ZEBSearchTextField new];
         
 //        path.lineWidth = 5.0;
         _searchBar.backgroundColor = [UIColor whiteColor];
@@ -108,14 +154,14 @@ static NSString * VD_Search_EndTime = @"结束时间:";
         _searchBar.layer.masksToBounds = YES;
         _searchBar.delegate = self;
         _searchBar.textColor = CHCHexColor(@"333333");
-        _searchBar.text = @"鄂A";
+       // _searchBar.text = @"鄂A";
         _searchBar.font = [UIFont systemFontOfSize:14];
         
         //左
         UIView *blankView = [[UIView alloc] initWithFrame:CGRectMake(0,0,12.0, _searchBar.frame.size.height)];
         _searchBar.leftView = blankView;
         _searchBar.leftViewMode =UITextFieldViewModeAlways;
-        
+        _searchBar.enablesReturnKeyAutomatically = YES; //这里设置为无文字就灰色不可点
         
         //右
 //        UIView *searchview = [UIView new];
@@ -186,9 +232,9 @@ static NSString * VD_Search_EndTime = @"结束时间:";
     return _searchBtn;
 }
 
-- (UITextField *)searchTextfield {
+- (ZEBSearchTextField *)searchTextfield {
     if (!_searchTextfield) {
-        _searchTextfield = [UITextField new];
+        _searchTextfield = [ZEBSearchTextField new];
         _searchTextfield.textColor = CHCHexColor(@"333333");
         _searchTextfield.font = Font(12);
         
@@ -230,7 +276,7 @@ static NSString * VD_Search_EndTime = @"结束时间:";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
+    self.analysisType = TrafficMonitoring;
     [self initUI];
     
     [self initFormater];
@@ -249,14 +295,104 @@ static NSString * VD_Search_EndTime = @"结束时间:";
     self.title = @"车辆查询";
     [self.view addSubview:self.topView];
     [self.view addSubview:self.bottomView];
+    [self.view addSubview:self.chooseView];
     [self addSubViewOfTopView];
     [self addSubViewOfBottomView];
     [self addSearchBtn];
-    
+    [self addchooseView];
     [self.view addSubview:self.cuiPickerView];
     
 }
 
+- (void)addchooseView {
+    
+    
+    UILabel *line1 = [[UILabel alloc] init];
+    line1.backgroundColor = LineColor;
+    
+    UILabel *TrafficMonitoringLabel = [CHCUI createLabelWithbackGroundColor:nil textAlignment:NSTextAlignmentLeft font:ZEBFont(14) textColor:zBlackColor text:@"通行监控"];
+    TrafficMonitoringLabel.userInteractionEnabled = YES;
+    
+    UITapGestureRecognizer *tapTrafficMonitoring = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(chooseTrafficMonitoring)];
+    [TrafficMonitoringLabel addGestureRecognizer:tapTrafficMonitoring];
+    
+    UIImageView *TrafficMonitoringImage = [CHCUI createImageWithbackGroundImageV:@"gougou"];
+    TrafficMonitoringImage.alpha = 1.0;
+    self.TrafficMonitoringImage = TrafficMonitoringImage;
+    
+    UILabel *line2 = [[UILabel alloc] init];
+    line2.backgroundColor = LineColor;
+    
+    UILabel *PathAnalysisLabel = [CHCUI createLabelWithbackGroundColor:nil textAlignment:NSTextAlignmentLeft font:ZEBFont(14) textColor:zBlackColor text:@"轨迹分析"];
+    PathAnalysisLabel.userInteractionEnabled = YES;
+    
+    UITapGestureRecognizer *tapPathAnalysisLabel = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(choosePathAnalysisLabel)];
+    [PathAnalysisLabel addGestureRecognizer:tapPathAnalysisLabel];
+    
+    UIImageView *PathAnalysisImage = [CHCUI createImageWithbackGroundImageV:@"gougou"];
+    PathAnalysisImage.alpha = 0.0;
+    self.PathAnalysisImage = PathAnalysisImage;
+    
+    
+    UILabel *line3 = [[UILabel alloc] init];
+    line3.backgroundColor = LineColor;
+    
+    
+    [self.chooseView addSubview:line1];
+    [self.chooseView addSubview:line2];
+    [self.chooseView addSubview:line3];
+    
+    [self.chooseView addSubview:TrafficMonitoringLabel];
+    [self.chooseView addSubview:TrafficMonitoringImage];
+    
+    [self.chooseView addSubview:PathAnalysisLabel];
+    [self.chooseView addSubview:PathAnalysisImage];
+
+    
+    
+    [line1 mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.left.right.equalTo(self.chooseView);
+        make.height.equalTo(@0.5);
+    }];
+    
+    [TrafficMonitoringLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.chooseView.mas_left).offset(12);
+        make.top.equalTo(line1.mas_bottom);
+        make.right.equalTo(self.chooseView.mas_right);
+        make.height.equalTo(@45);
+    }];
+    
+    [TrafficMonitoringImage mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerY.equalTo(TrafficMonitoringLabel.mas_centerY);
+        make.right.equalTo(self.chooseView.mas_right).offset(-12);
+        make.size.mas_equalTo(CGSizeMake(14, 14));
+    }];
+    
+    [line2 mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.chooseView.mas_left).offset(12);
+        make.centerY.equalTo(self.chooseView.mas_centerY);
+        make.right.equalTo(self.chooseView);
+        make.height.equalTo(@0.5);
+    }];
+    
+    [PathAnalysisLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.equalTo(self.chooseView.mas_left).offset(12);
+        make.top.equalTo(line2.mas_bottom);
+        make.right.equalTo(self.chooseView.mas_right);
+        make.height.equalTo(@45);
+    }];
+    
+    [PathAnalysisImage mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerY.equalTo(PathAnalysisLabel.mas_centerY);
+        make.right.equalTo(self.chooseView.mas_right).offset(-12);
+        make.size.mas_equalTo(CGSizeMake(14, 14));
+    }];
+    [line3 mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.bottom.left.right.equalTo(self.chooseView);
+        make.height.equalTo(@0.5);
+    }];
+    
+}
 - (void)addSearchBtn {
     
     [self.view addSubview:self.searchBtn];
@@ -264,7 +400,7 @@ static NSString * VD_Search_EndTime = @"结束时间:";
         make.left.equalTo(self.view.mas_left).offset(12);
         make.right.equalTo(self.view.mas_right).offset(-12);
         make.height.offset(40);
-        make.top.equalTo(self.bottomView.mas_bottom).offset(30);
+        make.top.equalTo(self.chooseView.mas_bottom).offset(30);
     }];
 }
 
@@ -279,9 +415,10 @@ static NSString * VD_Search_EndTime = @"结束时间:";
     
     
     [self.topView addSubview:self.searchBar];
-    [self.topView addSubview:self.oneDayBtn];
-    [self.topView addSubview:self.threeDayBtn];
-    [self.topView addSubview:self.oneWeekBtn];
+    [self.searchBar addSubview:self.provinceBtn];
+//    [self.topView addSubview:self.oneDayBtn];
+//    [self.topView addSubview:self.threeDayBtn];
+//    [self.topView addSubview:self.oneWeekBtn];
     
     
     NSInteger top_L_R_Constraints = 20;
@@ -292,15 +429,21 @@ static NSString * VD_Search_EndTime = @"结束时间:";
         make.top.equalTo(self.view.mas_top).offset(64);
         make.left.equalTo(self.view.mas_left).offset(0);
         make.right.equalTo(self.view.mas_right).offset(0);
-        make.height.offset(143);
+        make.height.offset(100);
     }];
     
     [self.bottomView mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.topView.mas_bottom).offset(16);
+        make.top.equalTo(self.topView.mas_bottom);
         make.left.equalTo(self.view.mas_left).offset(0);
         make.right.equalTo(self.view.mas_right).offset(0);
 //        make.bottom.equalTo(self.view.mas_bottom).offset(0);
         make.height.offset(90);
+    }];
+    
+    [self.chooseView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self.bottomView.mas_bottom).offset(16);
+        make.left.right.equalTo(self.view);
+        make.height.equalTo(@91.5);
     }];
     
     [self.searchBar mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -311,27 +454,33 @@ static NSString * VD_Search_EndTime = @"结束时间:";
        
     }];
     
-    [self.oneDayBtn mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.searchBar.mas_bottom).offset(20);
-        make.left.equalTo(self.topView.mas_left).offset(top_L_R_Constraints);
-//        make.height.equalTo(@35);
-        make.bottom.equalTo(self.topView.mas_bottom).offset(-20);
-//        make.width.offset(btnWidth);
+    [self.provinceBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.left.top.equalTo(self.searchBar);
+        make.bottom.equalTo(self.searchBar).offset(1);
+        make.width.mas_equalTo(self.searchBar.mas_height);
     }];
-    [self.threeDayBtn mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.oneDayBtn.mas_top);
-        make.left.equalTo(self.oneDayBtn.mas_right).offset(10);
-        make.height.equalTo(self.oneDayBtn.mas_height);
-        make.width.equalTo(self.oneDayBtn.mas_width);
+    
+//    [self.oneDayBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+//        make.top.equalTo(self.searchBar.mas_bottom).offset(20);
+//        make.left.equalTo(self.topView.mas_left).offset(top_L_R_Constraints);
+////        make.height.equalTo(@35);
+//        make.bottom.equalTo(self.topView.mas_bottom).offset(-20);
+////        make.width.offset(btnWidth);
+//    }];
+//    [self.threeDayBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+//        make.top.equalTo(self.oneDayBtn.mas_top);
+//        make.left.equalTo(self.oneDayBtn.mas_right).offset(10);
+//        make.height.equalTo(self.oneDayBtn.mas_height);
 //        make.width.equalTo(self.oneDayBtn.mas_width);
-    }];
-    [self.oneWeekBtn mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.oneDayBtn.mas_top);
-        make.left.equalTo(self.threeDayBtn.mas_right).offset(10);
-        make.height.equalTo(self.oneDayBtn.mas_height);
-        make.width.equalTo(self.oneDayBtn.mas_width);
-        make.right.equalTo(self.topView.mas_right).offset(-top_L_R_Constraints);
-    }];
+////        make.width.equalTo(self.oneDayBtn.mas_width);
+//    }];
+//    [self.oneWeekBtn mas_makeConstraints:^(MASConstraintMaker *make) {
+//        make.top.equalTo(self.oneDayBtn.mas_top);
+//        make.left.equalTo(self.threeDayBtn.mas_right).offset(10);
+//        make.height.equalTo(self.oneDayBtn.mas_height);
+//        make.width.equalTo(self.oneDayBtn.mas_width);
+//        make.right.equalTo(self.topView.mas_right).offset(-top_L_R_Constraints);
+//    }];
 }
 
 - (void)addSubViewOfBottomView {
@@ -367,7 +516,7 @@ static NSString * VD_Search_EndTime = @"结束时间:";
     [self.bottomView addSubview:self.startTime];
     [self.bottomView addSubview:self.endTime];
     
-    [self.bottomView addSubview:line1];
+   // [self.bottomView addSubview:line1];
     [self.bottomView addSubview:line2];
     
     
@@ -430,12 +579,12 @@ static NSString * VD_Search_EndTime = @"结束时间:";
     
     
     
-    [line1 mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(self.startTime.mas_top);
-        make.left.equalTo(self.startTime.mas_left);
-        make.right.equalTo(self.startTime.mas_right);
-        make.height.equalTo(@0.5);
-    }];
+//    [line1 mas_makeConstraints:^(MASConstraintMaker *make) {
+//        make.top.equalTo(self.startTime.mas_top);
+//        make.left.equalTo(self.startTime.mas_left);
+//        make.right.equalTo(self.startTime.mas_right);
+//        make.height.equalTo(@0.5);
+//    }];
     
     [line2 mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(self.endTime.mas_top);
@@ -501,7 +650,8 @@ static NSString * VD_Search_EndTime = @"结束时间:";
 - (void)searchBtnClick {
     [self.searchBar resignFirstResponder];
     
-    _searchResult = self.searchBar.text;
+    _searchResult = [self.provinceBtn currentTitle];
+    _searchResult = [NSString stringWithFormat:@"%@%@",_searchResult,[LZXHelper isNullToString:self.searchBar.text]];
 
     //搜索结果为空
     if ([[LZXHelper isNullToString:_searchResult]isEqualToString:@""]) {
@@ -512,9 +662,12 @@ static NSString * VD_Search_EndTime = @"结束时间:";
     if (![[LZXHelper isNullToString:_searchStartTime]isEqualToString:@""] && ![[LZXHelper isNullToString:_searchEndTime]isEqualToString:@""] && ![[LZXHelper isNullToString:_searchResult]isEqualToString:@""]) {
         _searchResult = [GetInfoCarRequest removeSpaceAndNewline:_searchResult];
         if ([ZEBUtils validateCarNo:_searchResult]) {
-            if ([GetInfoCarRequest isInOneWeekCompareWithStartTime:_searchStartTime WithEndTime:_searchEndTime Formatter:_formatter]) {
-                [CHCUI presentAlertToCancelWithMessage:@"您所选时间超出一周范围" WithObject:self.navigationController];
-            } else {
+            if ([GetInfoCarRequest compareDate:_searchStartTime withDate:_searchEndTime] == 0) {
+                [CHCUI presentAlertToCancelWithMessage:@"开始时间与结束时间不能相同" WithObject:self.navigationController];
+            } else if ([GetInfoCarRequest compareDate:_searchStartTime withDate:_searchEndTime] == -1){
+                [CHCUI presentAlertToCancelWithMessage:@"开始时间不能大于结束时间" WithObject:self.navigationController];
+                
+            }else if ([GetInfoCarRequest compareDate:_searchStartTime withDate:_searchEndTime] == 1){
                 [self.cuiPickerView hiddenPickerView];
                 [self search];
             }
@@ -565,11 +718,38 @@ static NSString * VD_Search_EndTime = @"结束时间:";
 //    [_threeDayBtn setBackgroundColor:CHCHexColor(@"f8b551")];
 //    [_oneWeekBtn setBackgroundColor:CHCHexColor(@"f8b551")];
 }
-
+#pragma mark -
+#pragma mark 选择城市
+- (void)chooseProvince:(UIButton *)btn {
+    
+    [self.searchBar endEditing:YES];
+    UIWindow * window=[[[UIApplication sharedApplication] delegate] window];
+    CGRect rect = [btn convertRect: btn.bounds toView:window];
+    [self.provinceListAlertView showInPoint:CGPointMake(CGRectGetMidX(rect), CGRectGetMaxY(rect))];
+}
+#pragma mark -
+#pragma mark 选择通行监控
+- (void)chooseTrafficMonitoring {
+    self.analysisType = TrafficMonitoring;
+    [UIView animateWithDuration:0.3 animations:^{
+        self.TrafficMonitoringImage.alpha = 1.0;
+        self.PathAnalysisImage.alpha = 0.0;
+    }];
+}
+#pragma mark -
+#pragma mark 选择轨迹分析
+- (void)choosePathAnalysisLabel {
+    self.analysisType = PathAnalysis;
+    [UIView animateWithDuration:0.3 animations:^{
+        self.TrafficMonitoringImage.alpha = 0.0;
+        self.PathAnalysisImage.alpha = 1.0;
+    }];
+}
 #pragma mark - search
 - (void)search {
 
     NSMutableDictionary *info =[NSMutableDictionary dictionary];
+    
     info[@"carNumber"] = _searchResult;
     info[@"toTime"] = _searchEndTime;
     info[@"formTime"] = _searchStartTime;
@@ -591,13 +771,18 @@ static NSString * VD_Search_EndTime = @"结束时间:";
                 [self showHint:@"没有搜索到结果"];
                 return ;
             }
-            
-            VehicleDetectionViewController *ve = [[VehicleDetectionViewController alloc] init];
-            ve.hidesBottomBarWhenPushed = YES;
-            [ve setCarDataSource:self.dataArray];
-            
+            if (self.analysisType == TrafficMonitoring) {
+                VehicleDetectionListViewController *ve = [[VehicleDetectionListViewController alloc] init];
+                ve.hidesBottomBarWhenPushed = YES;
+                [ve setCarDataSources:self.dataArray];
+                [self.navigationController pushViewController:ve animated:YES];
+            }else if (self.analysisType == PathAnalysis) {
+                VehicleDetectionViewController *ve = [[VehicleDetectionViewController alloc] init];
+                ve.hidesBottomBarWhenPushed = YES;
+                [ve setCarDataSource:self.dataArray];
+                [self.navigationController pushViewController:ve animated:YES];
+            }
             [self hideHud];
-            [self.navigationController pushViewController:ve animated:YES];
         }
         else {
             [self showHint:model.resultmessage];

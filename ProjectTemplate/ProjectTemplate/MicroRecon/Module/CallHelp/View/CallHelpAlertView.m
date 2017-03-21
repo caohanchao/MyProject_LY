@@ -9,7 +9,7 @@
 #import "CallHelpAlertView.h"
 
 #define AlertW 250
-#define AlertH 130
+#define AlertH 140
 @interface CallHelpAlertView ()
 
 @property (nonatomic, strong) NSTimer *timer;
@@ -31,7 +31,7 @@
     if (self) {
         
         self.frame = [UIScreen mainScreen].bounds;
-        self.backgroundColor = [UIColor colorWithWhite:0.8 alpha:0.6];
+        self.backgroundColor = [UIColor colorWithWhite:1 alpha:0];
         [self initView];
         [self initTimer];
       
@@ -47,7 +47,7 @@
     
     self.alertView = [[UIView alloc]init];
     self.alertView.backgroundColor = [UIColor whiteColor];
-    self.alertView.layer.cornerRadius = 5.0;
+    self.alertView.layer.cornerRadius = 10.0;
     self.alertView.layer.position = self.center;
     self.alertView.frame = CGRectMake(0, 0, AlertW, AlertH);
     [self addSubview:self.alertView];
@@ -62,13 +62,13 @@
     self.timeLabel.layer.borderColor = CHCHexColor(@"ee4444").CGColor;
     
     UILabel *line1  = [[UILabel alloc] init];
-    line1.backgroundColor = zGrayColor;
+    line1.backgroundColor = LineColor;
     
     self.cancelBtn = [CHCUI createButtonWithtarg:self sel:@selector(ClickButton:) titColor:zBlueColor font:ZEBFont(15) image:nil backGroundImage:nil title:@"取消"];
     self.cancelBtn.tag = ButtonClickCancel;
     
     UILabel *line2  = [[UILabel alloc] init];
-    line2.backgroundColor = zGrayColor;
+    line2.backgroundColor = LineColor;
     
     self.confirmBtn = [CHCUI createButtonWithtarg:self sel:@selector(ClickButton:) titColor:zBlueColor font:ZEBFont(15) image:nil backGroundImage:nil title:@"发送"];
     self.confirmBtn.tag = ButtonClickConfirm;
@@ -79,7 +79,7 @@
     [self.alertView addSubview:line2];
     [self.alertView addSubview:self.confirmBtn];
     
-    CGFloat margin = 10;
+    CGFloat margin = 20;
     
     [self.timeLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(self.alertView.mas_top).offset(margin);

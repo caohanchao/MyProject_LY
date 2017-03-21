@@ -118,9 +118,10 @@
 
 - (UIButton *)uploadImgBtn {
     if (!_uploadImgBtn) {
-        _uploadImgBtn = [CHCUI createButtonWithtarg:self sel:@selector(uploadImgBtnClick:) titColor:nil font:nil image:@"select_img_icon" backGroundImage:nil title:nil];
+       // _uploadImgBtn = [CHCUI createButtonWithtarg:self sel:@selector(uploadImgBtnClick:) titColor:nil font:nil image:@"select_img_icon" backGroundImage:nil title:nil];
+        _uploadImgBtn = [CHCUI createButtonWithtarg:self sel:@selector(uploadImgBtnClick:) titColor:nil font:nil image:@"icon_zudui" backGroundImage:nil title:nil];
         _uploadImgBtn.layer.masksToBounds =YES;
-        _uploadImgBtn.layer.cornerRadius = 30;
+        _uploadImgBtn.layer.cornerRadius = 6;
     }
     return _uploadImgBtn;
 }
@@ -485,6 +486,7 @@
     _alarmTextField.backgroundColor = [UIColor whiteColor];
     _alarmTextField.tintColor = zBlueColor;
     _alarmTextField.returnKeyType=UIReturnKeyDone;
+    _alarmTextField.keyboardType = UIKeyboardTypeASCIICapable;
     _alarmTextField.clearButtonMode=UITextFieldViewModeWhileEditing;
     _alarmTextField.delegate=self;
     _alarmTextField.font = ZEBFont(13);
@@ -550,6 +552,7 @@
     _IDCardTextField.backgroundColor = [UIColor whiteColor];
     _IDCardTextField.tintColor = zBlueColor;
     _IDCardTextField.delegate=self;
+    _IDCardTextField.keyboardType = UIKeyboardTypeASCIICapable;
     _IDCardTextField.clearButtonMode=UITextFieldViewModeWhileEditing;
     _IDCardTextField.returnKeyType=UIReturnKeyDone;
     _IDCardTextField.font = ZEBFont(13);
@@ -831,6 +834,12 @@
 - (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
     
     [self registerBtnSelectState];
+    
+    if ([NSString containEmoji:string]) {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    
     return YES;
 }
 

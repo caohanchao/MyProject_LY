@@ -33,6 +33,14 @@ static inline NSString *ImagescachePath() {
     return @"ImagesCaches";
 }
 /**
+ *  高清图
+ *
+ *  @return 高清图
+ */
+static inline NSString *OriginalscachePath() {
+    return @"original";
+}
+/**
  *  成员头像
  *
  *  @return 成员头像

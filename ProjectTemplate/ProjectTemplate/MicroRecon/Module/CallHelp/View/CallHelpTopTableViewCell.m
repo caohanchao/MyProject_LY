@@ -11,6 +11,7 @@
 @interface CallHelpTopTableViewCell () {
     
     UIImageView *_imageView;
+    UILabel *_nameLabel;
 }
 
 @end
@@ -27,23 +28,59 @@
     return self;
 }
 - (void)createUI {
-    _imageView = [[UIImageView alloc] initWithCornerRadiusAdvance:32/2 rectCornerType:UIRectCornerAllCorners];
-    _imageView.frame = CGRectMake(0, 0, 32, 32);
+    _imageView = [[UIImageView alloc] initWithCornerRadiusAdvance:6 rectCornerType:UIRectCornerAllCorners];
+    _imageView.frame = CGRectMake(15, 15, 50, 50);
     _imageView.contentMode = UIViewContentModeScaleAspectFill;
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tap:)];
     [_imageView addGestureRecognizer:tap];
     _imageView.userInteractionEnabled = YES;
     [self.contentView addSubview:_imageView];
     
-    NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
-    [_imageView imageGetCacheForAlarm:alarm forUrl:nil];
+//    NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+    
+    
+    _nameLabel = [[UILabel alloc]initWithFrame:CGRectMake(10, 77, 60, 20)];
+    _nameLabel.textColor  = zBlackColor;
+    
+    _nameLabel.textAlignment = NSTextAlignmentCenter;
+    _nameLabel.font = [UIFont systemFontOfSize:14.0];
+     [self.contentView addSubview:_nameLabel];
     
 }
-- (void)setImage:(UIImage *)image {
-    _image = image;
-    _imageView.image = _image;
+- (void)setUserArr:(NSArray *)userArr {
+
+    _userArr = userArr;
+    UserAllModel * model = [[[DBManager sharedManager]personnelInformationSQ]selectDepartmentmemberlistById:_userArr[self.row]];
+    
+    [_imageView imageGetCacheForAlarm:self.userArr[self.row] forUrl:model.RE_headpic];
+    
+    NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+    if ([model.RE_alarmNum isEqualToString:alarm]) {
+        UserInfoModel * model = [[[DBManager sharedManager]userDetailSQ]selectUserDetail];
+        _nameLabel.text = model.name;
+    }else {
+        _nameLabel.text = model.RE_name;
+    }
+    
+//    if ([model.RE_name isEqualToString:@"文件助手"]||[model.RE_name isEqualToString:@"文件小助手"]) {
+//        UserInfoModel * model = [[[DBManager sharedManager]userDetailSQ]selectUserDetail];
+//        _nameLabel.text = model.name;
+//    }
+//    else
+//    {
+//        _nameLabel.text = model.RE_name;
+//    }
 
 }
+- (void)tap:(UITapGestureRecognizer*)recognizer
+{
+    if (self.userImageBlock) {
+        self.userImageBlock();
+    }
+//    
+//     [LYRouter openURL:@"ly://selsetCell" withUserInfo:nil completion:nil];
+}
+
 - (void)awakeFromNib {
     [super awakeFromNib];
     // Initialization code

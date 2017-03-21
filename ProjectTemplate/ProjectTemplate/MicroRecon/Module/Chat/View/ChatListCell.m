@@ -78,7 +78,8 @@
 #pragma mark - Private Methods
 
 - (void)setup{
-    UIImageView *headImageView = [[UIImageView alloc] initWithCornerRadiusAdvance:25 rectCornerType:UIRectCornerAllCorners];
+   // UIImageView *headImageView = [[UIImageView alloc] initWithCornerRadiusAdvance:25 rectCornerType:UIRectCornerAllCorners];
+    UIImageView *headImageView = [[UIImageView alloc] initWithCornerRadiusAdvance:6 rectCornerType:UIRectCornerAllCorners];
 
     headImageView.contentMode = UIViewContentModeScaleAspectFill;
     //[headImageView setImage:[UIImage imageNamed:@"chatListCellHead"]];

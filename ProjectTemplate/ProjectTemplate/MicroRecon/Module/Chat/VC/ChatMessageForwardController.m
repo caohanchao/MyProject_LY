@@ -479,7 +479,6 @@
 //        };
 //        [self.locationManager requestAuthorization:nil];
         
-        
         //转发业务逻辑
         [[ForwardMSGLogic sharedManager] forwardMessageWithUrl:self.imageUrlStr withUsers:alarmArr withGroups:gidArr withgpsH:@"30" withgpsW:@"170" progress:^(NSProgress * _Nonnull progress) {
             

@@ -27,6 +27,22 @@
     NSString *str= [outputFormatter stringFromDate:someDay];
     return str;
 }
+- (NSString *)rollCallDetailTimeChangeHHmm {
+    
+    
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    NSDate *someDay = [formatter dateFromString:self];
+    
+    NSDateFormatter *outputFormatter= [[NSDateFormatter alloc] init];
+    
+    [outputFormatter setLocale:[NSLocale currentLocale]];
+    
+    [outputFormatter setDateFormat:@"HH:mm"];
+    
+    NSString *str= [outputFormatter stringFromDate:someDay];
+    return str;
+}
 - (NSString *)timeChangeYMdHHmm {
     
     

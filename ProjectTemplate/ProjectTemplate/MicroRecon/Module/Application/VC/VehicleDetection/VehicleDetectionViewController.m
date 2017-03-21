@@ -17,7 +17,7 @@
 #import "VdResultModel.h"
 #import "UIViewController+BackButtonHandler.h"
 #import "GetInfoCarRequest.h"
-#import "VehicleDetectionDesViewController.h"
+#import "VehicleDetectionListViewController.h"
 
 
 @interface VehicleDetectionViewController ()<MAMapViewDelegate, VehicleDetectionListViewDelegate>
@@ -31,6 +31,9 @@
 @property (nonatomic, strong) MAPolyline *commonPolyline;
 @property (nonatomic, strong) NSArray *carDataSource;
 @property (nonatomic, weak) VdAnnotation *vdAnnotation;
+
+@property (nonatomic, assign) BOOL isFirist;
+
 @end
 
 @implementation VehicleDetectionViewController
@@ -45,6 +48,7 @@
     [super viewDidLoad];
 //    self.title = @"鄂A39L76";
     self.view.backgroundColor = [UIColor whiteColor];
+    self.isFirist = YES;
     [self initall];
 }
 /*
@@ -96,7 +100,7 @@
 - (void)initall {
     [self initRoutable];
     [self initMap];
-    [self initVdListView];
+  //  [self initVdListView];
     [self getSource];
 }
 //注册block路由
@@ -107,9 +111,12 @@
         NSDictionary *userInfo = routerParameters[LYRouterParameterUserInfo];
                                   
         if ([userInfo[@"VdModel"] isKindOfClass:[VdResultModel class]]) {
-            VehicleDetectionDesViewController *desController = [[VehicleDetectionDesViewController alloc] init];
-            desController.model = userInfo[@"VdModel"];
-            [mySelf.navigationController pushViewController:desController animated:YES];
+            VehicleDetectionListViewController *vl = [[VehicleDetectionListViewController alloc] init];
+            
+            VdResultModel *model = userInfo[@"VdModel"];
+            [vl setkkbh:model.kkbh withAllarr:[mySelf.carDataSource mutableCopy]];
+            
+            [mySelf.navigationController pushViewController:vl animated:YES];
         }else {
             ZEBLog(@"model 类型错误");
         }
@@ -142,7 +149,7 @@
     
     
     [self mapAddAnnotationAndOverlay];
-    [self soureArray:_carDataSource];
+    //[self soureArray:_carDataSource];
    
 }
 - (void)mapAddAnnotationAndOverlay {
@@ -164,7 +171,9 @@
     [self.dataArray removeAllObjects];
     [self.dataArray addObjectsFromArray:results];
     for (int i = 0; i < count; i++) {
+        
         VdResultModel *model = self.dataArray[i];
+        model.kkindex =  (count - i);
         if (model.sbxx.count > 0) {
             SBXXModel *sbModel = [model.sbxx firstObject];
             VdAnnotation *vdAnnotation = [[VdAnnotation alloc] initWithCoordinate:CLLocationCoordinate2DMake([sbModel.latitude doubleValue], [sbModel.longitude doubleValue])];
@@ -176,7 +185,8 @@
             vdAnnotation.bayonetName = [[model.sbxx firstObject] deviceName];
             vdAnnotation.myID = model.clxxbh;
             vdAnnotation.model = model;
-            vdAnnotation.index = i;
+            vdAnnotation.kknum = [NSString stringWithFormat:@"%@",model.kknum];
+            vdAnnotation.index = model.kkindex;
             [self.annotationArray addObject:vdAnnotation];
             
             commonPolylineCoords[i].latitude = [sbModel.latitude doubleValue];
@@ -193,10 +203,13 @@
     [self.mapView addOverlay:_commonPolyline];
     
     [self.mapView showAnnotations:self.mapView.annotations animated:YES];
+    if (self.annotationArray.count > 0) {
+        _vdAnnotation = self.annotationArray[0];
+        [self.mapView selectAnnotation:_vdAnnotation animated:YES];
+    }
     
-    _vdAnnotation = self.annotationArray[0];
     
-   [self.mapView selectAnnotation:_vdAnnotation animated:YES];
+   
     
 }
 #pragma mark -
@@ -226,7 +239,16 @@
     [self.mapView removeOverlay:_commonPolyline];
     self.mapView.delegate = nil;
 }
-
+#pragma mark - MAMapViewDelegate
+//当位置改变时候调用
+- (void)mapView:(MAMapView *)mapView didUpdateUserLocation:(MAUserLocation *)userLocation updatingLocation:(BOOL)updatingLocation {
+    
+ 
+    if (self.isFirist) {
+        [self.mapView setCenterCoordinate:userLocation.coordinate animated:YES];
+        self.isFirist = NO;
+    }
+}
 //大头针属性设置
 - (MAAnnotationView *)mapView:(MAMapView *)mapView viewForAnnotation:(id <MAAnnotation>)annotation{
     if ([annotation isKindOfClass:[VdAnnotation class]])
@@ -264,7 +286,7 @@
 - (void)mapView:(MAMapView *)mapView didSelectAnnotationView:(MAAnnotationView *)view {
     
     if ([view isKindOfClass:[VdMAAnnotationView class]]) {
-       VdMAAnnotationView *tempView = (VdMAAnnotationView *)view;
+        VdMAAnnotationView *tempView = (VdMAAnnotationView *)view;
          [self.mapView setCenterCoordinate:tempView.aannotation.coordinate animated:YES];
     }
 }

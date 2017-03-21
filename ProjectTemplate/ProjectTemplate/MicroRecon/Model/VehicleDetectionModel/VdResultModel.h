@@ -28,8 +28,9 @@
 @property (nonatomic, nonnull, copy) NSString *sbbh;
 @property (nonatomic, nonnull, copy) NSString *xszt; // 行驶状态
 @property (nonatomic, nonnull, copy) NSString *clxxbh; // 车辆信息编号
+@property (nonatomic, nonnull, strong) NSNumber *kknum; // 通行次数
 
-
+@property (nonatomic, assign) NSInteger kkindex; // 排序
 
 
 //@property (nonatomic, nonnull, copy) NSString *PUID; // 设备编码
@@ -53,6 +54,8 @@
 @property (nonatomic, nonnull, copy)NSString *kkbh;
 @property (nonatomic, nonnull, copy)NSString *deviceName; //卡口位置
 @property (nonatomic, nonnull, copy)NSArray *lkxx;
+
+@property (nonatomic, assign) NSInteger index; // 排次数
 
 @end
 

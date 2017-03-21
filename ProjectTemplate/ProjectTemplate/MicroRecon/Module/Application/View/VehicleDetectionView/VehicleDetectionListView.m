@@ -14,7 +14,7 @@
 #import "VdLineTableViewCell.h"
 
 #define titleFont 12 // label字体大小
-#define topViewHeight 23 // 拖动区域的
+#define topViewHeight 0//23 // 拖动区域的
 
 
 @interface VehicleDetectionListView ()<UITableViewDelegate, UITableViewDataSource>
@@ -62,7 +62,7 @@
     self = [super initWithFrame:frame];
     if (self) {
         self.backgroundColor = [UIColor clearColor];
-        [self initShadow];
+       // [self initShadow];
         [self initView];
         self.isBottom = YES;
     }
@@ -77,9 +77,9 @@
     self.layer.shadowOpacity = 0.9f;
     self.layer.shadowPath = shadowPath.CGPath;
     
-    VdTopView *view = [[VdTopView alloc] initWithFrame:CGRectMake(0, 0, kScreenWidth, topViewHeight+1)];
-    view.backgroundColor = CHCHexColor(@"f5f5f5");
-    [self addSubview:view];
+//    VdTopView *view = [[VdTopView alloc] initWithFrame:CGRectMake(0, 0, kScreenWidth, topViewHeight+1)];
+//    view.backgroundColor = CHCHexColor(@"f5f5f5");
+//    [self addSubview:view];
 }
 - (VdTopView *)topView {
     if (!_topView) {
@@ -119,14 +119,14 @@
 }
 - (void)initView {
     
-    [self addSubview:self.topView];
-    
-    UILabel *gLabel = [[UILabel alloc] initWithFrame:CGRectMake(width(self.frame)/2-18, 10+15, 34, 4)];
-    gLabel.backgroundColor = CHCHexColor(@"d2d2d2");
-    gLabel.layer.masksToBounds = YES;
-    gLabel.layer.cornerRadius = 2;
-    [_topView addSubview:gLabel];
-    self.gLabel = gLabel;
+//    [self addSubview:self.topView];
+//    
+//    UILabel *gLabel = [[UILabel alloc] initWithFrame:CGRectMake(width(self.frame)/2-18, 10+15, 34, 4)];
+//    gLabel.backgroundColor = CHCHexColor(@"d2d2d2");
+//    gLabel.layer.masksToBounds = YES;
+//    gLabel.layer.cornerRadius = 2;
+//    [_topView addSubview:gLabel];
+//    self.gLabel = gLabel;
     
     _bottomView = [[UIView alloc] init];
     _bottomView.frame = CGRectMake(0, topViewHeight, kScreen_Width, height(self.frame)-topViewHeight);
@@ -273,8 +273,9 @@
         }
         VdResultModel *model = array[indexPath.row];
         cell.time = model.jgsj;
-        cell.bayonetName = [[model.sbxx firstObject] deviceName];
-        
+        LKXXModel *lkxxModel = [[[model.sbxx firstObject] lkxx] firstObject];
+        cell.bayonetName = lkxxModel.kkmc;
+        cell.index = model.kkindex;
         return cell;
     }
     VdTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier1];
@@ -286,8 +287,9 @@
     }
     VdResultModel *model = array[indexPath.row];
     cell.time = model.jgsj;
-    cell.bayonetName = [[model.sbxx firstObject] deviceName];
-    
+    LKXXModel *lkxxModel = [[[model.sbxx firstObject] lkxx] firstObject];
+    cell.bayonetName = lkxxModel.kkmc;
+    cell.index = model.kkindex;
     return cell;
     
 }

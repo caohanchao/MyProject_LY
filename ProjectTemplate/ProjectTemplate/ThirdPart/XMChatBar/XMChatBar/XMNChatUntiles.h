@@ -41,6 +41,9 @@ typedef NS_ENUM(NSUInteger, XMNMessageType){
     XMNMessageTypeLocation /**< 地理位置消息 */,
     XMNMessageTypeVideo /**< 视频消息 */,
     XMNMessageTypeReleaseTask /**< 发布任务 */,
+    XMNMessageTypeEmotions /**< 发gif 自定义图 */,
+    XMNMessageTypeFireImage /**< 发阅后即焚  */,
+    XMNMessageTypeFiles   /**< 发文件消息 >*/,
 };
 
 /**
@@ -69,6 +72,7 @@ typedef NS_ENUM(NSUInteger, XMNVoiceMessageState){
     XMNVoiceMessageStateDownloading,/**< 正在下载中 */
     XMNVoiceMessageStatePlaying,/**< 正在播放 */
     XMNVoiceMessageStateCancel,/**< 播放被取消 */
+    XMNVoiceMessageStateFinish,/**< 播放结束 */
 };
 
 
@@ -79,6 +83,7 @@ typedef NS_ENUM(NSUInteger, XMNChatMessageCellMenuActionType) {
     XMNChatMessageCellMenuActionTypeCopy, /**< 复制 */
     XMNChatMessageCellMenuActionTypeRelay, /**< 转发 */
     XMNChatMessageCellMenuActionTypeWithdraw, /**< 撤回 */
+    XMNChatMessageCellMenuActionTypeDelete, /**< 删除 */
 };
 
 
@@ -142,6 +147,20 @@ static NSString *const kXMNMessageConfigurationSendStateKey = @"com.XMFraker.kXM
  */
 static NSString *const kXMNMessageConfigurationTextKey = @"com.XMFraker.kXMNMessageConfigurationTextKey";
 
+/**
+ *  文件内容的key
+ */
+static NSString *const kXMNMessageConfigurationFileKey = @"com.XMFraker.kXMNMessageConfigurationFileKey";
+
+
+/**
+ *  文件状态的key
+ */
+static NSString *const kXMNMessageConfigurationFileStateKey = @"com.XMFraker.kXMNMessageConfigurationFileStateKey";
+/**
+ *  文件大小的key
+ */
+static NSString *const kXMNMessageConfigurationFileSizeKey = @"com.XMFraker.kXMNMessageConfigurationFileSizeKey";
 /**
  *  图片消息内容的key
  */

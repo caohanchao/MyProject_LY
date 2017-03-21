@@ -556,7 +556,18 @@
     [self.view addSubview:_mapBtnBtnsView];
 }
 
-
+- (NSMutableArray *)getMapAnnotations {
+    
+    NSMutableArray *tempArr = [NSMutableArray arrayWithArray:self.mapView.annotations];
+    
+    for (id annotation in self.mapView.annotations) {
+        if ([annotation isKindOfClass:[MAUserLocation class]]) {
+            [tempArr removeObject:annotation];
+            break;
+        }
+    }
+    return tempArr;
+}
 #pragma mark -
 #pragma mark 切换任务
 - (void)showOneTaskAnnontation:(NSNotification *)notification {
@@ -568,7 +579,7 @@
     self.jiLuSelct = @"YES";
     
     ZEBLog(@"----%@",self.mapView.annotations);
-    [self.mapView removeAnnotations:self.tempAnnontationArray];
+    [self.mapView removeAnnotations:[self getMapAnnotations]];
     [self.tempAnnontationArray removeAllObjects];
     
     if ([dic[taskId] isEqualToString:chooseAll]) {
@@ -690,13 +701,15 @@
     }else if ([annotation isKindOfClass:[StartAnnotation class]]) {
         
         StartAnnotation *annotation1 = (StartAnnotation *)annotation;
+
+        
         static NSString *pointReuseIndentifier = @"StartAnnotationView";
         StartPathAnnotationView *annotationView = (StartPathAnnotationView*)[mapView dequeueReusableAnnotationViewWithIdentifier:pointReuseIndentifier];
         if (annotationView == nil)
         {
             annotationView = [[StartPathAnnotationView alloc] initWithAnnotation:annotation1 reuseIdentifier:pointReuseIndentifier];
             annotationView.canShowCallout = NO;
-           
+            
         }
         if (annotation1.isBig) {
             if ([self isMeAlarm:annotation1.alarm]) {
@@ -715,9 +728,12 @@
         annotationView.aannotation = annotation1;
         annotation1.startPathAnnotationView = annotationView;
         return annotationView;
+        
+
     }else if ([annotation isKindOfClass:[StopAnnotation class]]) {
         
         StopAnnotation *annotation1 = (StopAnnotation *)annotation;
+        
         static NSString *pointReuseIndentifier = @"StopAnnotationView";
         StopPathAnnotationView *annotationView = (StopPathAnnotationView*)[mapView dequeueReusableAnnotationViewWithIdentifier:pointReuseIndentifier];
         if (annotationView == nil)
@@ -755,71 +771,79 @@
     }else if ([view isKindOfClass:[StartPathAnnotationView class]]) {
         [self reductionLastPolylineRendererAndLastAnnotationView];
         StartPathAnnotationView *startPathAnnotationView = (StartPathAnnotationView *)view;
-        StopPathAnnotationView *stopPathAnnotationView = [self getsstopAnnotationForPolylineId:startPathAnnotationView.aannotation.polylineID].stopPathAnnotationView;
-        UIImage *image1 = nil;
-        UIImage *image2 = nil;
-        if ([self isMeAlarm:startPathAnnotationView.aannotation.alarm]) {
-            image1 = [UIImage imageNamed:@"startpath_organ1.3"];
-        }else {
-            image1 = [UIImage imageNamed:@"startpath_blue1.3"];
+
+        
+        if (!startPathAnnotationView.aannotation.writePAth) {
+            StopPathAnnotationView *stopPathAnnotationView = [self getsstopAnnotationForPolylineId:startPathAnnotationView.aannotation.polylineID].stopPathAnnotationView;
+            UIImage *image1 = nil;
+            UIImage *image2 = nil;
+            if ([self isMeAlarm:startPathAnnotationView.aannotation.alarm]) {
+                image1 = [UIImage imageNamed:@"startpath_organ1.3"];
+            }else {
+                image1 = [UIImage imageNamed:@"startpath_blue1.3"];
+            }
+            if ([self isMeAlarm:startPathAnnotationView.aannotation.alarm]) {
+                image2 = [UIImage imageNamed:@"stoppath_organ1.3"];
+            }else {
+                image2 = [UIImage imageNamed:@"stoppath_blue1.3"];
+            }
+            startPathAnnotationView.image = image1;
+            stopPathAnnotationView.image = image2;
+            startPathAnnotationView.aannotation.isBig = YES;
+            stopPathAnnotationView.aannotation.isBig = YES;
+            self.lastStartPathAnnotationView = startPathAnnotationView;
+            self.lastStopPathAnnotationView = stopPathAnnotationView;
+            MAPolyline *thePolyline = [self getPolylineInPathArrayForPolylineId:startPathAnnotationView.aannotation.polylineID];
+            if ([thePolyline isKindOfClass:[MinePolyline class]]) {
+                MinePolyline *minePolyline = (MinePolyline *)thePolyline;
+                minePolyline.polylineRenderer.lineWidth = 8*1.3;
+                self.lastPolylineRenderer = minePolyline.polylineRenderer;
+            }else if ([thePolyline isKindOfClass:[OthersPolyline class]]) {
+                OthersPolyline *othersPolyline = (OthersPolyline *)thePolyline;
+                othersPolyline.polylineRenderer.lineWidth = 8*1.3;
+                self.lastPolylineRenderer = othersPolyline.polylineRenderer;
+            }
+            NSArray *arr = @[startPathAnnotationView.aannotation,stopPathAnnotationView.aannotation];
+            [self.mapView showAnnotations:arr edgePadding:UIEdgeInsetsMake(200, 50, 200, 50) animated:YES];
         }
-        if ([self isMeAlarm:startPathAnnotationView.aannotation.alarm]) {
-            image2 = [UIImage imageNamed:@"stoppath_organ1.3"];
-        }else {
-            image2 = [UIImage imageNamed:@"stoppath_blue1.3"];
-        }
-        startPathAnnotationView.image = image1;
-        stopPathAnnotationView.image = image2;
-        startPathAnnotationView.aannotation.isBig = YES;
-        stopPathAnnotationView.aannotation.isBig = YES;
-        self.lastStartPathAnnotationView = startPathAnnotationView;
-        self.lastStopPathAnnotationView = stopPathAnnotationView;
-        MAPolyline *thePolyline = [self getPolylineInPathArrayForPolylineId:startPathAnnotationView.aannotation.polylineID];
-        if ([thePolyline isKindOfClass:[MinePolyline class]]) {
-            MinePolyline *minePolyline = (MinePolyline *)thePolyline;
-            minePolyline.polylineRenderer.lineWidth = 8*1.3;
-            self.lastPolylineRenderer = minePolyline.polylineRenderer;
-        }else if ([thePolyline isKindOfClass:[OthersPolyline class]]) {
-            OthersPolyline *othersPolyline = (OthersPolyline *)thePolyline;
-            othersPolyline.polylineRenderer.lineWidth = 8*1.3;
-            self.lastPolylineRenderer = othersPolyline.polylineRenderer;
-        }
-        NSArray *arr = @[startPathAnnotationView.aannotation,stopPathAnnotationView.aannotation];
-        [self.mapView showAnnotations:arr edgePadding:UIEdgeInsetsMake(200, 50, 200, 50) animated:YES];
+        
     }else if ([view isKindOfClass:[StopPathAnnotationView class]]) {
         [self reductionLastPolylineRendererAndLastAnnotationView];
         StopPathAnnotationView *stopPathAnnotationView = (StopPathAnnotationView *)view;
-        StartPathAnnotationView *startPathAnnotationView = [self getstartAnnotationForPolylineId:stopPathAnnotationView.aannotation.polylineID].startPathAnnotationView;
-        UIImage *image1 = nil;
-        UIImage *image2 = nil;
-        if ([self isMeAlarm:startPathAnnotationView.aannotation.alarm]) {
-            image1 = [UIImage imageNamed:@"startpath_organ1.3"];
-        }else {
-            image1 = [UIImage imageNamed:@"startpath_blue1.3"];
+        if (!stopPathAnnotationView.aannotation.writePAth) {
+            StartPathAnnotationView *startPathAnnotationView = [self getstartAnnotationForPolylineId:stopPathAnnotationView.aannotation.polylineID].startPathAnnotationView;
+            UIImage *image1 = nil;
+            UIImage *image2 = nil;
+            if ([self isMeAlarm:startPathAnnotationView.aannotation.alarm]) {
+                image1 = [UIImage imageNamed:@"startpath_organ1.3"];
+            }else {
+                image1 = [UIImage imageNamed:@"startpath_blue1.3"];
+            }
+            if ([self isMeAlarm:startPathAnnotationView.aannotation.alarm]) {
+                image2 = [UIImage imageNamed:@"stoppath_organ1.3"];
+            }else {
+                image2 = [UIImage imageNamed:@"stoppath_blue1.3"];
+            }
+            stopPathAnnotationView.image = image2;
+            startPathAnnotationView.image = image1;
+            startPathAnnotationView.aannotation.isBig = YES;
+            stopPathAnnotationView.aannotation.isBig = YES;
+            self.lastStopPathAnnotationView = stopPathAnnotationView;
+            self.lastStartPathAnnotationView = startPathAnnotationView;
+            MAPolyline *thePolyline = [self getPolylineInPathArrayForPolylineId:stopPathAnnotationView.aannotation.polylineID];
+            if ([thePolyline isKindOfClass:[MinePolyline class]]) {
+                MinePolyline *minePolyline = (MinePolyline *)thePolyline;
+                minePolyline.polylineRenderer.lineWidth = 8*1.3;
+                self.lastPolylineRenderer = minePolyline.polylineRenderer;
+            }else if ([thePolyline isKindOfClass:[OthersPolyline class]]) {
+                OthersPolyline *othersPolyline = (OthersPolyline *)thePolyline;
+                othersPolyline.polylineRenderer.lineWidth = 8*1.3;
+                self.lastPolylineRenderer = othersPolyline.polylineRenderer;
+            }
+            NSArray *arr = @[startPathAnnotationView.aannotation,stopPathAnnotationView.aannotation];
+            [self.mapView showAnnotations:arr edgePadding:UIEdgeInsetsMake(200, 50, 200, 50) animated:YES];
         }
-        if ([self isMeAlarm:startPathAnnotationView.aannotation.alarm]) {
-            image2 = [UIImage imageNamed:@"stoppath_organ1.3"];
-        }else {
-            image2 = [UIImage imageNamed:@"stoppath_blue1.3"];
-        }
-        stopPathAnnotationView.image = image2;
-        startPathAnnotationView.image = image1;
-        startPathAnnotationView.aannotation.isBig = YES;
-        stopPathAnnotationView.aannotation.isBig = YES;
-        self.lastStopPathAnnotationView = stopPathAnnotationView;
-        self.lastStartPathAnnotationView = startPathAnnotationView;
-        MAPolyline *thePolyline = [self getPolylineInPathArrayForPolylineId:stopPathAnnotationView.aannotation.polylineID];
-        if ([thePolyline isKindOfClass:[MinePolyline class]]) {
-            MinePolyline *minePolyline = (MinePolyline *)thePolyline;
-            minePolyline.polylineRenderer.lineWidth = 8*1.3;
-            self.lastPolylineRenderer = minePolyline.polylineRenderer;
-        }else if ([thePolyline isKindOfClass:[OthersPolyline class]]) {
-            OthersPolyline *othersPolyline = (OthersPolyline *)thePolyline;
-            othersPolyline.polylineRenderer.lineWidth = 8*1.3;
-            self.lastPolylineRenderer = othersPolyline.polylineRenderer;
-        }
-        NSArray *arr = @[startPathAnnotationView.aannotation,stopPathAnnotationView.aannotation];
-        [self.mapView showAnnotations:arr edgePadding:UIEdgeInsetsMake(200, 50, 200, 50) animated:YES];
+        
     }
 }
 // 还原标记
@@ -1414,10 +1438,8 @@
             break;
         case 06:
         {
-            //            [LYRouter openURL:@"ly://ChatMapPhysicsViewController" completion:^(id result) {
-            //
-            //            }];
-            [self PopTrackPageWithEditType:1 WithFromWhere:0];
+            [DCURLRouter pushURLString:[NSString stringWithFormat:@"ly://NewMarkViewController"] animated:YES replace:NO];
+//            [self PopTrackPageWithEditType:1 WithFromWhere:0];
             //            NSDictionary *dict = @{@"editType":@(0),@"fromWhere":@(0)};
             //            [LYRouter openURL:@"ly://ChatMapPhysicsViewController" withUserInfo:dict completion:^(id result) {
             //
@@ -1484,6 +1506,9 @@
     NSString *myaAlarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
     _startAnnotation = [[StartAnnotation alloc] init];
     _startAnnotation.coordinate = self.currentUL.coordinate;
+
+    _startAnnotation.writePAth = YES;
+
     _startAnnotation.alarm = myaAlarm;
     [self.mapView addAnnotation:_startAnnotation];
 }
@@ -1494,6 +1519,9 @@
     NSString *myaAlarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
     _stopAnnotation = [[StopAnnotation alloc] init];
     _stopAnnotation.coordinate = self.currentUL.coordinate;
+
+    _stopAnnotation.writePAth = YES;
+
     _stopAnnotation.alarm = myaAlarm;
     [self.mapView addAnnotation:_stopAnnotation];
 }
@@ -1571,6 +1599,9 @@
     StartAnnotation *startAnnotation = [[StartAnnotation alloc] init];
     startAnnotation.coordinate = coordinate;
     startAnnotation.polylineID = polylineId;
+
+    startAnnotation.writePAth = NO;
+
     startAnnotation.alarm = alarm;
     [self.startPathArr addObject:startAnnotation];
 }
@@ -1579,6 +1610,9 @@
     StopAnnotation *stopAnnotation = [[StopAnnotation alloc] init];
     stopAnnotation.coordinate = coordinate;
     stopAnnotation.polylineID = polylineId;
+
+    stopAnnotation.writePAth = NO;
+
     stopAnnotation.alarm = alarm;
     [self.stopPathArr addObject:stopAnnotation];
 }

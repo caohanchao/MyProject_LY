@@ -100,6 +100,35 @@
     return array;
 
 }
+- (NSMutableArray *)selectAllSuspects {
+    
+    __block NSMutableArray *array = [NSMutableArray array];
+    
+    [[ZEBDatabaseHelper sharedInstance] inDatabase:^(FMDatabase *db)
+     {
+         FMResultSet *set = [db executeQuery:@"select * from sl_suspectalllist order by SL_create_time desc "];
+         while (set.next) {
+             SuspectlistModel *model = [[SuspectlistModel alloc] init];
+             model.create_time = [set stringForColumn:@"SL_create_time"];
+             model.createuser = [set stringForColumn:@"SL_createuser"];
+             model.gid = [set stringForColumn:@"SL_gid"];
+             model.gname = [set stringForColumn:@"SL_gname"];
+             model.headpic = [set stringForColumn:@"SL_headpic"];
+             model.suspectdec = [set stringForColumn:@"SL_suspectdec"];
+             model.suspectid = [set stringForColumn:@"SL_suspectid"];
+             model.suspectname = [set stringForColumn:@"SL_suspectname"];
+             model.suspecttype = [set stringForColumn:@"SL_suspecttype"];
+             model.username = [set stringForColumn:@"SL_username"];
+             [array addObject:model];
+         }
+         [set close];
+         
+     }];
+    
+    return array;
+    
+}
+
 - (SuspectlistModel *)selectSuspectByWorkId:(NSString *)workId {
 
     __block SuspectlistModel *tempModel;

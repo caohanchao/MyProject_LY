@@ -10,7 +10,8 @@
 
 @interface ZEBCache : NSObject
 
-
+// 清除根聊天有关的图片 语音 视频
++ (void)clearAllChat;
 //视频缓存的路径
 + (NSString *)videoCacheUrlString:(NSString *)urlString chatId:(NSString *)chatId;
 //语音缓存的路径
@@ -21,6 +22,12 @@
 + (void)clearVideoCaches;
 //删除指定消息的视频缓存
 + (void)clearVideoCachesChatId:(NSString *)chatId;
+//高清图片缓存的路径
++ (NSURL *)originalImageCacheUrlStringUrl:(NSString *)url;
+//高清图片缓存的路径
++ (void)originalImageCacheUrlString:(UIImage *)image url:(NSString *)url;
+//获取缓存高清图片
++ (UIImage *)originalImageCacheUrl:(NSString *)url;
 //图片缓存的路径
 + (void)imageCacheUrlString:(UIImage *)image alarm:(NSString *)alarm;
 //获取缓存图片

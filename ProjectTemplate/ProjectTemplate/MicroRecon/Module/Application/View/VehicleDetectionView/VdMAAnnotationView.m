@@ -11,7 +11,7 @@
 #import "VdCalloutView.h"
 
 #define kCalloutWidth       170.0
-#define kCalloutHeight      70.0
+#define kCalloutHeight      85.0
 
 
 @interface VdMAAnnotationView ()
@@ -30,11 +30,12 @@
     if (self) {
         
         self.image = [UIImage imageNamed:@"vd_annotation"];
-//        self.titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, width(self.frame), height(self.frame)-4)];
-//        self.titleLabel.textAlignment = NSTextAlignmentCenter;
-//        self.titleLabel.font = ZEBFont(12);
-//        self.titleLabel.textColor = zWhiteColor;
-//        [self addSubview:self.titleLabel];
+        self.centerOffset = CGPointMake(0, -13);
+        self.titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, width(self.frame), height(self.frame)-4)];
+        self.titleLabel.textAlignment = NSTextAlignmentCenter;
+        self.titleLabel.font = ZEBFont(12);
+        self.titleLabel.textColor = zWhiteColor;
+        [self addSubview:self.titleLabel];
         
     }
     
@@ -66,7 +67,7 @@
         self.calloutView.LaneNumber = [LZXHelper isNullToString:self.aannotation.LaneNumber];
         self.calloutView.bayonetName = [LZXHelper isNullToString:self.aannotation.bayonetName];
         self.calloutView.iconUrl = [LZXHelper isNullToString:self.aannotation.iconUrl];
-        
+        self.calloutView.kknum = [LZXHelper isNullToString:self.aannotation.kknum];
         self.calloutView.model = self.aannotation.model;
         
         [self addSubview:self.calloutView];
@@ -94,15 +95,15 @@
     
     return inside;
 }
-//- (void)setAannotation:(VdAnnotation *)aannotation {
-//    _aannotation = aannotation;
-//    if (_aannotation.index+1 >= 100) {
-//        self.titleLabel.font = ZEBFont(10);
-//    }else {
-//        self.titleLabel.font = ZEBFont(12);
-//    }
-//    self.titleLabel.text = [NSString stringWithFormat:@"%ld",_aannotation.index+1];
-//}
+- (void)setAannotation:(VdAnnotation *)aannotation {
+    _aannotation = aannotation;
+    if (_aannotation.index+1 >= 100) {
+        self.titleLabel.font = ZEBFont(10);
+    }else {
+        self.titleLabel.font = ZEBFont(12);
+    }
+    self.titleLabel.text = [NSString stringWithFormat:@"%ld",_aannotation.index];
+}
 /*
 // Only override drawRect: if you perform custom drawing.
 // An empty implementation adversely affects performance during animation.

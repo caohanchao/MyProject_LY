@@ -11,5 +11,10 @@
 @interface NSString (Emoji)
 
 + (BOOL)stringContainsEmoji:(NSString *)string;
+//过滤表情
++ (NSString *)filterEmoji:(NSString *)string;
+
++ (BOOL)containEmoji:(NSString *)string;
+
 
 @end

@@ -27,7 +27,7 @@
 #import "ChatMapViewController.h"
 #import "UIButton+EnlargeEdge.h"
 #import "CreateTaskViewController.h"
-
+#import "UITabBar+badge.h"
 
 #define LeftMargin 8
 #define TopMargin 10
@@ -69,7 +69,6 @@
 - (void)initall {
 
     
-    
     [self setNavigationBar];
     [self createSearBtn];
     [self createFRbtn];
@@ -78,6 +77,11 @@
     [self createDownMenu];
     [self creatNotification];
 
+}
+
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
 }
 - (void)viewWillAppear:(BOOL)animated
 {
@@ -102,6 +106,8 @@
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(groupChat:) name: PushGroupChatNotification object:nil];
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(taskGroupChat:) name: PushTaskGroupChatNotification object:nil];
+    
+    
 }
 
 
@@ -277,14 +283,15 @@
     CGFloat widthBtn = btnMargin;
     
     NSArray *titleAry = @[@"好友",@"组队",@"单位"];
-    NSArray *imageAry = @[@"contact_friend_icon",@"contact_team_icon",@"contact_organization_icon"];
+    // NSArray *imageAry = @[@"contact_friend_icon",@"contact_team_icon",@"contact_organization_icon"];
+    NSArray *imageAry = @[@"C_haoyou",@"C_zudui",@"C_danwei"];
     for (int i = 0; i < 3; i++) {
         UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
 
         if (i == 0) {
             btn.frame = CGRectMake(left+i*(widthBtn+wid) , TopMargin, widthBtn, heightBtn);
         }else if (i == 1){
-            btn.frame = CGRectMake(left+i*(widthBtn+wid) , TopMargin, widthBtn+10, heightBtn);
+            btn.frame = CGRectMake(left+i*(widthBtn+wid+5) , TopMargin, widthBtn, heightBtn);
         }else if (i == 2){
             btn.frame = CGRectMake(left+i*(widthBtn+wid+5), TopMargin, widthBtn, heightBtn);
         }
@@ -301,7 +308,7 @@
         title.frame = CGRectMake(minX(btn), maxY(btn), widthBtn, 80 - 2*TopMargin - heightBtn+5);
         if(i == 1)
         {
-            title.frame = CGRectMake(minX(btn)+5, maxY(btn), widthBtn, 80 - 2*TopMargin - heightBtn+5);
+            title.frame = CGRectMake(minX(btn), maxY(btn), widthBtn, 80 - 2*TopMargin - heightBtn+5);
         }
         
 
@@ -508,7 +515,8 @@
     self.menuView = menuView;
     
 }
-
+#pragma mark -
+#pragma mark rightbutton
 - (void)rightBtn:(UIButton *)btn {
 
     if (self.menuView.isShow) {
@@ -585,9 +593,12 @@
 
     NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
     if ([frModel.alarm isEqualToString:alarm]) {
-        UserInfoViewController *userInfoController = [[UserInfoViewController alloc] init];
-        userInfoController.hidesBottomBarWhenPushed = YES;
-        [self.navigationController pushViewController:userInfoController animated:YES];
+        self.tabBarController.selectedIndex = 0;
+        self.tabBarController.tabBar.hidden = NO;
+        self.navigationController.navigationBar.hidden = NO;
+        
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"skipChatNotification" object:frModel];
+     
     }else {
         UserDesInfoController *userDes = [[UserDesInfoController alloc] init];
         userDes.alarm = frModel.alarm;
@@ -602,6 +613,7 @@
     controller.hidesBottomBarWhenPushed = YES;
     [self.navigationController pushViewController:controller animated:YES];
     [[NSNotificationCenter defaultCenter]postNotificationName:RemoveTag object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationName:tabbarHiddenRedLabel object:@"1"];
     
 }
 #pragma mark -
@@ -617,7 +629,8 @@
         
         ChatMapViewController *chatMap = [[ChatMapViewController alloc] initWithChatType:XMNMessageChatGroup chatname:model.gname type:2];
         chatMap.chatView = [[ChatView alloc] init];
-        
+        [user setObj:model.gid forKey:@"chatId"];
+        [user setObj:@"G" forKey:@"chatType"];
         [[[DBManager sharedManager] UserlistDAO] clearNewMsgCout:model.gid];
         chatMap.hidesBottomBarWhenPushed = YES;
         [self.navigationController pushViewController:chatMap animated:YES];
@@ -625,7 +638,8 @@
     }else {
         
         XMNChatController *chatC = [[XMNChatController alloc] initWithChatType:XMNMessageChatGroup];
-        
+        [user setObj:model.gid forKey:@"chatId"];
+        [user setObj:@"G" forKey:@"chatType"];
         chatC.chatterName = model.gname;
         chatC.cType = GroupTeam;
         [[[DBManager sharedManager] UserlistDAO] clearNewMsgCout:model.gid];

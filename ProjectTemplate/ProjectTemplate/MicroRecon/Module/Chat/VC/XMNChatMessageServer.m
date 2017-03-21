@@ -15,6 +15,9 @@
 #import "UserInfoModel.h"
 #import "UserAllModel.h"
 #import "DisplayContentLogic.h"
+#import "UIImage+UIImageScale.h"
+#import "UIImage+Property.h"
+#import "ZEBURLSessionWrapperOperation.h"
 
 @interface XMNChatMessageServer ()
 
@@ -32,6 +35,7 @@
         // 注册观察者
         // 观察者 self 在收到名为 @"NOTIFICATION_NAME" 的事件是执行 @selector(execute:)，最后一个参数是表示会对哪个发送者对象发出的事件作出响应，nil 时表示接受所有发送者的事件
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(execute:) name: @"ReceiveChatMessage" object:nil];
+       
     }
     
     return self;
@@ -40,6 +44,7 @@
 - (void)dealloc {
     // 注销观察者
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    
 }
 
 /**
@@ -77,7 +82,6 @@
 
 
 - (void)sendMessage:(NSDictionary *)message withProgressBlock:(XMNChatServerProgressBlock)progressBlock completeBlock:(XMNChatServerCompleteBlock)completeBlock {
-    
     
     
     NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
@@ -125,6 +129,34 @@
 
     NSNumber *number = message[kXMNMessageConfigurationTypeKey];
     switch ([number unsignedIntegerValue]) {
+        case XMNMessageTypeEmotions:
+        {
+            data = message[kXMNMessageConfigurationTextKey];
+            
+            NSString *atAlarm = [user objectForKey:atAlarms];
+            
+            
+            NSString *displayContent =[[DisplayContentLogic sharedManager] displayContentLogicWithChatType:chatType withChatID:chatId withMessageType:[number unsignedIntegerValue] withData:data];
+            
+            NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"ATALARM\":\"%@\",\"RID\":\"%@\",\"CUID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"T\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"DISPLAY_CONTENT\":\"%@\",\"FIRE\":\"%@\"}}", alarm,atAlarm, chatId, cuid ,chatType,longitude,latitude,data, DE_type, DE_name,displayContent,fire];
+            
+            [[ChatLogic sharedManager] logicSendMessage:content progress:^(NSProgress * _Nonnull progress) {
+                
+                
+                completeBlock(XMNMessageSendStateSending);
+            } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {
+                
+                completeBlock(XMNMessageSendSuccess);
+                [[[DBManager sharedManager] messageResendSQ] deleteMessageByCuid:cuid];
+                
+            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                completeBlock(XMNMessageSendFail);
+                
+                [[ChatLogic sharedManager] saveMessageWithMessageOfSendFailureState:message WithMessageType:@"T" WithCuid:cuid];
+                
+            }];
+        }
+            break;
         case XMNMessageTypeText:
         {
             data = message[kXMNMessageConfigurationTextKey];
@@ -134,7 +166,7 @@
         
             NSString *displayContent =[[DisplayContentLogic sharedManager] displayContentLogicWithChatType:chatType withChatID:chatId withMessageType:[number unsignedIntegerValue] withData:data];
             
-            NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"ATALARM\":\"%@\",\"RID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"T\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"DISPLAY_CONTENT\":\"%@\",\"FIRE\":\"%@\"}}", alarm,atAlarm, chatId, chatType,longitude,latitude,data, DE_type, DE_name,displayContent,fire];
+           NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"ATALARM\":\"%@\",\"RID\":\"%@\",\"CUID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"T\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"DISPLAY_CONTENT\":\"%@\",\"FIRE\":\"%@\"}}", alarm,atAlarm, chatId,cuid,chatType,longitude,latitude,data, DE_type, DE_name,displayContent,fire];
 
             [[ChatLogic sharedManager] logicSendMessage:content progress:^(NSProgress * _Nonnull progress) {
                 
@@ -170,7 +202,11 @@
             } else if ([@"G" isEqualToString:chatType]) {
                 maxQid = [[[DBManager sharedManager] MessageDAO] getMaxQidGroup];
             }
-            
+            if (maxQid == 0) {
+                NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
+                NSString *chatId = [user objectForKey:@"chatId"];
+                maxQid = [[[DBManager sharedManager] maxQidListSQ] selectMaxQidByChatId:chatId];
+            }
             ICometModel *model = [[ICometModel alloc] init];
             UserInfoModel *userModel = [[[DBManager sharedManager] userDetailSQ] selectUserDetail];
             model.cmd = @"1";
@@ -189,17 +225,31 @@
             
             [[[DBManager sharedManager] uploadingSQ] insertUploading:model];
             //[[[DBManager sharedManager] UserlistDAO] insertOrUpdateUserlist:model];
-
-            [[HttpsManager sharedManager] upload:image progress:^(NSProgress * _Nonnull progress) {
+            
+            
+          NSURLSessionUploadTask* uploadTask = [[HttpsManager sharedManager] uploadImage:image progress:^(NSProgress * _Nonnull progress) {
                 progressBlock(progress.fractionCompleted);
-            } success:^(NSURLSessionDataTask * _Nonnull task, id _Nullable response) {
+            } success:^(NSURLSessionDataTask * _Nonnull task, id _Nullable response, UIImage * _Nullable theImage) {
                 
                 UploadModel *model = [UploadModel uploadWithData:response];
                 
                 NSString *displayContent =[[DisplayContentLogic sharedManager] displayContentLogicWithChatType:chatType withChatID:chatId withMessageType:[number unsignedIntegerValue] withData:data];
-                
+                NSString *url = model.url;
+                //缓存
+                SDWebImageManager *manager = [SDWebImageManager sharedManager];
+                UIImage *tempImage = [UIImage imageWithData:theImage.imageData];
+                if ([theImage.type isEqualToString:@"original"]) { //包含原图
+                    
+                    [ZEBCache originalImageCacheUrlString:tempImage url:model.url];
+                    [manager saveImageToCache:[tempImage newOriginalOfChat] forURL:[NSURL URLWithString:model.url]];
+                    
+                    url = [NSString stringWithFormat:@"%@?type=1&size=%@&width=10&height=10",model.url,theImage.Bytes];
+                }else {
+                    
+                    [manager saveImageToCache:tempImage forURL:[NSURL URLWithString:model.url]];
+                }
 
-                NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"RID\":\"%@\",\"CUID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"P\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"DISPLAY_CONTENT\":\"%@\"}}", alarm, chatId,cuid,chatType,longitude,latitude, model.url, DE_type, DE_name,displayContent];
+                NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"RID\":\"%@\",\"CUID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"P\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"DISPLAY_CONTENT\":\"%@\",\"FIRE\":\"%@\"}}", alarm, chatId,cuid,chatType,longitude,latitude, url, DE_type, DE_name,displayContent,fire];
                 
                 
                 [[ChatLogic sharedManager] logicSendMessage:content progress:^(NSProgress * _Nonnull progress) {
@@ -220,6 +270,90 @@
                 [[[DBManager sharedManager] uploadingSQ] deleteUploading:cuid];
                 [[ChatLogic sharedManager] saveMessageWithMessageOfSendFailureState:message WithMessageType:@"P" WithCuid:cuid];
             }];
+            
+        }
+            break;
+        case XMNMessageTypeFireImage:
+        {
+            UIImage *image = message[kXMNMessageConfigurationImageKey];
+            
+            //生成唯一标志
+            //            NSString *cuid = [LZXHelper createCUID];
+            
+            NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
+            [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+            NSString *time = [formatter stringFromDate:[NSDate date]];
+            NSInteger maxQid;
+            if ([@"S" isEqualToString:chatType]) {
+                maxQid = [[[DBManager sharedManager] MessageDAO] getMaxQidSingle];
+            } else if ([@"G" isEqualToString:chatType]) {
+                maxQid = [[[DBManager sharedManager] MessageDAO] getMaxQidGroup];
+            }
+            
+            ICometModel *model = [[ICometModel alloc] init];
+            UserInfoModel *userModel = [[[DBManager sharedManager] userDetailSQ] selectUserDetail];
+            model.cmd = @"1";
+            model.sid = alarm;
+            model.rid = chatId;
+            model.type = chatType;
+            model.sname = userModel.name;
+            model.headpic = userModel.headpic;
+            model.longitude = @"112";
+            model.latitude = @"30";
+            model.mtype = @"P";
+            model.data = @"";
+            model.qid = maxQid;
+            model.time = time;
+            model.cuid = cuid;
+            
+            [[[DBManager sharedManager] uploadingSQ] insertUploading:model];
+            //[[[DBManager sharedManager] UserlistDAO] insertOrUpdateUserlist:model];
+            
+            
+            NSURLSessionUploadTask* uploadTask = [[HttpsManager sharedManager] uploadImage:image progress:^(NSProgress * _Nonnull progress) {
+                progressBlock(progress.fractionCompleted);
+            } success:^(NSURLSessionDataTask * _Nonnull task, id _Nullable response, UIImage * _Nullable theImage) {
+                
+                UploadModel *model = [UploadModel uploadWithData:response];
+                
+                NSString *displayContent =[[DisplayContentLogic sharedManager] displayContentLogicWithChatType:chatType withChatID:chatId withMessageType:[number unsignedIntegerValue] withData:data];
+                NSString *url = model.url;
+                //缓存
+                SDWebImageManager *manager = [SDWebImageManager sharedManager];
+                UIImage *tempImage = [UIImage imageWithData:theImage.imageData];
+                if ([theImage.type isEqualToString:@"original"]) { //包含原图
+                    
+                    [ZEBCache originalImageCacheUrlString:tempImage url:model.url];
+                    [manager saveImageToCache:[tempImage newOriginalOfChat] forURL:[NSURL URLWithString:model.url]];
+                    
+                    url = [NSString stringWithFormat:@"%@?type=1&size=%@&width=10&height=10",model.url,theImage.Bytes];
+                }else {
+                    
+                    [manager saveImageToCache:tempImage forURL:[NSURL URLWithString:model.url]];
+                }
+                
+                NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"RID\":\"%@\",\"CUID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"P\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"DISPLAY_CONTENT\":\"%@\",\"FIRE\":\"%@\"}}", alarm, chatId,cuid,chatType,longitude,latitude, url, DE_type, DE_name,displayContent,fire];
+                
+                
+                [[ChatLogic sharedManager] logicSendMessage:content progress:^(NSProgress * _Nonnull progress) {
+                    completeBlock(XMNMessageSendStateSending);
+                } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {
+                    completeBlock(XMNMessageSendSuccess);
+                    [[[DBManager sharedManager] messageResendSQ] deleteMessageByCuid:cuid];
+                } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                    
+                    completeBlock(XMNMessageSendFail);
+                    [[[DBManager sharedManager] uploadingSQ] deleteUploading:cuid];
+                    [[ChatLogic sharedManager] saveMessageWithMessageOfSendFailureState:message WithMessageType:@"P" WithCuid:cuid];
+                }];
+                
+            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                
+                completeBlock(XMNMessageSendFail);
+                [[[DBManager sharedManager] uploadingSQ] deleteUploading:cuid];
+                [[ChatLogic sharedManager] saveMessageWithMessageOfSendFailureState:message WithMessageType:@"P" WithCuid:cuid];
+            }];
+            
         }
             break;
         case XMNMessageTypeVoice:
@@ -237,7 +371,7 @@
                 
                 NSString *displayContent =[[DisplayContentLogic sharedManager] displayContentLogicWithChatType:chatType withChatID:chatId withMessageType:[number unsignedIntegerValue] withData:data];
                 
-                NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"RID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"S\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"VOICETIME\":\"%d\",\"DISPLAY_CONTENT\":\"%@\"}}", alarm, chatId, chatType,longitude,latitude, model.url, DE_type,DE_name , (int)voiceTime.doubleValue,displayContent];
+                NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"RID\":\"%@\",\"CUID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"S\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"VOICETIME\":\"%d\",\"DISPLAY_CONTENT\":\"%@\",\"FIRE\":\"%@\"}}", alarm, chatId,cuid, chatType,longitude,latitude, model.url, DE_type,DE_name , (int)voiceTime.doubleValue,displayContent,fire];
                 
                 [[[DBManager sharedManager] messageResendSQ] deleteMessageByCuid:cuid];
                 
@@ -268,7 +402,7 @@
 
             data = [NSString stringWithFormat:@"locationUrl=%@&locationText=%@", locationUrl, locationText];
             
-            NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"RID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"L\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"DISPLAY_CONTENT\":\"%@\"}}", alarm, chatId, chatType,longitude,latitude, data, DE_type,DE_name, displayContent];
+            NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"RID\":\"%@\",\"CUID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"L\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"DISPLAY_CONTENT\":\"%@\"}}", alarm, chatId,cuid, chatType,longitude,latitude, data, DE_type,DE_name, displayContent];
             
 
             
@@ -350,7 +484,7 @@
                     
                     NSString *displayContent =[[DisplayContentLogic sharedManager] displayContentLogicWithChatType:chatType withChatID:chatId withMessageType:[number unsignedIntegerValue] withData:data];
                     
-                    NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"RID\":\"%@\",\"CUID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"V\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"VIDEOPIC\":\"%@\",\"DISPLAY_CONTENT\":\"%@\"}}", alarm, chatId,cuid,chatType,longitude,latitude, videoUrl, DE_type,DE_name, videoImageUrl,displayContent];
+                     NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"RID\":\"%@\",\"CUID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"V\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"VIDEOPIC\":\"%@\",\"DISPLAY_CONTENT\":\"%@\"}}", alarm, chatId,cuid,chatType,longitude,latitude, videoUrl, DE_type,DE_name, videoImageUrl,displayContent];
                     
 
                     // 发送消息
@@ -386,6 +520,86 @@
             
         }
             break;
+        case XMNMessageTypeFiles:
+        {
+            
+            CJFileObjModel *model = message[kXMNMessageConfigurationFileKey];
+            
+            NSString *filePath = model.filePath;
+            
+            NSString *fileName = model.name;
+            NSString *fileSize = model.fileSize;
+            NSString *fileBytes = [NSString stringWithFormat:@"%lf", model.fileSizefloat];
+            
+            [[HttpsManager sharedManager] uploadFilesWithURL:filePath withFileName:fileName progress:^(NSProgress * _Nonnull progress) {
+                progressBlock(progress.fractionCompleted);
+            } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {
+                UploadModel *uploadModel = [UploadModel uploadWithData:reponse];
+                
+                NSInteger maxQid = [message[kXMNMessageConfigurationQIDKey] integerValue];
+                
+                if (!maxQid) {
+                    if ([@"S" isEqualToString:chatType]) {
+                        maxQid = [[[DBManager sharedManager] MessageDAO] getMaxQidSingle];
+                    } else if ([@"G" isEqualToString:chatType]) {
+                        maxQid = [[[DBManager sharedManager] MessageDAO] getMaxQidGroup];
+                    }
+                }
+                
+                NSString *displayContent =[[DisplayContentLogic sharedManager] displayContentLogicWithChatType:chatType withChatID:chatId withMessageType:[number unsignedIntegerValue] withData:data];
+                
+                NSString *data = [NSString stringWithFormat:@"{\\\"fileurl\\\":\\\"%@\\\",\\\"filename\\\":\\\"%@\\\",\\\"filesize\\\":\\\"%@\\\",\\\"filelocalpath\\\":\\\"%@\\\",\\\"filebytes\\\":\\\"%@\\\"}",uploadModel.url,fileName,fileSize,filePath,fileBytes];
+                
+//                NSString *data = [NSString stringWithFormat:@"{\"fileurl\":\"%@\",\"filename\":\"%@\",\"filesize\":\"%@\",\"filelocalpath\":\"%@\",\"filebytes\":\"%@\"}",uploadModel.url,fileName,fileSize,filePath,fileBytes];
+                
+                NSString *content = [NSString stringWithFormat:@"{\"CMD\":\"1\",\"SID\":\"%@\",\"RID\":\"%@\",\"CUID\":\"%@\",\"TYPE\":\"%@\",\"GPS\":{\"H\":\"%@\",\"W\":\"%@\"},\"MSG\":{\"MTYPE\":\"D\",\"DATA\":\"%@\",\"DE_type\":\"%@\",\"DE_name\":\"%@\",\"DISPLAY_CONTENT\":\"%@\"}}", alarm, chatId,cuid, chatType,longitude,latitude, data, DE_type,DE_name, displayContent];
+                
+                
+                //存数据库
+                NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
+                [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+                NSString *time = [formatter stringFromDate:[NSDate date]];
+                
+                ICometModel *model = [[ICometModel alloc] init];
+                UserInfoModel *userModel = [[[DBManager sharedManager] userDetailSQ] selectUserDetail];
+                model.cmd = @"1";
+                model.sid = alarm;
+                model.rid = chatId;
+                model.type = chatType;
+                model.sname = userModel.name;
+                model.headpic = userModel.headpic;
+                model.longitude = @"";
+                model.latitude = @"";
+                model.mtype = @"D";
+                model.qid = maxQid;
+                model.time = time;
+                model.videopic = @"";
+                model.cuid = cuid;
+                model.data = data;
+                [[[DBManager sharedManager] uploadingSQ] insertUploading:model];
+                
+                // 发送消息
+                [[ChatLogic sharedManager] logicSendMessage:content progress:^(NSProgress * _Nonnull progress) {
+                    completeBlock(XMNMessageSendStateSending);
+                } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {
+                    completeBlock(XMNMessageSendSuccess);
+                    [[[DBManager sharedManager] uploadingSQ] deleteUploading:cuid];
+//                    [[[DBManager sharedManager] messageResendSQ] deleteMessageByCuid:cuid];
+                } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                    completeBlock(XMNMessageSendFail);
+                    [[[DBManager sharedManager] uploadingSQ] deleteUploading:cuid];
+                    
+
+                }];
+                
+                
+            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                completeBlock(XMNMessageSendFail);
+            }];
+            
+        }
+            break;
+            
         case XMNMessageTypeSystem:
         {
             
@@ -404,9 +618,25 @@
 
 - (void)receiveMessage:(ICometModel *) model {
     
+    NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
+    NSString *alarm = [user objectForKey:@"alarm"];
+    
     XMNMessageType messageType = XMNMessageTypeImage;
+    if ([model.FIRE containsString:@"LOCK"]) {
+        if ([model.mtype isEqualToString:@"P"])
+        {
+            messageType = XMNMessageTypeFireImage;
+        }
+        
+    }
+    
+    
     if ([@"T" isEqualToString:model.mtype]) {
-        messageType = XMNMessageTypeText;
+        if ([model.data rangeOfString:@"[img]file:///storage/emulated/0/MicroRecon/Emoticons/"].location == NSNotFound) {
+            messageType = XMNMessageTypeText;
+        }else {
+            messageType = XMNMessageTypeEmotions;
+        }
     } else if ([@"P" isEqualToString:model.mtype]) {
         messageType = XMNMessageTypeImage;
     } else if ([@"S" isEqualToString:model.mtype]) {
@@ -415,8 +645,10 @@
         messageType = XMNMessageTypeLocation;
     } else if ([@"V" isEqualToString:model.mtype]) {
         messageType = XMNMessageTypeVideo;
-    }else {
-        messageType = XMNMessageTypeText;
+    } else if ([@"D" isEqualToString:model.mtype]) {
+        messageType = XMNMessageTypeFiles;
+    } else {
+        messageType = XMNMessageTypeSystem;
     }
 //    XMNMessageType messageType = random() % 5 + 1;
     NSMutableDictionary *messageDict = [NSMutableDictionary dictionary];
@@ -427,7 +659,14 @@
         case XMNMessageTypeText:
             messageDict[kXMNMessageConfigurationTextKey] = model.data;
             break;
+        case XMNMessageTypeEmotions:
+            messageDict[kXMNMessageConfigurationTextKey] = model.data;
+            break;
         case XMNMessageTypeImage:
+            
+            messageDict[kXMNMessageConfigurationImageKey]= model.data;
+            break;
+        case XMNMessageTypeFireImage:
             
             messageDict[kXMNMessageConfigurationImageKey]= model.data;
             break;
@@ -444,16 +683,26 @@
             messageDict[kXMNMessageConfigurationTextKey] = [model.data substringFromIndex:(rangeT.location+rangeT.length)];
           
         }
+            break;
         case XMNMessageTypeVideo:
         {
             
             messageDict[kXMNMessageConfigurationVideoKey]= model.data;
             messageDict[kXMNMessageConfigurationImageKey]= model.videopic;
         }
+            
             break;
+        case XMNMessageTypeFiles:
+        {
+            messageDict[kXMNMessageConfigurationFileKey] = model.data;
+            messageDict[kXMNMessageConfigurationFileStateKey] = @(0); //收消息后为未接收
+//            messageDict[kXMNMessageConfigurationVideoKey]= model.data;
+//            messageDict[kXMNMessageConfigurationImageKey]= model.videopic;
+        }
+            
             break;
         case XMNMessageTypeSystem:
-            messageDict[kXMNMessageConfigurationTextKey] = @"2015-11-22";
+//            messageDict[kXMNMessageConfigurationTextKey] = @"2015-11-22";
 
         default:
             break;
@@ -466,8 +715,11 @@
 //    messageDict[kXMNMessageConfigurationTimeScopeKey] = [self isTimeScopeType:model.time withDict:messageDict] ? @"begin" : @"during";
     
     messageDict[kXMNMessageConfigurationTypeKey] = @(messageType);
-    messageDict[kXMNMessageConfigurationOwnerKey] = @(messageType == XMNMessageTypeSystem ? XMNMessageOwnerSystem : XMNMessageOwnerOther);
     
+    messageDict[kXMNMessageConfigurationOwnerKey] = @(messageType == XMNMessageTypeSystem ? XMNMessageOwnerSystem : XMNMessageOwnerOther);
+    if ([model.sid isEqualToString:alarm]) {
+        messageDict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSelf);
+    }
     messageDict[kXMNMessageConfigurationGroupKey] = @([@"G" isEqualToString:model.type] ? XMNMessageChatGroup : XMNMessageChatSingle);
     
     UserAllModel *uModel = [[[DBManager sharedManager] personnelInformationSQ] selectDepartmentmemberlistById:model.sid];
@@ -475,9 +727,41 @@
     messageDict[kXMNMessageConfigurationNicknameKey] = uModel.RE_name;
     messageDict[kXMNMessageConfigurationDETypeKey] = model.DE_type;
     messageDict[kXMNMessageConfigurationDENameKey] = model.DE_name;
-    NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
-    NSString *alarm = [user objectForKey:@"alarm"];
+
+    
+    
+    if ([@"1" isEqualToString:model.cmd])
+    {
+        if ([model.FIRE containsString:@"LOCK"]) {
+            messageDict[kXMNMessageConfigurationFireKey] = @"LOCK";
+             if ([model.mtype isEqualToString:@"P"])
+             {
+                  messageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeFireImage);
+             }
+           
+        }
+    }
+    else if ([@"2" isEqualToString:model.cmd])
+    {
+        
+    }
+    else if ([@"3" isEqualToString:model.cmd])
+    {
+        messageDict[kXMNMessageConfigurationTextKey] = model.data;
+        messageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeSystem);
+        messageDict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSystem);
+    }
+    else if ([@"4" isEqualToString:model.cmd])
+    {
+        if ([model.mtype isEqualToString:@"7"]){
+            messageDict[kXMNMessageConfigurationTextKey] = model.data;
+            messageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeSystem);
+            messageDict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSystem);
+        }
+    }
+    
     if ([@"5" isEqualToString:model.cmd]) {//任务
+        
         messageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeReleaseTask);
         messageDict[kXMNMessageConfigurationTextKey] = model.data;
         if ([model.sid isEqualToString:alarm]) {

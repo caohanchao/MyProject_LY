@@ -52,4 +52,12 @@
 #pragma mark -
 #pragma mark 得到草稿箱的展示图片
 + (UIImage *)getIcon:(NSString *)my_type  type:(NSString *)type;
+
+#pragma mark - 取消系统菜单的弹框
++ (void) isMenuvisibleOfSystem ;
+
++ (NSDictionary *) jsonDataToDictionary:(NSString *)jsondata;
+
+
+
 @end

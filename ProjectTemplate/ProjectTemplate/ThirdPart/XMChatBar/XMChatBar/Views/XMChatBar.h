@@ -13,7 +13,7 @@
 #import <UIKit/UIKit.h>
 #import <MAMapKit/MAMapKit.h>
 #import <AMapSearchKit/AMapSearchKit.h>
-
+#import "CJFileObjModel.h"
 
 @class ZMLPlaceholderTextView;
 /**
@@ -38,6 +38,7 @@ typedef NS_ENUM(NSUInteger, ChatFireMessageType){
     messageUNLock /**<阅后即焚已读*/,
     messageLock /**< 阅后即焚消息*/,
     messageRead /**<阅后即焚已读*/,
+    messageUnknow /**<未知消息*/,
 };
 
 @protocol XMChatBarDelegate;
@@ -88,7 +89,7 @@ typedef NS_ENUM(NSUInteger, ChatFireMessageType){
  *  @param chatBar
  *  @param pictures 需要发送的图片信息
  */
-- (void)chatBar:(XMChatBar *)chatBar sendPictures:(NSArray *)pictures;
+- (void)chatBar:(XMChatBar *)chatBar sendPictures:(NSArray *)pictures withType:(ChatFireMessageType)messageType;
 
 /**
  *  发送地理位置信息
@@ -114,7 +115,7 @@ typedef NS_ENUM(NSUInteger, ChatFireMessageType){
  *  @param voiceData 语音data数据
  *  @param seconds   语音时长
  */
-- (void)chatBar:(XMChatBar *)chatBar sendVoice:(NSString *)voiceFileName seconds:(NSTimeInterval)seconds;
+- (void)chatBar:(XMChatBar *)chatBar sendVoice:(NSString *)voiceFileName seconds:(NSTimeInterval)seconds withType:(ChatFireMessageType)messageType;
 
 /**
  *  发送视频信息
@@ -123,6 +124,17 @@ typedef NS_ENUM(NSUInteger, ChatFireMessageType){
  *  @param assetURL 需要发送的视频地址
  */
 - (void)chatBar:(XMChatBar *)chatBar sendVideo:(NSURL *)assetURL;
+
+/**
+ *  发送文件信息
+ *
+ *  @param chatBar
+ *  @param assetURL 需要发送的视频地址
+ */
+- (void)chatBar:(XMChatBar *)chatBar sendfile:(NSString *)fileURL withName:(NSString *)fileName withSize:(NSString *)fileSize orAsset:(PHAsset *)asset;
+
+
+- (void)chatBar:(XMChatBar *)chatBar sendfile:(CJFileObjModel *)fileModel;
 
 /**
  *  将聊天信息滑动至最底部

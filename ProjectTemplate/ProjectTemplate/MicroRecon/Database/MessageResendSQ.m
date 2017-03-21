@@ -125,7 +125,7 @@
     return array;
 }
 
-// 根据Msgid删除消息
+// 根据cuid删除消息
 - (BOOL)deleteMessageByCuid:(NSString *)cuid {
     
     __block BOOL ret;

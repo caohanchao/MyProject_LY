@@ -28,4 +28,12 @@
     // 动态添加属性的本质是:让对象的某个属性与值产生关联
     objc_setAssociatedObject(self, @selector(open), open, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
+- (NSString *)name {
+    // 获取对应属性的值
+    return objc_getAssociatedObject(self, @selector(name));
+}
+- (void)setName:(NSString *)name {
+    // 动态添加属性的本质是:让对象的某个属性与值产生关联
+    objc_setAssociatedObject(self, @selector(name), name, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 @end

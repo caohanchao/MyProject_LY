@@ -54,22 +54,141 @@
     s = [s stringByReplacingOccurrencesOfString:@"\"{" withString:@"{"];
     s = [s stringByReplacingOccurrencesOfString:@"}\"" withString:@"}"];
     s = [s stringByReplacingOccurrencesOfString:@"\\\\/" withString:@"/"];
-
+    s = [s transferredMeaningWithEnter];
    ZEBLog(@"返回结果:%@", s);
     
     NSData *data = [s dataUsingEncoding:NSUTF8StringEncoding];
     NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data
                                                        options:NSJSONReadingMutableContainers error:nil];
     
+    
+    ICometModel *model;
+    if ([self isCMD_1AndMTYPE_D:dict]) {
+        model = [self requestDictionary:dict];
+        return model;
+    }
 
     //将JSON数据和Model的属性进行绑定
-    ICometModel *model = [MTLJSONAdapter modelOfClass:[ICometModel class]
+    model = [MTLJSONAdapter modelOfClass:[ICometModel class]
                                    fromJSONDictionary:dict
-                                                error:nil];
-
+                                   error:nil];
     return model;
     
 }
+
++ (BOOL)isCMD_1AndMTYPE_D:(NSDictionary *)dictionary{
+    
+    NSString *contentKey = @"content";
+    NSString *messagekey = @"MSG";
+    NSString *cmdKey = @"CMD";
+    NSString *dataKey = @"DATA";
+    NSString *mtypeKey = @"MTYPE";
+    
+    NSDictionary *contentDict = dictionary[contentKey];
+    //content字典 包含 MSG 字段   &&  MSG字典 包含 DATA 字段
+    if ([contentDict isEqual:@""]) {
+        return NO;
+    }
+    
+    if ([[contentDict allKeys] containsObject:messagekey] && [[contentDict[messagekey] allKeys] containsObject:dataKey] ) {
+        if ([contentDict[messagekey][mtypeKey] isEqualToString:@"D"] && [contentDict[cmdKey] isEqualToString:@"1"]){
+            return YES;
+        }
+        else {
+            return NO;
+        }
+    }
+    else {
+        return NO;
+    }
+}
+
++ (ICometModel *)requestDictionary:(NSDictionary *)dictionary {
+    NSString *contentKey = @"content";
+    NSString *messagekey = @"MSG";
+    NSString *cmdKey = @"CMD";
+    NSString *dataKey = @"DATA";
+    NSString *mtypeKey = @"MTYPE";
+    
+    NSDictionary *contentDict = dictionary[contentKey];
+    
+    if ([[contentDict allKeys] containsObject:messagekey] && [[contentDict[messagekey] allKeys] containsObject:dataKey] ) {
+        if ([contentDict[messagekey][mtypeKey] isEqualToString:@"D"] && [contentDict[cmdKey] isEqualToString:@"1"]) {
+
+            ICometModel *model = [ICometModel new];
+            
+            model.cname = dictionary[@"cname"];
+            model.myType = dictionary[@"type"];
+            model.seq = [dictionary[@"seq"] integerValue];
+            
+            model.sid = contentDict[@"SID"];
+            model.rid = contentDict[@"RID"];
+            model.qid = [contentDict[@"QID"] integerValue];
+            model.cmd = contentDict[@"CMD"];
+            model.msGid = contentDict[@"MSGID"];
+            model.type = contentDict[@"TYPE"];
+            model.atAlarm = contentDict[@"ATALARM"];
+            model.headpic = contentDict[@"HEADPIC"];
+            model.beginTime = contentDict[@"TIME"];
+            model.sname = contentDict[@"SNAME"];
+            model.cuid = contentDict[@"CUID"];
+            
+
+            if ([[contentDict allKeys] containsObject:@"GPS"] && [[contentDict[@"GPS"] allKeys] containsObject:@"W"]) {
+                model.latitude = contentDict[@"GPS"][@"W"];
+            }
+            if ([[contentDict allKeys] containsObject:@"GPS"] && [[contentDict[@"GPS"] allKeys] containsObject:@"H"]) {
+                model.longitude = contentDict[@"GPS"][@"H"];
+            }
+            
+            if ([[contentDict[messagekey] allKeys] containsObject:@"FIRE"]) {
+                model.FIRE = contentDict[messagekey][@"FIRE"];
+            }
+            if ([[contentDict[messagekey] allKeys] containsObject:@"DE_type"]) {
+                model.DE_type = contentDict[messagekey][@"DE_type"];
+            }
+            if ([[contentDict[messagekey] allKeys] containsObject:@"MTYPE"]) {
+                model.mtype = contentDict[messagekey][@"MTYPE"];
+            }
+            
+            if ([[contentDict[messagekey] allKeys] containsObject:@"DE_name"]) {
+                model.DE_name = contentDict[messagekey][@"DE_name"];
+            }
+            
+            if ([[contentDict[messagekey] allKeys] containsObject:@"VIDEOPIC"]) {
+                model.videopic = contentDict[messagekey][@"VIDEOPIC"];
+            }
+            if ([[contentDict[messagekey] allKeys] containsObject:@"VOICETIME"]) {
+                model.voicetime = contentDict[messagekey][@"VOICETIME"];
+            }
+            
+            if ([[contentDict[messagekey] allKeys] containsObject:@"SUSPECT_S_DATA"]) {
+                model.suspectSDataModel = contentDict[messagekey][@"SUSPECT_S_DATA"];
+            }
+            if ([[contentDict[messagekey] allKeys] containsObject:@"TASK_N_DATA"]) {
+                model.taskNDataModel = contentDict[messagekey][@"TASK_N_DATA"];
+            }
+            if ([[contentDict[messagekey] allKeys] containsObject:@"TASK_T_DATA"]) {
+                model.taskTDataModel = contentDict[messagekey][@"TASK_T_DATA"];
+            }
+            
+            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:contentDict[messagekey][@"DATA"] options:NSJSONWritingPrettyPrinted error:nil];
+            model.data = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+            
+            return model;
+            
+        }else {
+            return nil;
+        }
+        
+    }else {
+        return nil;
+    }
+    
+}
+
+
+
 
 
 - (BOOL) isUpdateOnChatList:(nonnull ICometModel *) model {

@@ -14,5 +14,10 @@
 #define FMDBVersion2 @"1.06 beta"
 #define FMDBVersion3 @"1.07 beta"
 #define FMDBVersion4 @"1.08 beta"
+#define FMDBVersion5 @"1.08 beta"
+#define FMDBVersion6 @"1.08 beta"
+#define FMDBVersion7 @"1.08 beta"
+#define FMDBVersion8 @"1.09 beta"
+#define FMDBVersion2_0 @"2.00 beta"
 
 #endif /* FMDBVersionHeader_h */

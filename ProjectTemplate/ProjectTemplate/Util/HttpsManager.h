@@ -33,7 +33,10 @@
     progress:(nonnull void(^)(NSProgress * _Nonnull progress)) progressBlock
      success:(nonnull void(^)(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse))successBlock
      failure:(nonnull void(^)(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error))failureBlock;
-
+- (void)downloadImage:(NSString *)urlString
+             progress:(void(^)(NSProgress * _Nonnull progress)) progressBlock
+          destination:(nonnull NSURL *_Nonnull(^)(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull reponse)) destinationBlock
+    completionHandler:(void(^)(NSURLResponse * _Nonnull reponse, NSURL * _Nullable filePath, NSError * _Nullable error)) completionHandlerBlock;
 /**
  * 下载
  */
@@ -53,8 +56,12 @@ NS_ASSUME_NONNULL_END
  */
 NS_ASSUME_NONNULL_BEGIN//去警告
 - (void)upload:(UIImage *)image progress:(void(^)(NSProgress * _Nonnull progress)) progressBlock success:(void(^)(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse))successBlock failure:(void(^)(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error))failureBlock;
+// 聊天发送图片
+- (NSURLSessionUploadTask *)uploadImage:(UIImage *)image progress:(void(^)(NSProgress * _Nonnull progress)) progressBlock success:(void(^)(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse, UIImage * _Nullable theImage))successBlock failure:(void(^)(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error))failureBlock;
 - (void)uploadTwo:(UIImage *)image progress:(void(^)(NSProgress * _Nonnull progress)) progressBlock success:(void(^)(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse))successBlock failure:(void(^)(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error))failureBlock;
 - (void)uploadFile:(NSString *)filePath progress:(void(^)(NSProgress * _Nonnull progress)) progressBlock success:(void(^)(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse))successBlock failure:(void(^)(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error))failureBlock;
+
+- (void)uploadFilesWithURL:(NSString *)fileURL  withFileName:(NSString *)filename progress:(void(^)(NSProgress * _Nonnull progress)) progressBlock success:(void(^)(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse))successBlock failure:(void(^)(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error))failureBlock;
 
 //- (void)uploadVideoFile:(NSURL *)filePath progress:(void(^)(NSProgress * _Nonnull progress)) progressBlock success:(void(^)(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse))successBlock failure:(void(^)(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error))failureBlock;
 

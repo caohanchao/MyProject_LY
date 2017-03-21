@@ -17,8 +17,10 @@
 #import "ZLPhotoBrowser.h"
 #import "ToastUtils.h"
 #import <objc/runtime.h>
+#import "UIImage+Property.h"
+#import "UIImage+UIImageScale.h"
 
-double const ScalePhotoWidth = 1000;
+double const ScalePhotoWidth = 720;
 
 typedef void (^handler)(NSArray<UIImage *> *selectPhotos, NSArray<ZLSelectPhotoModel *> *selectPhotoModels);
 
@@ -34,7 +36,7 @@ typedef void (^handler)(NSArray<UIImage *> *selectPhotos, NSArray<ZLSelectPhotoM
 @property (nonatomic, assign) BOOL preview;
 @property (nonatomic, strong) NSMutableArray<PHAsset *> *arrayDataSources;
 @property (nonatomic, strong) NSMutableArray<ZLSelectPhotoModel *> *arraySelectPhotos;
-@property (nonatomic, assign) BOOL isSelectOriginalPhoto;
+
 @property (nonatomic, copy)   handler handler;
 @property (nonatomic, assign) UIStatusBarStyle previousStatusBarStyle;
 
@@ -362,7 +364,8 @@ static char RelatedKey;
 {
     ZLProgressHUD *hud = [[ZLProgressHUD alloc] init];
     [hud show];
-    
+    //清理内存
+    [[SDImageCache sharedImageCache] clearMemory];
     weakify(self);
     NSMutableArray *photos = [NSMutableArray arrayWithCapacity:self.arraySelectPhotos.count];
     for (int i = 0; i < self.arraySelectPhotos.count; i++) {
@@ -370,11 +373,29 @@ static char RelatedKey;
     }
     
     CGFloat scale = self.isSelectOriginalPhoto?1:[UIScreen mainScreen].scale;
+    PHImageRequestOptionsResizeMode mode = 0;
+    if (self.isSelectOriginalPhoto) {
+        mode = PHImageRequestOptionsResizeModeExact;
+    }else {
+        mode = PHImageRequestOptionsResizeModeFast;
+    }
     for (int i = 0; i < self.arraySelectPhotos.count; i++) {
         ZLSelectPhotoModel *model = self.arraySelectPhotos[i];
-        [[ZLPhotoTool sharePhotoTool] requestImageForAsset:model.asset scale:scale resizeMode:PHImageRequestOptionsResizeModeExact completion:^(UIImage *image) {
+        [[ZLPhotoTool sharePhotoTool] requestImageForAsset:model.asset scale:scale resizeMode:mode completion:^(UIImage *image) {
             strongify(weakSelf);
-            if (image) [photos replaceObjectAtIndex:i withObject:[self scaleImage:image]];
+            if (image) {
+                if (self.isSelectOriginalPhoto) {
+                    UIImage *tempImage = [image compressionImageToDataMaxFileSize:100];
+                    tempImage.type = @"original";
+                    tempImage.Bytes = image.Bytes;
+                    tempImage.imageData = image.imageData;
+                    [photos replaceObjectAtIndex:i withObject:tempImage];
+                    
+                }else {
+                   
+                    [photos replaceObjectAtIndex:i withObject:[image compressionImageToDataMaxFileSize:100]];
+            }
+            }
             
             for (id obj in photos) {
                 if ([obj isKindOfClass:[NSString class]]) return;
@@ -398,9 +419,9 @@ static char RelatedKey;
     [image drawInRect:CGRectMake(0, 0, size.width, size.height)];
     UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
+    
     return newImage;
 }
-
 - (void)done:(NSArray<UIImage *> *)photos
 {
     if (self.handler) {

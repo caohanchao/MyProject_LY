@@ -6,14 +6,14 @@
 //  Copyright © 2016年 Jomper Studio. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
+#import "ViewControllerTextField.h"
 
 typedef enum : NSUInteger {
     ChatListVCToTaskGroup,
     GroupTeamVCToTaskGroup
 } TaskGroupVCComeType;
 
-@interface CreateTaskViewController : UIViewController
+@interface CreateTaskViewController : ViewControllerTextField
 
 
 @property (nonatomic, strong) NSMutableArray *selectArray;

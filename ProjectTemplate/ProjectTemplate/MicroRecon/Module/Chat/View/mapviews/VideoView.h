@@ -13,7 +13,7 @@
 @protocol VideoViewDelegate <NSObject>
 
 @optional
-- (void)videoView:(VideoView *)view index:(NSInteger)index;
+- (void)videoView:(VideoView *)view index:(NSInteger)index videlUrl:(NSString *)videoUrl;
 - (void)videoView:(VideoView *)view deleteVideoIndex:(NSInteger)index;
 @end
 

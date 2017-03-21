@@ -104,6 +104,7 @@ static const void *HttpRequestHUDKey = &HttpRequestHUDKey;
     hud.removeFromSuperViewOnHide = YES;
     
     [hud hide:YES afterDelay:2];
+    [self setHUD:hud];
 //    [hud showAnimated:YES whileExecutingBlock:^{
 //        //对话框显示时需要执行的操作
 //        sleep(2);
@@ -164,11 +165,11 @@ static const void *HttpRequestHUDKey = &HttpRequestHUDKey;
     //显示提示信息
     UIView *view = [[UIApplication sharedApplication].delegate window];
     MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:view animated:YES];
-    hud.userInteractionEnabled = YES;
+    hud.userInteractionEnabled = NO;
     // Configure for text only and offset down
     
     UIImageView * imageV = [[UIImageView alloc]initWithFrame:CGRectMake(0, 0, 30, 30)];
-    [imageV setImage:[UIImage imageNamed:@"hud_error@2x.png"]];
+    [imageV setImage:[UIImage imageNamed:@"hud_error.png"]];
     
     hud.mode = MBProgressHUDModeCustomView;
     hud.customView = imageV;

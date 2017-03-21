@@ -180,12 +180,12 @@
     [[NSNotificationCenter defaultCenter] postNotificationName:@"showImagesNotification" object:nil userInfo:userInfo];
 }
 //播放视频
-- (void)videoView:(VideoView *)view index:(NSInteger)index {
+- (void)videoView:(VideoView *)view index:(NSInteger)index videlUrl:(NSString *)videoUrl{
     NSInteger tag = view.tag - 10000;
     
-    NSString *videoUrl = self.videoArray[tag];
+    NSString *videourl = self.videoArray[tag];
     
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"playVideoNotification" object:videoUrl];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"playVideoNotification" object:videourl];
 }
 //播放语音
 - (void)audioViewPlayAudio:(AudioView *)view index:(NSInteger)index audio:(NSURL *)url {

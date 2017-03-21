@@ -14,7 +14,7 @@
 #import "HYBNetworking.h"
 #import <AFNetworking.h>
 #import <Bugtags/Bugtags.h>
-#import "Hotfix.h"
+
 #import "DeviceSystemVersion.h"
 #import "CUrlServer.h"
 #import "ChatLogic.h"
@@ -22,9 +22,12 @@
 #import "LYApp.h"
 #import "LoginResponseModel.h"
 #import "LocationManager.h"
+#import "PullMessageLogic.h"
 
 @interface AppDelegate ()<CLLocationManagerDelegate>
-
+{
+    BOOL _isSendHeaart;
+}
 
 @property (nonatomic, strong) UINavigationController *navVC;
 @property (nonatomic, strong) NSTimer *timer;
@@ -32,12 +35,11 @@
 @property(nonatomic)BOOL isFirst;
 
 @property(nonatomic,strong) LocationManager *locationManager;
+@property(nonatomic,strong) UILongPressGestureRecognizer * longPressGr;
 
 @end
 
 @implementation AppDelegate
-
-
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -52,7 +54,7 @@
     
     self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     self.window.backgroundColor = [UIColor whiteColor];
-
+ 
     //初始化 全局curl
     curl_global_init(0L);
     
@@ -71,7 +73,12 @@
              LoginResponseModel *model = [LoginResponseModel LoginWithData:reponse];
             if (model && [@"0" isEqualToString:model.resultcode] &&
                 model.results && model.results.count) {
-                [self savaUserInfo:model.results[0]];}
+                [self savaUserInfo:model.results[0]];
+            }
+            else
+            {
+                [[NSNotificationCenter defaultCenter] postNotificationName:DidLoginFromOtherDeviceNotification object:nil];
+            }
         } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
             
         }];
@@ -98,6 +105,8 @@
     options.trackingCrashes = YES;
 
     [self pushNotification:application];
+    
+    _isSendHeaart = YES;
     
     return YES;
 }
@@ -300,12 +309,44 @@
     if ([[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"] && [[NSUserDefaults standardUserDefaults] objectForKey:@"token"]) {
         
         [[ChatLogic sharedManager] logicSendHeartWithLatitude:self.latitude WithLongitude:self.longitude success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {
-            ZEBLog(@"-----%@",[NSJSONSerialization JSONObjectWithData:reponse
-                                                              options:NSJSONReadingMutableContainers error:nil]);
+//            NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:reponse
+//                                                                 options:NSJSONReadingMutableContainers error:nil];
+//            if ([dict[@"resultcode"] isEqualToString:@"1018"]) {
+//                [[NSNotificationCenter defaultCenter] postNotificationName:DidLoginFromOtherDeviceNotification object:nil];
+//            }
+
         } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
             
         }];
     }
+}
+
+#pragma mark -
+#pragma mark 发送心跳包
+- (void)sendHeartSS {
+    
+    if (_isSendHeaart == NO) {
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"] && [[NSUserDefaults standardUserDefaults] objectForKey:@"token"]) {
+            
+            [[ChatLogic sharedManager] logicSendHeartWithLatitude:self.latitude WithLongitude:self.longitude success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {
+                NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:reponse
+                                                                     options:NSJSONReadingMutableContainers error:nil];
+                if ([dict[@"resultcode"] isEqualToString:@"1018"]) {
+                    [[NSNotificationCenter defaultCenter] postNotificationName:DidLoginFromOtherDeviceNotification object:nil];
+                }
+                
+            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                
+            }];
+        }
+        
+        
+    }
+    else
+    {
+        _isSendHeaart = NO;
+    }
+    
 }
 
 //保存程序当前的状态，，为 yes 时说明程序在后台，为 no 时说明程序在前台
@@ -361,7 +402,7 @@
 //应用程序进入活动状态时
 - (void)applicationDidBecomeActive:(UIApplication *)application
 {
-    [Hotfix HSDevaluateScript];
+    
     
     NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
     NSString *token = [[NSUserDefaults standardUserDefaults] objectForKey:@"token"];
@@ -373,12 +414,21 @@
         
         if ([CUrlServer sharedManager].isComet ==YES)
         {
-            [[ChatLogic sharedManager] logicGetHistoryMessage:^(NSProgress * _Nonnull progress) {
-                NSLog(@"getHistoryMessage progress");
-            } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {
-                NSLog(@"getHistoryMessage success");
-            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-                NSLog(@"getHistoryMessage failuer");
+//            [[ChatLogic sharedManager] logicGetHistoryMessage:^(NSProgress * _Nonnull progress) {
+//                NSLog(@"getHistoryMessage progress");
+//            } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {
+//                NSLog(@"getHistoryMessage success");
+//            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+//                NSLog(@"getHistoryMessage failuer");
+//            }];
+            
+            [[PullMessageLogic sharedManager] logicPullHistoryMessage:^(NSProgress * _Nonnull progress) {
+                
+            } completion:^(id  _Nonnull aResponseObject, NSError * _Nullable anError) {
+                if (anError == nil) {
+                    
+                }
+                
             }];
         }
         else
@@ -387,7 +437,7 @@
         }
     }
     
-    
+     [self performSelector:@selector(sendHeartSS) withObject:nil afterDelay:2.0f];
     
     
 }
@@ -469,9 +519,32 @@
 {
     if(viewController == [tabBarController.viewControllers objectAtIndex:2])
     {
-        [self.tabbar showHint:@"该功能开发中"];
-        return NO;
+       // [self.tabbar showHint:@"该功能开发中"];
+        [tabBarController.tabBar addGestureRecognizer:self.longPressGr];
+        
+        return YES;
     }
+    
+    [tabBarController.tabBar removeGestureRecognizer:self.longPressGr];
+    
     return YES;
 }
+
+- (UILongPressGestureRecognizer*)longPressGr
+{
+    if (!_longPressGr) {
+        _longPressGr = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressToDo:)];
+        _longPressGr.minimumPressDuration = 1.0;
+    }
+    return _longPressGr;
+}
+
+-(void)longPressToDo:(UILongPressGestureRecognizer *)gesture
+{
+    if(gesture.state == UIGestureRecognizerStateBegan)
+    {
+        [LYRouter openURL:@"ly://CallHelpViewControllerLongPressCallHelp"];
+    }
+}
+
 @end

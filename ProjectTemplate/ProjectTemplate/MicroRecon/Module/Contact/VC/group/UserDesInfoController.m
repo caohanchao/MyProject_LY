@@ -337,7 +337,8 @@
 //    
     _TXImageView = [UIImageView new];
     _TXImageView.layer.masksToBounds = YES;
-    _TXImageView.layer.cornerRadius = 32;
+//    _TXImageView.layer.cornerRadius = 32;
+     _TXImageView.layer.cornerRadius = 6;
     _TXImageView.contentMode = UIViewContentModeScaleAspectFill;
     _TXImageView.userInteractionEnabled = YES;
     
@@ -346,7 +347,8 @@
     
     UIView *imgBg =[UIView new];
     imgBg.layer.masksToBounds = YES;
-    imgBg.layer.cornerRadius = 33;
+//    imgBg.layer.cornerRadius = 33;
+    imgBg.layer.cornerRadius = 6;
     
     imgBg.backgroundColor =[UIColor whiteColor];
     
@@ -360,13 +362,13 @@
     _nameLabel = [UILabel new];
     _nameLabel.textColor = [UIColor whiteColor];
     _nameLabel.font = ZEBFont(14);
-    _nameLabel.textAlignment = NSTextAlignmentRight;
+    _nameLabel.textAlignment = NSTextAlignmentCenter;
     [view1 addSubview:_nameLabel];
     
     _alertLabel =[UILabel new];
     _alertLabel.textColor = [UIColor whiteColor];
     _alertLabel.font = ZEBFont(13);
-    _alertLabel.textAlignment = NSTextAlignmentLeft;
+    _alertLabel.textAlignment = NSTextAlignmentCenter;
     [view1 addSubview:_alertLabel];
     
     _postLabel = [UILabel new];
@@ -375,7 +377,7 @@
     _postLabel.textAlignment =NSTextAlignmentCenter;
     _postLabel.font = ZEBFont(10);
     _postLabel.textColor = [UIColor whiteColor];
-    [view1 addSubview:_postLabel];
+ //   [view1 addSubview:_postLabel];
     
     
     UIView *line1 =[UIView new];
@@ -484,35 +486,38 @@
         
     }];
     
-    [userImg mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.top.equalTo(_TXImageView.mas_bottom).offset(12);
-        make.trailing.equalTo(_TXImageView.mas_trailing).offset(0);
-        make.height.offset(15);
-        make.width.offset(12);
-    }];
-    
     [_nameLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.right.equalTo(userImg.mas_left).offset(-10);
-        make.centerY.equalTo(userImg.mas_centerY).offset(0);
+        make.top.equalTo(_TXImageView.mas_bottom).offset(12);
+        make.centerX.equalTo(_TXImageView.mas_centerX).offset(0);
         make.height.offset(15);
         make.width.offset(100);
     }];
     
+    [userImg mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.centerY.equalTo(_nameLabel.mas_centerY).offset(0);
+        make.left.equalTo(_nameLabel.mas_right).offset(10);
+        make.height.offset(15);
+        make.width.offset(12);
+    }];
+    
+    
+    
     [_alertLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.leading.equalTo(_TXImageView.mas_leading).offset(35);
+       // make.leading.equalTo(_TXImageView.mas_leading).offset(35);
+        make.left.equalTo(_TXImageView.mas_left).offset(-17);
         make.top.equalTo(_nameLabel.mas_bottom).offset(8);
         make.width.offset(100);
         make.height.offset(15);
         
     }];
     
-    [_postLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-       
-        make.right.equalTo(_alertLabel.mas_left).with.offset(-10);
-        make.centerY.equalTo(_alertLabel.mas_centerY).with.offset(0);
-        make.height.equalTo(_alertLabel.mas_height).with.offset(0);
-        make.width.lessThanOrEqualTo(@100);
-    }];
+//    [_postLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+//       
+//        make.right.equalTo(_alertLabel.mas_left).with.offset(-10);
+//        make.centerY.equalTo(_alertLabel.mas_centerY).with.offset(0);
+//        make.height.equalTo(_alertLabel.mas_height).with.offset(0);
+//        make.width.lessThanOrEqualTo(@100);
+//    }];
     
     [line1 mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.equalTo(view1.mas_bottom).offset(0);
@@ -699,44 +704,50 @@
     }];
     _TXImageView.contentMode = UIViewContentModeScaleAspectFill;
     _nameLabel.text = self.userInfoModel.name;
+    
+    CGFloat width = [LZXHelper textWidthFromTextString:_nameLabel.text height:15 fontSize:14];
+    [_nameLabel mas_updateConstraints:^(MASConstraintMaker *make) {
+        make.width.offset(width+20);
+    }];
+    
     _alertLabel.text = [NSString stringWithFormat:@"%@",self.userInfoModel.useralarm];
     
     
     
-    UserAllModel *userModel = [[[DBManager sharedManager] personnelInformationSQ] selectDepartmentmemberlistById:self.userInfoModel.alarm];
-    UnitListModel *uModel = [[[DBManager sharedManager] DepartmentlistSQ] selectDepartmentlistById:userModel.RE_department];
-    NSString *DE_type = uModel.DE_type;
-
-    CGFloat width =_postLabel.frame.size.width;
-    
-    if ([[LZXHelper isNullToString:self.userInfoModel.post] isEqualToString:@""]) {
-        
-            _postLabel.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"];
-            _postLabel.text = [NSString stringWithFormat:@" 武汉市公安局 "];
-
-    }else {
-        if ([DE_type isEqualToString:@"0"]) {//0警察公务组织紫，1技术支持绿
-            _postLabel.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"];
-            _postLabel.text = [NSString stringWithFormat:@" %@ ",self.userInfoModel.post];
-
-            
-        }else if ([DE_type isEqualToString:@"1"]) {
-            _postLabel.backgroundColor = [UIColor colorWithHexString:@"#6cd9a3"];
-            _postLabel.text = [NSString stringWithFormat:@" %@ ",self.userInfoModel.post];
-
-        }
-        
-    }
-    
-    width = [LZXHelper textWidthFromTextString:_postLabel.text height:20 fontSize:10];
-    [_postLabel mas_updateConstraints:^(MASConstraintMaker *make) {
-       
-        make.right.equalTo(_alertLabel.mas_left).with.offset(-10);
-        make.centerY.equalTo(_alertLabel.mas_centerY).with.offset(0);
-        make.height.equalTo(_alertLabel.mas_height).with.offset(0);
-        make.width.offset(width);
-        
-    }];
+//    UserAllModel *userModel = [[[DBManager sharedManager] personnelInformationSQ] selectDepartmentmemberlistById:self.userInfoModel.alarm];
+//    UnitListModel *uModel = [[[DBManager sharedManager] DepartmentlistSQ] selectDepartmentlistById:userModel.RE_department];
+//    NSString *DE_type = uModel.DE_type;
+//
+//    CGFloat width =_postLabel.frame.size.width;
+//    
+//    if ([[LZXHelper isNullToString:self.userInfoModel.post] isEqualToString:@""]) {
+//        
+//            _postLabel.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"];
+//            _postLabel.text = [NSString stringWithFormat:@" 武汉市公安局 "];
+//
+//    }else {
+//        if ([DE_type isEqualToString:@"0"]) {//0警察公务组织紫，1技术支持绿
+//            _postLabel.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"];
+//            _postLabel.text = [NSString stringWithFormat:@" %@ ",self.userInfoModel.post];
+//
+//            
+//        }else if ([DE_type isEqualToString:@"1"]) {
+//            _postLabel.backgroundColor = [UIColor colorWithHexString:@"#6cd9a3"];
+//            _postLabel.text = [NSString stringWithFormat:@" %@ ",self.userInfoModel.post];
+//
+//        }
+//        
+//    }
+//    
+//    width = [LZXHelper textWidthFromTextString:_postLabel.text height:20 fontSize:10];
+//    [_postLabel mas_updateConstraints:^(MASConstraintMaker *make) {
+//       
+//        make.right.equalTo(_alertLabel.mas_left).with.offset(-10);
+//        make.centerY.equalTo(_alertLabel.mas_centerY).with.offset(0);
+//        make.height.equalTo(_alertLabel.mas_height).with.offset(0);
+//        make.width.offset(width);
+//        
+//    }];
 
 
 //    _nickNameLabel.text = [NSString stringWithFormat:@"昵称：%@",self.userInfoModel.name];
@@ -763,47 +774,52 @@
 
     _TXImageView.contentMode = UIViewContentModeScaleAspectFill;
     _nameLabel.text = model.name;
+    
+    CGFloat width = [LZXHelper textWidthFromTextString:_nameLabel.text height:15 fontSize:14];
+    [_nameLabel mas_updateConstraints:^(MASConstraintMaker *make) {
+        make.width.offset(width);
+    }];
     _alertLabel.text = [NSString stringWithFormat:@"%@",model.useralarm];
     
-    UserAllModel *userModel = [[[DBManager sharedManager] personnelInformationSQ] selectDepartmentmemberlistById:model.alarm];
-    UnitListModel *uModel = [[[DBManager sharedManager] DepartmentlistSQ] selectDepartmentlistById:userModel.RE_department];
-    NSString *DE_type = uModel.DE_type;
-    NSString *DE_name = [LZXHelper isNullToString:userModel.RE_post];
-    
-    CGFloat width =_postLabel.frame.size.width;
-    
-    if ([DE_name isEqualToString:@""]) {
-        
-        _postLabel.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"];
-        _postLabel.text = [NSString stringWithFormat:@" 武汉市公安局 "];
-
-        
-    }else {
-        if ([DE_type isEqualToString:@"0"]) {//0警察公务组织紫，1技术支持绿
-            _postLabel.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"];
-            _postLabel.text = [NSString stringWithFormat:@" %@ ",DE_name];
-            
-            
-        }else if ([DE_type isEqualToString:@"1"]) {
-            _postLabel.backgroundColor = [UIColor colorWithHexString:@"#6cd9a3"];
-            _postLabel.text = [NSString stringWithFormat:@" %@ ",DE_name];
-            
-        }
-        
-    }
-    
-    width = [LZXHelper textWidthFromTextString:_postLabel.text height:20 fontSize:10];
-    [_postLabel mas_updateConstraints:^(MASConstraintMaker *make) {
-        
-        make.right.equalTo(_alertLabel.mas_left).with.offset(-10);
-        make.centerY.equalTo(_alertLabel.mas_centerY).with.offset(0);
-        make.height.equalTo(_alertLabel.mas_height).with.offset(0);
-        make.width.offset(width);
-        
-    }];
+//    UserAllModel *userModel = [[[DBManager sharedManager] personnelInformationSQ] selectDepartmentmemberlistById:model.alarm];
+//    UnitListModel *uModel = [[[DBManager sharedManager] DepartmentlistSQ] selectDepartmentlistById:userModel.RE_department];
+//    NSString *DE_type = uModel.DE_type;
+//    NSString *DE_name = [LZXHelper isNullToString:userModel.RE_post];
+//    
+//    CGFloat width =_postLabel.frame.size.width;
+//    
+//    if ([DE_name isEqualToString:@""]) {
+//        
+//        _postLabel.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"];
+//        _postLabel.text = [NSString stringWithFormat:@" 武汉市公安局 "];
+//
+//        
+//    }else {
+//        if ([DE_type isEqualToString:@"0"]) {//0警察公务组织紫，1技术支持绿
+//            _postLabel.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"];
+//            _postLabel.text = [NSString stringWithFormat:@" %@ ",DE_name];
+//            
+//            
+//        }else if ([DE_type isEqualToString:@"1"]) {
+//            _postLabel.backgroundColor = [UIColor colorWithHexString:@"#6cd9a3"];
+//            _postLabel.text = [NSString stringWithFormat:@" %@ ",DE_name];
+//            
+//        }
+//        
+//    }
+//    
+//    width = [LZXHelper textWidthFromTextString:_postLabel.text height:20 fontSize:10];
+//    [_postLabel mas_updateConstraints:^(MASConstraintMaker *make) {
+//        
+//        make.right.equalTo(_alertLabel.mas_left).with.offset(-10);
+//        make.centerY.equalTo(_alertLabel.mas_centerY).with.offset(0);
+//        make.height.equalTo(_alertLabel.mas_height).with.offset(0);
+//        make.width.offset(width);
+//        
+//    }];
     
     _phoneLabel.text = model.phone;
-    _orLabel.text = userModel.RE_department;
+ //   _orLabel.text = userModel.RE_department;
 }
 
 - (void)refreshUIWithNULL {
@@ -811,6 +827,11 @@
     [_TXImageView setImage:[UIImage imageNamed:@"ph_s"]];
     _TXImageView.contentMode = UIViewContentModeScaleAspectFill;
     _nameLabel.text =@"该账号不存在";
+    
+    CGFloat width = [LZXHelper textWidthFromTextString:_nameLabel.text height:15 fontSize:14];
+    [_nameLabel mas_updateConstraints:^(MASConstraintMaker *make) {
+        make.width.offset(width);
+    }];
     _alertLabel.text = @"未知";
     _postLabel.text = @"未知";
     [_postLabel mas_updateConstraints:^(MASConstraintMaker *make) {

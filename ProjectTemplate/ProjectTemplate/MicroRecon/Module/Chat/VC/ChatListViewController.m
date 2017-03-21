@@ -33,6 +33,8 @@
 #import "NSString+Time.h"
 #import "TeamsModel.h"
 #import "SystemRemindController.h"
+#import "WorkListsViewController.h"
+#import "UIButton+Layout.h"
 
 #define kSelfName @"MicroRecon-iOS"
 #define kSelfThumb @"http://img1.touxiang.cn/uploads/20131114/14-065809_117.jpg"
@@ -56,6 +58,7 @@
 @property(weak,nonatomic)UILabel *netTitle;
 @property(assign,nonatomic)BOOL isLunch;
 
+
 @end
 
 @implementation ChatListViewController
@@ -69,7 +72,7 @@
     
     //[self.navigationController.navigationBar setBackgroundImage:[UIImage new] forBarMetrics:UIBarMetricsCompact];
     
-    
+    [[NSNotificationCenter defaultCenter] postNotificationName:setupUnreadMessageCount object:@"1"];
     self.tableView.backgroundColor=[UIColor clearColor];
     [self setNavigationBar];
     [self createDownMenu];
@@ -149,7 +152,7 @@
         UserInfoModel *userInfoModel = notification.object ;
         
         XMNChatController *chatC = [[XMNChatController alloc] initWithChatType:XMNMessageChatSingle];
-        
+        [user setObj:userInfoModel.alarm forKey:@"chatId"];
         [user setObj:@"S" forKey:@"chatType"];
         chatC.chatterName = userInfoModel.name;
         chatC.cType = ChatList;
@@ -176,7 +179,8 @@
         }else {
             
             XMNChatController *chatC = [[XMNChatController alloc] initWithChatType:XMNMessageChatGroup];
-            
+            [user setObj:teamModel.gid forKey:@"chatId"];
+            [user setObj:@"G" forKey:@"chatType"];
             chatC.chatterName = teamModel.gname;
             chatC.cType = GroupTeam;
             [[[DBManager sharedManager] UserlistDAO] clearNewMsgCout:teamModel.gid];
@@ -184,6 +188,26 @@
             chatC.hidesBottomBarWhenPushed = YES;
             [self.navigationController pushViewController:chatC animated:YES];
         }
+    }else if ([notification.object isKindOfClass:[FriendsListModel class]]) {
+        FriendsListModel *frModel = notification.object ;
+        
+        XMNChatController *chatC = [[XMNChatController alloc] initWithChatType:XMNMessageChatSingle];
+        [user setObj:frModel.alarm forKey:@"chatId"];
+        [user setObj:@"S" forKey:@"chatType"];
+        NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+        if ([frModel.alarm isEqualToString:alarm]) {
+            chatC.chatterName = @"文件助手";
+        }else {
+            chatC.chatterName = frModel.name;
+        }
+        
+        chatC.cType = ChatList;
+        [[[DBManager sharedManager] UserlistDAO] clearNewMsgCout:frModel.alarm];
+        
+        chatC.chatterThumb = frModel.headpic;
+        chatC.hidesBottomBarWhenPushed = YES;
+        
+        [self.navigationController pushViewController:chatC animated:YES];
     }
     
     
@@ -357,7 +381,7 @@
 
     
     NSString *lastMsg = [ChatBusiness getLastMessage:model];
-        
+
     if ([@"G" isEqualToString:model.ut_type]) {
         [self setGroupName:cell groupId:model.ut_alarm];
       // NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
@@ -395,14 +419,14 @@
         NSString *lastMessage = [NSString stringWithFormat:@"%@",lastMsg];
         [cell.lastMessageLabel setText:lastMessage];
         [cell.titleLabel setText:@"系统消息提醒"];
-        [cell.headImageView setImage:[UIImage imageNamed:@"system_remind"]];
+        //  [cell.headImageView setImage:[UIImage imageNamed:@"system_remind"]];
+        [cell.headImageView setImage:[UIImage imageNamed:@"G_xitongxiaoxi"]];
         
     }else {
         
         FriendsListModel *fModel = [[[DBManager sharedManager] personnelInformationSQ] selectFrirndlistById:model.ut_alarm];
         
-        [cell.titleLabel setText:fModel.name];
-        if ([model.ut_fire  containsString:@"LOCK"]) {
+        if ([model.ut_fire  containsString:@"LOCK"]||[model.ut_fire isEqualToString:@"READ"]) {
             NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
             if ([model.ut_sendid isEqualToString:alarm]) {
                 [cell.lastMessageLabel setText:@"你发送了一条悄悄话"];
@@ -417,7 +441,14 @@
         {
             [cell.lastMessageLabel setText:lastMsg];
         }
-        [cell.headImageView imageGetCacheForAlarm:fModel.alarm forUrl:fModel.headpic];
+        NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+        if ([fModel.alarm isEqualToString:alarm]) {
+            cell.headImageView.image = [UIImage imageNamed:@"wenjianzhushou"];
+            [cell.titleLabel setText:@"文件助手"];
+        }else {
+            [cell.headImageView imageGetCacheForAlarm:fModel.alarm forUrl:fModel.headpic];
+            [cell.titleLabel setText:fModel.name];
+        }
     }
     
     
@@ -463,19 +494,27 @@
     if (gModel) {
         switch ([gModel.type integerValue]) {
             case 0:
-                imageStr = @"group_zhencha";
+                // imageStr = @"group_zhencha";
+                imageStr = @"G_zhencha";
                 break;
             case 1:
-                imageStr = @"group_qunliao";
+                // imageStr = @"group_qunliao";
+                imageStr = @"G_zudui";
                 break;
             case 2:
-                imageStr = @"group_anbao";
+                // imageStr = @"group_anbao";
+                imageStr = @"G_pancha";
                 break;
             case 3:
-                imageStr = @"group_xunkong";
+                //imageStr = @"group_xunkong";
+                imageStr = @"G_xunkong";
                 break;
             case 4:
-                imageStr = @"group_sos";
+                //  imageStr = @"group_sos";
+                imageStr = @"G_zengyuan";
+                break;
+            case 5:
+                imageStr = @"G_duikang";
                 break;
             default:
                 imageStr = @"ph_g";
@@ -494,19 +533,27 @@
             NSString *imageStr = @"";
             switch ([gModel.type integerValue]) {
                 case 0:
-                    imageStr = @"group_zhencha";
+                    // imageStr = @"group_zhencha";
+                    imageStr = @"G_zhencha";
                     break;
                 case 1:
-                    imageStr = @"group_qunliao";
+                    // imageStr = @"group_qunliao";
+                    imageStr = @"G_zudui";
                     break;
                 case 2:
-                    imageStr = @"group_anbao";
+                    // imageStr = @"group_anbao";
+                    imageStr = @"G_pancha";
                     break;
                 case 3:
-                    imageStr = @"group_xunkong";
+                    //imageStr = @"group_xunkong";
+                    imageStr = @"G_xunkong";
                     break;
                 case 4:
-                    imageStr = @"group_sos";
+                    //  imageStr = @"group_sos";
+                    imageStr = @"G_zengyuan";
+                    break;
+                case 5:
+                    imageStr = @"G_duikang";
                     break;
                 default:
                     imageStr = @"ph_g";
@@ -571,8 +618,11 @@
         chatC = [[XMNChatController alloc] initWithChatType:XMNMessageChatSingle];
     }
     ChatListCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-    chatC.chatterName = cell.titleLabel.text;
-    chatC.cType = ChatList;
+        NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+        
+        chatC.chatterName = cell.titleLabel.text;
+        
+        chatC.cType = ChatList;
     //cell.unreadLabel.hidden = YES;
     [[[DBManager sharedManager] UserlistDAO] clearAtAlarmMsg:model.ut_alarm];
     [[[DBManager sharedManager] UserlistDAO] clearNewMsgCout:model.ut_alarm];
@@ -597,6 +647,19 @@
     [button setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
     UIBarButtonItem *rightBar = [[UIBarButtonItem alloc] initWithCustomView:button];
     self.navigationItem.rightBarButtonItem = rightBar;
+    
+    
+    UIButton *lbtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    lbtn.frame = CGRectMake(0, 0, 50, 19);
+    [lbtn setImage:[UIImage imageNamed:@"chat_renwu"] forState:UIControlStateNormal];
+    [lbtn addTarget:self action:@selector(leftBtn:) forControlEvents:UIControlEventTouchUpInside];
+    [lbtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [lbtn setTitle:@"任务" forState:UIControlStateNormal];
+    lbtn.titleLabel.font = [UIFont systemFontOfSize:14];
+    [lbtn layoutButtonForTitle:@"任务" titleFont:[UIFont systemFontOfSize:14] image:[UIImage imageNamed:@"chat_renwu"] gapBetween:5 layType:1];
+    
+    UIBarButtonItem *leftBar = [[UIBarButtonItem alloc] initWithCustomView:lbtn];
+    self.navigationItem.leftBarButtonItem = leftBar;
 }
 
 //- (void)loadDatas{
@@ -701,7 +764,47 @@
     self.menuView = menuView;
     
 }
-
+#pragma mark -
+#pragma mark leftbutton
+- (void)leftBtn:(UIButton *)btn {
+    
+    WeakSelf
+    WorkListsViewController *workList = [[WorkListsViewController alloc] init];
+    workList.type = 3;
+    workList.taskBlock = ^(NSMutableDictionary *param){
+        NSString *gid = param[@"gid"];
+        NSString *gname = param[@"gname"];
+        
+        TeamsListModel *teamModel = [[[DBManager sharedManager] GrouplistSQ] selectGrouplistById:gid];
+        NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
+        [user setObj:gid forKey:@"chatId"];
+        [user setObj:@"G" forKey:@"chatType"];
+        
+        if ([teamModel.type isEqualToString:@"0"]) {
+            
+            ChatMapViewController *chatMap = [[ChatMapViewController alloc] initWithChatType:XMNMessageChatGroup chatname:gname type:1];
+            chatMap.chatView = [[ChatView alloc] init];
+            [[[DBManager sharedManager] UserlistDAO] clearNewMsgCout:gid];
+            chatMap.hidesBottomBarWhenPushed = YES;
+            [weakSelf.navigationController pushViewController:chatMap animated:YES];
+            
+        }else {
+            
+            XMNChatController *chatC = [[XMNChatController alloc] initWithChatType:XMNMessageChatGroup];
+            chatC.chatterName = gname;
+            chatC.cType = ChatList;
+            [[[DBManager sharedManager] UserlistDAO] clearNewMsgCout:gid];
+            
+            chatC.hidesBottomBarWhenPushed = YES;
+            [weakSelf.navigationController pushViewController:chatC animated:YES];
+        }
+    
+    };
+    workList.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:workList animated:YES];
+}
+#pragma mark -
+#pragma mark rightbutton
 - (void)rightBtn:(UIButton *)btn {
     
     if (self.menuView.isShow) {

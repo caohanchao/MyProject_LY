@@ -11,10 +11,24 @@
 #import "XMNChatController.h"
 #import "UserHomePageViewController.h"
 #import "CircleOfBattleController.h"
-@interface SystemRemindController ()<UITableViewDelegate,UITableViewDataSource>
+#import "ChatTableView.h"
+#import "CallTheRollHomeViewController.h"
+
+@interface SystemRemindController ()<UITableViewDelegate,UITableViewDataSource>{
+    UIActivityIndicatorView* _activity;
+    UIView* _headView;
+    BOOL _isRefresh;
+    CGFloat contentOffsetY;
+    
+    CGFloat oldContentOffsetY;
+    
+    CGFloat newContentOffsetY;
+
+}
+
 
 @property(nonatomic,copy)NSMutableArray *dataArray;
-@property(nonatomic,strong)UITableView *tableView;
+@property(nonatomic,strong) ChatTableView *tableView;
 @property(nonatomic)NSInteger page;
 
 @end
@@ -25,10 +39,11 @@
 
 @implementation SystemRemindController
 
--(UITableView *)tableView
+-(ChatTableView *)tableView
 {
     if (!_tableView) {
-        _tableView = [[UITableView alloc]initWithFrame:CGRectMake(0, 64, screenWidth(), screenHeight()-64) style:UITableViewStyleGrouped];
+        _tableView = [[ChatTableView alloc]initWithFrame:CGRectMake(0, 64, screenWidth(), screenHeight()-64) style:UITableViewStyleGrouped];
+        _tableView.contentInset = UIEdgeInsetsMake(-25, 0, 0, 0);
         _tableView.backgroundColor = [UIColor groupTableViewBackgroundColor];
         _tableView.separatorColor = [UIColor clearColor];
         _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
@@ -94,49 +109,128 @@
 
 //    self.tableView.mj_footer = [MJRefreshAutoNormalFooter footerWithRefreshingTarget:self refreshingAction:@selector(refreshAction)];
 
-    self.tableView.mj_header = [MJRefreshNormalHeader headerWithRefreshingTarget:self refreshingAction:@selector(refreshAction)];
+   // self.tableView.mj_header = [MJRefreshNormalHeader headerWithRefreshingTarget:self refreshingAction:@selector(refreshAction)];
+    
+    _headView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 40)];
+    _headView.backgroundColor = [UIColor clearColor];
+    
+    _activity = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhite];
+    _activity.color = zBlackColor;
+    [_headView addSubview:_activity];
+    _activity.frame = CGRectMake(_headView.frame.size.width/2-10, _headView.frame.size.height/2-10, 20, 20);
+    
+    _tableView.tableHeaderView = _headView;
+    _headView.hidden = YES;
 }
-
+- (void)startRefreshing {
+    
+    _tableView.contentInset = UIEdgeInsetsMake(0, 0, 0, 0);
+    _headView.hidden = NO;
+    [_activity startAnimating];
+    _isRefresh = YES;
+}
+- (void)endRefreshing {
+    [_activity stopAnimating];
+    _headView.hidden = YES;
+    [UIView animateWithDuration:0.5 animations:^{
+        _tableView.contentInset = UIEdgeInsetsMake(-25, 0, 0, 0);
+    }];
+    _isRefresh = NO;
+}
 - (void)refreshAction{
     
-    _page ++;
+    [self startRefreshing];
+    //等待1s
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+    
     NSInteger count = self.dataArray.count+1;
     
     NSArray *array = [[[DBManager sharedManager] MessageDAO] selectSystemMessageByPage:_page];
-    array = [[array reverseObjectEnumerator] allObjects];
+    NSArray *reversedArray=[NSArray new];
+    reversedArray = [[array reverseObjectEnumerator] allObjects];
     if (array.count == 0) {
-        [self.tableView.mj_header endRefreshing];
+        [self endRefreshing];
     }else {
-        [self.dataArray addObjectsFromArray:array];
+        //[self.dataArray addObjectsFromArray:array];
+//        NSArray *results = [array sortedArrayUsingComparator:^NSComparisonResult(id  _Nonnull obj1, id  _Nonnull obj2) {
+//            ICometModel *model1 = obj1;
+//            ICometModel *model2 = obj2;
+//            NSComparisonResult result = [model1.beginTime compare:model2.beginTime];
+//            return result == NSOrderedDescending;
+//        }];
+        NSRange range=NSMakeRange(0,reversedArray.count);
+        NSIndexSet *set=[NSIndexSet indexSetWithIndexesInRange:range];
+        //[self.dataArray removeAllObjects];
+        [self.dataArray insertObjects:reversedArray atIndexes:set];
         
-        NSArray *results = [self.dataArray sortedArrayUsingComparator:^NSComparisonResult(id  _Nonnull obj1, id  _Nonnull obj2) {
-            ICometModel *model1 = obj1;
-            ICometModel *model2 = obj2;
-            NSComparisonResult result = [model1.beginTime compare:model2.beginTime];
-            return result == NSOrderedDescending;
-        }];
-        
-        [self.dataArray removeAllObjects];
-        [self.dataArray addObjectsFromArray:results];
-        
-        
-    
         [self.tableView reloadData];
+        [self endRefreshing];
         
-        
-        if (count > 3) {
-            [self scrollToSection:NO section:count];
-        }
-        [self scrollToSection:NO section:count];
-        
-        [self.tableView.mj_header endRefreshing];
+//        if (count > 3) {
+//            [self scrollToSection:NO section:count];
+//        }
+//        [self scrollToSection:NO section:count];
+//        
+//        [self.tableView.mj_header endRefreshing];
 
     }
-
+                  
+                   });
 }
 
 
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+    
+    contentOffsetY = scrollView.contentOffset.y;
+}
 
+-(void)scrollViewDidScroll:(UIScrollView *)scrollView
+{
+    if (scrollView.contentOffset.y<=0  && _isRefresh==NO)
+    {
+        newContentOffsetY = scrollView.contentOffset.y;
+        //        if (newContentOffsetY > oldContentOffsetY && oldContentOffsetY > contentOffsetY) {  // 向上滚动
+        //            NSLog(@"up");
+        //        } else if (newContentOffsetY < oldContentOffsetY && oldContentOffsetY < contentOffsetY) { // 向下滚动
+        //            NSLog(@"down");
+        //        } else {
+        //            NSLog(@"dragging");
+        //        }
+        
+        if (scrollView.dragging) {  // 拖拽
+            
+            
+            if ((scrollView.contentOffset.y - contentOffsetY) > 10.0f) {  // 向上拖拽
+                
+            } else if ((contentOffsetY - scrollView.contentOffset.y) > 10.0f) {   // 向下拖拽
+                NSLog(@"scrollView.dragging");
+                
+                NSLog(@"contentOffsetY: %f", contentOffsetY);
+                
+                NSLog(@"newContentOffsetY: %f", scrollView.contentOffset.y);
+
+                NSLog(@"newContentOffsetY: %f", contentOffsetY - scrollView.contentOffset.y);
+                _page ++;
+                _isRefresh = YES;
+                [self refreshAction];
+            } else {
+                
+            }
+            
+        }
+    }
+}
+// 完成拖拽(滚动停止时调用此方法，手指离开屏幕前)
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
+
+{
+    // NSLog(@"scrollViewDidEndDragging");
+    
+    oldContentOffsetY = scrollView.contentOffset.y;
+    
+}
 #pragma mark - CreateUI / ReloadData
 - (void)createTableView {
     self.automaticallyAdjustsScrollViewInsets = NO;
@@ -220,13 +314,17 @@
         CircleOfBattleController *cvc =[[CircleOfBattleController alloc] init];
         [self.navigationController pushViewController:cvc animated:YES];
     }
-
+    else if ([model.mtype isEqualToString:@"RP"]||[model.mtype isEqualToString:@"RS"]||[model.mtype isEqualToString:@"RR"])
+    {
+        CallTheRollHomeViewController * callRollVC = [[CallTheRollHomeViewController alloc]init];
+        [self.navigationController pushViewController:callRollVC animated:YES];
+    }
     
     
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section  {
-    return 0.1;
+    return 12;
 }
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
     return 0.1;

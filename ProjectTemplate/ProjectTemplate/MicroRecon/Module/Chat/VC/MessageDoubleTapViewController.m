@@ -9,7 +9,7 @@
 #import "MessageDoubleTapViewController.h"
 #import "MLEmojiLabel.h"
 
-@interface MessageDoubleTapViewController ()<MLEmojiLabelDelegate,UIGestureRecognizerDelegate>
+@interface MessageDoubleTapViewController ()<MLEmojiLabelDelegate,UIGestureRecognizerDelegate,UIScrollViewDelegate>
 
 @property (nonatomic,strong)UIScrollView *scrollview;
 @property (nonatomic,strong)UITextView *textLabel;
@@ -25,6 +25,7 @@
         _textLabel.textColor = [UIColor blackColor];
         _textLabel.userInteractionEnabled = YES;
         _textLabel.editable = NO;
+        _textLabel.dataDetectorTypes = NSUIntegerMax;
 //        _textLabel.numberOfLines = 0;
 //        _textLabel.backgroundColor = [UIColor blueColor];
 //        _messageTextL.userInteractionEnabled = YES;

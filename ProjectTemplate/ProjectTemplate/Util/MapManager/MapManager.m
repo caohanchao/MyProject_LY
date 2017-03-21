@@ -33,7 +33,18 @@ static MAMapView *_mapView = nil;
     }
 }
 
-
+- (NSMutableArray *)getMapAnnotations {
+    
+    NSMutableArray *tempArr = [NSMutableArray arrayWithArray:_mapView.annotations];
+    
+    for (id annotation in _mapView.annotations) {
+        if ([annotation isKindOfClass:[MAUserLocation class]]) {
+            [tempArr removeObject:annotation];
+            break;
+        }
+    }
+    return tempArr;
+}
 //重写allocWithZone保证分配内存alloc相同
 + (id)allocWithZone:(NSZone *)zone {
     @synchronized(self) {

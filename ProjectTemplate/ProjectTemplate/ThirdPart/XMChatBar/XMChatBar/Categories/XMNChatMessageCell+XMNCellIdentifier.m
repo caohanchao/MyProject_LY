@@ -61,6 +61,16 @@
         case XMNMessageTypeReleaseTask:
             typeKey = @"ReleaseTaskMessage";
             break;
+        case XMNMessageTypeEmotions:
+            typeKey = @"EmotionsMessage";
+            break;
+        case XMNMessageTypeFireImage:
+            typeKey = @"FireImageMessage";
+            break;
+        case XMNMessageTypeFiles:
+            typeKey = @"FilesMessage";
+            break;
+            
         default:
             NSAssert(NO, @"Message Type Unknow");
             break;

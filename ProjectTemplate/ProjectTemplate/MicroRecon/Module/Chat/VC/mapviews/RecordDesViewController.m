@@ -203,7 +203,7 @@
     
    UserAllModel *uModel = [[[DBManager sharedManager] personnelInformationSQ] selectDepartmentmemberlistById:self.model.alarm];
     
-    self.headerImageView = [[UIImageView alloc] initWithCornerRadiusAdvance:25/2 rectCornerType:UIRectCornerAllCorners];
+    self.headerImageView = [[UIImageView alloc] initWithCornerRadiusAdvance:6 rectCornerType:UIRectCornerAllCorners];
     self.headerImageView.clipsToBounds = YES;
     self.headerImageView.contentMode = UIViewContentModeScaleAspectFill;
     [self.headerImageView imageGetCacheForAlarm:self.model.alarm forUrl:uModel.RE_headpic];
@@ -251,7 +251,7 @@
     [_topBgView addSubview:line2];
     [_topBgView addSubview:self.recordByPersonLabel];
     [_topBgView addSubview:self.headerImageView];
-    [_topBgView addSubview:self.postLabel];
+ //   [_topBgView addSubview:self.postLabel];
     [_topBgView addSubview:self.nameLabel];
     [_topBgView addSubview:line3];
     [_topBgView addSubview:poImage];
@@ -314,16 +314,16 @@
         make.left.equalTo(self.titleFiled.mas_left);
         make.size.mas_equalTo(CGSizeMake(25, 25));
     }];
-    [self.postLabel mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.centerY.equalTo(self.recordByPersonLabel.mas_centerY);
-        make.left.equalTo(self.headerImageView.mas_right).offset(5);
-        make.height.equalTo(@15);
-        make.width.mas_lessThanOrEqualTo(60);
-
-    }];
+//    [self.postLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+//        make.centerY.equalTo(self.recordByPersonLabel.mas_centerY);
+//        make.left.equalTo(self.headerImageView.mas_right).offset(5);
+//        make.height.equalTo(@15);
+//        make.width.mas_lessThanOrEqualTo(60);
+//
+//    }];
     [self.nameLabel mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerY.equalTo(self.recordByPersonLabel.mas_centerY);
-        make.left.equalTo(self.postLabel.mas_right).offset(5);
+        make.left.equalTo(self.headerImageView.mas_right).offset(5);
         make.height.equalTo(@30);
         make.width.mas_lessThanOrEqualTo(100);
     }];
@@ -556,12 +556,12 @@
     [self showPic:index];
 }
 //播放视频
-- (void)videoView:(VideoView *)view index:(NSInteger)index {
+- (void)videoView:(VideoView *)view index:(NSInteger)index videlUrl:(NSString *)videoUrl{
     NSInteger tag = view.tag - 10000;
     
-    NSString *videoUrl = self.videoArray[tag];
+    NSString *videourl = self.videoArray[tag];
     
-    VideoViewController *vc = [[VideoViewController alloc] initWithVideoUrl:videoUrl];
+    VideoViewController *vc = [[VideoViewController alloc] initWithVideoUrl:videourl];
     [self presentViewController:vc animated:YES completion:nil];
 }
 //播放语音

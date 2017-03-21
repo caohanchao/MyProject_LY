@@ -8,7 +8,7 @@
 
 #import "XMNChatVideoMessageCell.h"
 #import <SDWebImage/UIImageView+WebCache.h>
-#import "Masonry.h"
+#import "UIImageView+CornerRadius.h"
 
 @interface XMNChatVideoMessageCell ()
 /**
@@ -173,10 +173,8 @@
 - (UIImageView *)messageImageView {
     
     if (!_messageImageView) {
-        _messageImageView = [[UIImageView alloc] init];
+        _messageImageView = [[UIImageView alloc] initWithCornerRadiusAdvance:5 rectCornerType:UIRectCornerAllCorners];
         _messageImageView.contentMode = UIViewContentModeScaleAspectFill;
-        _messageImageView.layer.cornerRadius = 12;
-        _messageImageView.layer.masksToBounds = YES;
     }
     return _messageImageView;
     

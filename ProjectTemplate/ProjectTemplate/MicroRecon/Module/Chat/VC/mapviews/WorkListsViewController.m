@@ -12,10 +12,6 @@
 #import "SuspectlistBaseModel.h"
 #import "WorkDesViewController.h"
 
-// 注意const的位置
-static NSString *const cellId = @"cellId";
-//static NSString *const headerId = @"headerId";
-//static NSString *const footerId = @"footerId";
 
 static CGFloat viewOffset = 64;
 
@@ -40,6 +36,10 @@ static CGFloat viewOffset = 64;
 @property (nonatomic, strong) NSMutableArray *searchArray;
 @property (nonatomic, strong) NSMutableArray *nameArray;
 @property (nonatomic, strong) NSMutableArray *resultsArray;
+
+// 用来存放Cell的唯一标示符
+@property (nonatomic, strong) NSMutableDictionary *cellDic;
+
 @end
 
 @implementation WorkListsViewController
@@ -80,16 +80,65 @@ static CGFloat viewOffset = 64;
     }
     return _resultsArray;
 }
-
+- (NSMutableDictionary *)cellDic {
+    if (!_cellDic) {
+        _cellDic = [NSMutableArray array];
+    }
+    return _cellDic;
+}
 
 - (void)getDataSource {
-    [self.dataArray addObjectsFromArray:[[[DBManager sharedManager] suspectAlllistSQ]  selectSuspectlistByGid:self.gid]];
+    
+    if ([[LZXHelper isNullToString:self.gid] isEqualToString:@""]) {
+        [self.dataArray addObjectsFromArray:[[[DBManager sharedManager] suspectAlllistSQ] selectAllSuspects]];
+    }else{
+        [self.dataArray addObjectsFromArray:[[[DBManager sharedManager] suspectAlllistSQ]  selectSuspectlistByGid:self.gid]];
+    }
+    
+    
+    if (self.dataArray.count == 0) {
+        [self httpGetSuspectlist];
+    }else {
+        
     [self.searchArray addObjectsFromArray:self.dataArray];
     [self.collectView reloadData];
     
     for (SuspectlistModel *model in self.searchArray) {
         [self.nameArray addObject:model.suspectname];
     }
+        
+    }
+}
+//获取任务列表
+- (void)httpGetSuspectlist {
+    NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+    NSString *token = [[NSUserDefaults standardUserDefaults] objectForKey:@"token"];
+    NSString *urlString = [NSString stringWithFormat:GetSuspectlistUrl,alarm,token];
+    
+    ZEBLog(@"%@",urlString);
+    [self showloadingName:@"正在加载..."];
+    [HYBNetworking getWithUrl:urlString refreshCache:YES success:^(id response) {
+        
+        SuspectlistBaseModel *baseModel = [SuspectlistBaseModel getInfoWithData:response];
+        
+        [[[DBManager sharedManager] suspectAlllistSQ] transactionInsertSuspectAlllist:baseModel.results];
+        
+        if ([[LZXHelper isNullToString:self.gid] isEqualToString:@""]) {
+            [self.dataArray addObjectsFromArray:[[[DBManager sharedManager] suspectAlllistSQ] selectAllSuspects]];
+        }else{
+            [self.dataArray addObjectsFromArray:[[[DBManager sharedManager] suspectAlllistSQ]  selectSuspectlistByGid:self.gid]];
+        }
+        
+        [self.searchArray addObjectsFromArray:self.dataArray];
+        [self.collectView reloadData];
+        
+        for (SuspectlistModel *model in self.searchArray) {
+            [self.nameArray addObject:model.suspectname];
+        }
+        [self hideHud];
+    } fail:^(NSError *error) {
+        
+    }];
 }
 - (void)initCollectView {
 
@@ -97,7 +146,8 @@ static CGFloat viewOffset = 64;
     CGFloat centerMargin = 15;
     UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
     layout.scrollDirection = UICollectionViewScrollDirectionVertical;
-    layout.itemSize = CGSizeMake((kScreenWidth-leftMargin*2-centerMargin)/2, 165);
+   // layout.itemSize = CGSizeMake((kScreenWidth-leftMargin*2-centerMargin)/2, 165);
+    layout.itemSize = CGSizeMake((kScreenWidth-leftMargin*2), 147);
     layout.minimumLineSpacing = 12; //上下的间距 可以设置0看下效果
     layout.sectionInset = UIEdgeInsetsMake(0.f, 12, 0.f, 12);
     
@@ -108,7 +158,6 @@ static CGFloat viewOffset = 64;
     _collectView.delegate = self;
     _collectView.alwaysBounceVertical = YES;
     
-    [_collectView registerClass:[WorkListsCollectionViewCell class] forCellWithReuseIdentifier:cellId];
     
     [self.view addSubview:_collectView];
 }
@@ -122,7 +171,7 @@ static CGFloat viewOffset = 64;
     self.searchBar.delegate = self;
     self.searchBar.placeholder = @"搜索";
     self.searchBar.returnKeyType = UIReturnKeySearch;
-    
+    self.searchBar.enablesReturnKeyAutomatically = YES; //这里设置为无文字就灰色不可点
     [self.view addSubview:self.searchBar];
     
     _resultLabel = [CHCUI createLabelWithbackGroundColor:nil textAlignment:NSTextAlignmentCenter font:ZEBFont(15) textColor:zGrayColor text:@"没有更多的搜索结果"];
@@ -256,11 +305,29 @@ static CGFloat viewOffset = 64;
 }
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    WorkListsCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:cellId forIndexPath:indexPath];
+    // 每次先从字典中根据IndexPath取出唯一标识符
+    NSString *identifier = [_cellDic objectForKey:[NSString stringWithFormat:@"%@", indexPath]];
+    // 如果取出的唯一标示符不存在，则初始化唯一标示符，并将其存入字典中，对应唯一标示符注册Cell
+    if (identifier == nil) {
+        identifier = [NSString stringWithFormat:@"%@%@", @"WorkListsCollectionViewCell", [NSString stringWithFormat:@"%@", indexPath]];
+        [_cellDic setValue:identifier forKey:[NSString stringWithFormat:@"%@", indexPath]];
+        // 注册Cell
+        [self.collectView registerClass:[WorkListsCollectionViewCell class]  forCellWithReuseIdentifier:identifier];
+    }
+    WorkListsCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:identifier forIndexPath:indexPath];
     cell.model = self.dataArray[indexPath.item];
+    
     return cell;
     
 }
+
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath
+{
+    SuspectlistModel * model = self.dataArray[indexPath.item];
+    CGFloat height = [LZXHelper textHeightFromTextString:model.suspectdec width:screenWidth()-12*4 fontSize:13];
+    return CGSizeMake((kScreenWidth-12*2), 97+height);
+}
+
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
 
     if (self.isSearch) {
@@ -285,6 +352,15 @@ static CGFloat viewOffset = 64;
         dict[@"taskId"] =model.suspectid;
         self.taskBlock(dict);
         [self.navigationController popViewControllerAnimated:YES];
+    }
+    else if (self.type == 3) {
+        SuspectlistModel *model = self.dataArray[indexPath.item];
+        NSMutableDictionary *dict =[NSMutableDictionary new];
+        dict[@"gid"] = model.gid;
+        dict[@"gname"] =model.gname;
+        [self.navigationController popViewControllerAnimated:NO];
+        self.taskBlock(dict);
+        
     }
     
 }

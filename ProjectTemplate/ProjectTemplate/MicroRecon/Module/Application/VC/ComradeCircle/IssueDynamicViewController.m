@@ -320,21 +320,32 @@ static BOOL _isShow;
             
         } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable response)
          {
-             [self showHint:@"发布成功"];
+             NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:response
+                                                                  options:NSJSONReadingMutableContainers error:nil];
              
-             if ([_privaceStr isEqualToString:@"0"])
+             if ([dict[@"resultcode"] isEqualToString:@"0"])
              {
-                 [[NSNotificationCenter defaultCenter] postNotificationName:NewPrivacyPostNotification object:nil];
+                 [self showHint:@"发布成功"];
+                 
+                 if ([_privaceStr isEqualToString:@"0"])
+                 {
+                     [[NSNotificationCenter defaultCenter] postNotificationName:NewPrivacyPostNotification object:nil];
+                 }
+                 else
+                 {
+                     [[NSNotificationCenter defaultCenter] postNotificationName:AllPostNewNotification object:nil];
+                     [[NSNotificationCenter defaultCenter] postNotificationName:NewFollowPostNotification object:nil];
+                 }
+                 _rightButton.enabled = YES;
+                 [self hideHud];
+                 
+                 [self.navigationController popViewControllerAnimated:YES];
              }
              else
              {
-                 [[NSNotificationCenter defaultCenter] postNotificationName:AllPostNewNotification object:nil];
-                 [[NSNotificationCenter defaultCenter] postNotificationName:NewFollowPostNotification object:nil];
+                 [self showHint:@"发布失败"];
              }
-             _rightButton.enabled = YES;
-             [self hideHud];
-             
-             [self.navigationController popViewControllerAnimated:YES];
+            
              
          } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
              _rightButton.enabled = YES;
@@ -596,7 +607,24 @@ static BOOL _isShow;
         _contentLabel.hidden = NO;
     }
 }
-
+- (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text {
+    NSString *string = [NSString stringWithFormat:@"%@%@", textView.text, text];
+    if (string.length > CONTENT_MAXLENGTH){
+        [self showloadingError:@"字数不能大于50!"];
+        return NO;
+    }
+    if ([[[UITextInputMode currentInputMode]primaryLanguage] isEqualToString:@"emoji"])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    if ([NSString containEmoji:text])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    return YES;
+}
 -(void)commentTableViewTouchInSide
 {
     [_contentTextView resignFirstResponder];
@@ -619,7 +647,7 @@ static BOOL _isShow;
         _imagePickerVc.delegate = self;
         // set appearance / 改变相册选择页的导航栏外观
         _imagePickerVc.navigationBar.barTintColor = zNavColor;
-        _imagePickerVc.navigationBar.tintColor = self.navigationController.navigationBar.tintColor;
+        _imagePickerVc.navigationBar.tintColor = zNavColor;
         UIBarButtonItem *tzBarItem, *BarItem;
         if (iOS9Later) {
             tzBarItem = [UIBarButtonItem appearanceWhenContainedInInstancesOfClasses:@[[TZImagePickerController class]]];
@@ -739,6 +767,7 @@ static BOOL _isShow;
             imagePickerVc.maxImagesCount = 6;
             imagePickerVc.allowPickingOriginalPhoto = YES;
             imagePickerVc.isSelectOriginalPhoto = _isSelectOriginalPhoto;
+            imagePickerVc.navigationBar.tintColor = zNavColor;
             [imagePickerVc setDidFinishPickingPhotosHandle:^(NSArray<UIImage *> *photos, NSArray *assets, BOOL isSelectOriginalPhoto) {
                 _selectedPhotos = [NSMutableArray arrayWithArray:photos];
                 _selectedAssets = [NSMutableArray arrayWithArray:assets];

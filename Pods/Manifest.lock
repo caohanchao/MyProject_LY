@@ -21,17 +21,14 @@ PODS:
     - AMapFoundation (~> 1.1)
   - AMapSearch (4.2.0):
     - AMapFoundation (~> 1.0)
-  - BFKit (1.9.2)
-  - Bugtags (2.0.2):
-    - Bugtags/Core (= 2.0.2)
-  - Bugtags/Core (2.0.2)
+  - BFKit (1.9.3)
+  - Bugtags (2.2.2):
+    - Bugtags/Core (= 2.2.2)
+  - Bugtags/Core (2.2.2)
   - FMDB (2.6.2):
     - FMDB/standard (= 2.6.2)
   - FMDB/standard (2.6.2)
   - JLRoutes (1.5.5)
-  - JSPatch (1.1):
-    - JSPatch/Core (= 1.1)
-  - JSPatch/Core (1.1)
   - JTSImageViewController (1.5.1)
   - libqrencode (3.4.2)
   - Mantle (2.0.7):
@@ -39,6 +36,7 @@ PODS:
   - Mantle/extobjc (2.0.7)
   - Masonry (1.0.2)
   - MBProgressHUD (0.9.2)
+  - MJExtension (3.0.13)
   - MJRefresh (3.1.12)
   - pop (1.0.9)
   - PureLayout (3.0.2)
@@ -53,6 +51,9 @@ PODS:
     - SDWebImage/Core (= 3.8.2)
   - SDWebImage/Core (3.8.2)
   - Toast (3.1.0)
+  - YYImage (1.0.4):
+    - YYImage/Core (= 1.0.4)
+  - YYImage/Core (1.0.4)
 
 DEPENDENCIES:
   - AFNetworking (~> 3.1.0)
@@ -64,18 +65,19 @@ DEPENDENCIES:
   - Bugtags
   - FMDB (~> 2.6.2)
   - JLRoutes (~> 1.5.5)
-  - JSPatch
   - JTSImageViewController (~> 1.5.1)
   - libqrencode (~> 3.4.2)
   - Mantle (~> 2.0.6)
   - Masonry (~> 1.0.1)
   - MBProgressHUD (~> 0.9.2)
+  - MJExtension (~> 3.0.10)
   - MJRefresh (~> 3.1.0)
   - pop (~> 1.0.9)
   - PureLayout (~> 3.0.1)
   - ReactiveCocoa (= 2.5)
   - SDWebImage (~> 3.8.1)
   - Toast (~> 3.0)
+  - YYImage
 
 SPEC CHECKSUMS:
   AFNetworking: 5e0e199f73d8626b11e79750991f5d173d1f8b67
@@ -83,23 +85,24 @@ SPEC CHECKSUMS:
   AMapFoundation: 15db20567e6512422a086a01b42a88b145bc2500
   AMapLocation: 343abc9ccd971ad27e459f38b5b082eabebf8792
   AMapSearch: 788020fca7ed18819e8bc2bfca716a6775a05ada
-  BFKit: c8f1a85a04f8d350089da8693806a472d475d1f8
-  Bugtags: 94646a8cc2cdcb0f2fe8818675d0f73ba9a26029
+  BFKit: e581dc0609b462aea9ceb02417ceb5b26ede3316
+  Bugtags: bc4e3f55ee72b859380c3b298431dbd4b4075818
   FMDB: 854a0341b4726e53276f2a8996f06f1b80f9259a
   JLRoutes: d191a496b820f60d70225202d04289582da962df
-  JSPatch: ade285ad1d8f06146ed6054a39cef87509453299
   JTSImageViewController: 1f8ce1cc93dab0d0af8e53badeea7528560cfec9
   libqrencode: 43dc34b89af83ea4b07c409cd8e09c87aa3a1c9f
   Mantle: bc40bb061d8c2c6fb48d5083e04d928c3b7f73d9
   Masonry: 7c429b56da9d4ee0bbb3ed77a5ea710d6a5df39e
   MBProgressHUD: 1569cf7ace17a8bac47aabfbb8580a49690386d1
+  MJExtension: 5932755f451458eefa24239358817f8d291240c7
   MJRefresh: b96cdb21c4aa75a7b07654311ab2f315c497e806
   pop: f667631a5108a2e60d9e8797c9b32ddaf2080bce
   PureLayout: 4d550abe49a94f24c2808b9b95db9131685fe4cd
   ReactiveCocoa: e2db045570aa97c695e7aa97c2bcab222ae51f4a
   SDWebImage: 098e97e6176540799c27e804c96653ee0833d13c
   Toast: 14a93686d6c8bfe2727afd342414e35660a8a1f3
+  YYImage: 1e1b62a9997399593e4b9c4ecfbbabbf1d3f3b54
 
-PODFILE CHECKSUM: b74d02b3d45fd6d19245ee0bfe1148c2961982c5
+PODFILE CHECKSUM: 9532b0d441fde8fc734b5ad485baf7e47f6174bd
 
-COCOAPODS: 1.0.1
+COCOAPODS: 1.2.0

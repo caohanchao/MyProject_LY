@@ -290,7 +290,8 @@
     
     _iconImgView = [[UIImageView alloc]initWithFrame:CGRectMake(kScreenWidth/2-60/2, headerImgHeight-85-60, 60, 60)];
     _iconImgView.layer.masksToBounds = YES;
-    _iconImgView.layer.cornerRadius = 60/2;
+//    _iconImgView.layer.cornerRadius = 60/2;
+     _iconImgView.layer.cornerRadius = 6;
     _iconImgView.layer.borderWidth = 1;
     _iconImgView.layer.borderColor = [zWhiteColor CGColor];
     [headerView addSubview:_iconImgView];
@@ -552,93 +553,110 @@
         
     } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable response) {
         
-        if ([_userCardModel.isfocus integerValue] == 1)
+        NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:response
+                                                             options:NSJSONReadingMutableContainers error:nil];
+        
+        if ([dict[@"resultcode"] isEqualToString:@"0"])
         {
-            [_addAtBtn setBackgroundImage:[UIImage imageNamed:@"cricleattention"] forState:UIControlStateNormal];
-            [_addAtBtn setTitle:@"关注" forState:UIControlStateNormal];
-            [_addAtBtn setTitleEdgeInsets:UIEdgeInsetsMake(6, 21, 0, 0)];
-            [_addAtBtn setTitleColor:zBlueColor];
-            _userCardModel.isfocus =  [NSNumber numberWithInt:0];
-            
-            [[[DBManager sharedManager]userFollowSQ]deleteUserFollowWithUserAlarm:self.userIDStr withAlarm:alarm];
-            [[[DBManager sharedManager]userFansSQ]deleteUserFansWithUserAlarm:self.userIDStr withAlarm:alarm];
-            
-            CardCountInfoModel * countModel = [[CardCountInfoModel alloc]init];
-            
-            countModel.fansNum = [NSString stringWithFormat:@"%d",[_cardCountModel.fansNum intValue]-1];
-            
-            CardCountInfoModel * owncountModel = [[CardCountInfoModel alloc]init];
-            
-            owncountModel.focusNum = [NSString stringWithFormat:@"%d",[_cardCountModel.focusNum intValue]-1];
-            
-            [[[DBManager sharedManager]userCountInfoSQ]updataUsrCount:countModel withUserAlarm:self.userIDStr];
-            [[[DBManager sharedManager]userCountInfoSQ]updataUsrCount:owncountModel withUserAlarm:alarm];
-            
-            [self userCountUpde];
-            
-            [[NSNotificationCenter defaultCenter]postNotificationName:UserFollowNotification object:nil];
-            [[NSNotificationCenter defaultCenter]postNotificationName:UserFansNotification object:nil];
-            
-            [self showHint:@"取消关注成功"];
+            if ([_userCardModel.isfocus integerValue] == 1)
+            {
+                [_addAtBtn setBackgroundImage:[UIImage imageNamed:@"cricleattention"] forState:UIControlStateNormal];
+                [_addAtBtn setTitle:@"关注" forState:UIControlStateNormal];
+                [_addAtBtn setTitleEdgeInsets:UIEdgeInsetsMake(6, 21, 0, 0)];
+                [_addAtBtn setTitleColor:zBlueColor];
+                _userCardModel.isfocus =  [NSNumber numberWithInt:0];
+                
+                [[[DBManager sharedManager]userFollowSQ]deleteUserFollowWithUserAlarm:self.userIDStr withAlarm:alarm];
+                [[[DBManager sharedManager]userFansSQ]deleteUserFansWithUserAlarm:self.userIDStr withAlarm:alarm];
+                
+                CardCountInfoModel * countModel = [[CardCountInfoModel alloc]init];
+                
+                countModel.fansNum = [NSString stringWithFormat:@"%d",[_cardCountModel.fansNum intValue]-1];
+                
+                CardCountInfoModel * owncountModel = [[CardCountInfoModel alloc]init];
+                
+                owncountModel.focusNum = [NSString stringWithFormat:@"%d",[_cardCountModel.focusNum intValue]-1];
+                
+                [[[DBManager sharedManager]userCountInfoSQ]updataUsrCount:countModel withUserAlarm:self.userIDStr];
+                [[[DBManager sharedManager]userCountInfoSQ]updataUsrCount:owncountModel withUserAlarm:alarm];
+                
+                [self userCountUpde];
+                
+                [[NSNotificationCenter defaultCenter]postNotificationName:UserFollowNotification object:nil];
+                [[NSNotificationCenter defaultCenter]postNotificationName:UserFansNotification object:nil];
+                
+                [self showHint:@"取消关注成功"];
+            }
+            else
+            {
+                [_addAtBtn setBackgroundImage:[UIImage imageNamed:@"cricleattented"] forState:UIControlStateNormal];
+                [_addAtBtn setTitle:@"已关注" forState:UIControlStateNormal];
+                [_addAtBtn setTitleEdgeInsets:UIEdgeInsetsMake(6, 21, 0, 0)];
+                [_addAtBtn setTitleColor:zWhiteColor];
+                _userCardModel.isfocus =  [NSNumber numberWithInt:1];
+                
+                HomePageListModel *hmUserModel = [[HomePageListModel alloc]init];
+                
+                UserInfoModel * userInfoModel = [[[DBManager sharedManager]userDetailSQ]selectUserDetail];
+                
+                //获取当前时间并转为时间戳
+                NSDate* date = [NSDate dateWithTimeIntervalSinceNow:0];
+                NSTimeInterval a=[date timeIntervalSince1970];
+                NSString *timeString = [NSString stringWithFormat:@"%f", a];
+                NSString * string = [timeString substringToIndex:10];
+                
+                NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init];
+                [numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
+                NSNumber *numTemp = [numberFormatter numberFromString:string];
+                
+                hmUserModel.alarm = alarm;
+                hmUserModel.department = userInfoModel.department;
+                hmUserModel.headpic = userInfoModel.headpic;
+                hmUserModel.name = userInfoModel.name;
+                hmUserModel.time = numTemp ;
+                
+                
+                HomePageListModel *userModel = [[HomePageListModel alloc]init];
+                
+                userModel.alarm = self.userIDStr;
+                userModel.department = _userCardModel.department;
+                userModel.headpic = _userCardModel.headpic;
+                userModel.name = _userCardModel.name;
+                userModel.time = numTemp ;
+                
+                CardCountInfoModel * countModel = [[CardCountInfoModel alloc]init];
+                
+                countModel.fansNum = [NSString stringWithFormat:@"%d",[_cardCountModel.fansNum intValue]+1];
+                
+                CardCountInfoModel * owncountModel = [[CardCountInfoModel alloc]init];
+                
+                owncountModel.focusNum = [NSString stringWithFormat:@"%d",[_cardCountModel.focusNum intValue]+1];
+                [[[DBManager sharedManager]userCountInfoSQ]updataUsrCount:owncountModel withUserAlarm:alarm];
+                
+                [[[DBManager sharedManager]userFollowSQ]insertUserFollow:userModel withUserAlarm:alarm];
+                
+                [[[DBManager sharedManager]userFansSQ]insertUserFans:hmUserModel withUserAlarm:self.userIDStr];
+                
+                [[[DBManager sharedManager]userCountInfoSQ]updataUsrCount:countModel withUserAlarm:self.userIDStr];
+                
+                [self userCountUpde];
+                
+                [[NSNotificationCenter defaultCenter]postNotificationName:UserFollowNotification object:nil];
+                [[NSNotificationCenter defaultCenter]postNotificationName:UserFansNotification object:nil];
+                
+                [self showHint:@"关注成功"];
+            }
         }
         else
         {
-            [_addAtBtn setBackgroundImage:[UIImage imageNamed:@"cricleattented"] forState:UIControlStateNormal];
-            [_addAtBtn setTitle:@"已关注" forState:UIControlStateNormal];
-            [_addAtBtn setTitleEdgeInsets:UIEdgeInsetsMake(6, 21, 0, 0)];
-            [_addAtBtn setTitleColor:zWhiteColor];
-            _userCardModel.isfocus =  [NSNumber numberWithInt:1];
-            
-            HomePageListModel *hmUserModel = [[HomePageListModel alloc]init];
-            
-            UserInfoModel * userInfoModel = [[[DBManager sharedManager]userDetailSQ]selectUserDetail];
-            
-            //获取当前时间并转为时间戳
-            NSDate* date = [NSDate dateWithTimeIntervalSinceNow:0];
-            NSTimeInterval a=[date timeIntervalSince1970];
-            NSString *timeString = [NSString stringWithFormat:@"%f", a];
-            NSString * string = [timeString substringToIndex:10];
-            
-            NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init];
-            [numberFormatter setNumberStyle:NSNumberFormatterDecimalStyle];
-            NSNumber *numTemp = [numberFormatter numberFromString:string];
-            
-            hmUserModel.alarm = alarm;
-            hmUserModel.department = userInfoModel.department;
-            hmUserModel.headpic = userInfoModel.headpic;
-            hmUserModel.name = userInfoModel.name;
-            hmUserModel.time = numTemp ;
-            
-            
-            HomePageListModel *userModel = [[HomePageListModel alloc]init];
-            
-            userModel.alarm = self.userIDStr;
-            userModel.department = _userCardModel.department;
-            userModel.headpic = _userCardModel.headpic;
-            userModel.name = _userCardModel.name;
-            userModel.time = numTemp ;
-            
-            CardCountInfoModel * countModel = [[CardCountInfoModel alloc]init];
-            
-            countModel.fansNum = [NSString stringWithFormat:@"%d",[_cardCountModel.fansNum intValue]+1];
-            
-            CardCountInfoModel * owncountModel = [[CardCountInfoModel alloc]init];
-            
-            owncountModel.focusNum = [NSString stringWithFormat:@"%d",[_cardCountModel.focusNum intValue]+1];
-            [[[DBManager sharedManager]userCountInfoSQ]updataUsrCount:owncountModel withUserAlarm:alarm];
-            
-            [[[DBManager sharedManager]userFollowSQ]insertUserFollow:userModel withUserAlarm:alarm];
-            
-            [[[DBManager sharedManager]userFansSQ]insertUserFans:hmUserModel withUserAlarm:self.userIDStr];
-            
-            [[[DBManager sharedManager]userCountInfoSQ]updataUsrCount:countModel withUserAlarm:self.userIDStr];
-            
-            [self userCountUpde];
-            
-            [[NSNotificationCenter defaultCenter]postNotificationName:UserFollowNotification object:nil];
-            [[NSNotificationCenter defaultCenter]postNotificationName:UserFansNotification object:nil];
-            
-            [self showHint:@"关注成功"];
+             if ([_userCardModel.isfocus integerValue] == 1)
+             {
+                 [self showHint:@"取消关注失败"];
+             }
+            else
+            {
+                [self showHint:@"关注失败"];
+            }
         }
         
     } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {;

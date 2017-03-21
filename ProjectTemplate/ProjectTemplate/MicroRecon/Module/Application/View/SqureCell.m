@@ -40,7 +40,8 @@
     
     //头像
     self.iconImage = [[UIImageView alloc] initWithFrame:CGRectMake(LeftMargin, TopMargin, 36, 36)];
-    self.iconImage.layer.cornerRadius = 18;
+//    self.iconImage.layer.cornerRadius = 18;
+    self.iconImage.layer.cornerRadius = 6;
     self.iconImage.layer.masksToBounds = YES;
     //self.iconImage.backgroundColor = [UIColor redColor];
     [self.contentView addSubview: self.iconImage];
@@ -215,14 +216,15 @@
     }
     contentHight = [LZXHelper textHeightFromTextString:model.text width: screenWidth() - LeftMargin*2 fontSize:textFont];
     
-    if ([[LZXHelper isNullToString:DE_type]isEqualToString:@""])
-    {
-         postLabWidth = [LZXHelper textWidthFromTextString:@"武汉市公安局" height:18 fontSize:identityFont];
-    }
-    else
-    {
-         postLabWidth = [LZXHelper textWidthFromTextString:userModel.RE_post height:18 fontSize:identityFont];
-    }
+//    if ([[LZXHelper isNullToString:DE_type]isEqualToString:@""])
+//    {
+//         postLabWidth = [LZXHelper textWidthFromTextString:@"武汉市公安局" height:18 fontSize:identityFont];
+//    }
+//    else
+//    {
+//         postLabWidth = [LZXHelper textWidthFromTextString:userModel.RE_post height:18 fontSize:identityFont];
+//    }
+    postLabWidth = 0;
     
     imageScrollViewWidth = 88*_imageArray.count+12*(_imageArray.count-1);
     if (imageScrollViewWidth>screenWidth() - LeftMargin*2)
@@ -268,7 +270,7 @@
     
     
     _timeLabel.frame = CGRectMake(screenWidth()-LeftMargin-timeLabWidth-10, minY(self.identitylabel), timeLabWidth+10, 12);
-    _nameLabel.frame = CGRectMake(maxX(self.identitylabel)+4, minY(self.identitylabel), nameLabWidth, 15);
+    _nameLabel.frame = CGRectMake(maxX(self.identitylabel), minY(self.identitylabel), nameLabWidth, 15);
     
     _fromLabel.frame = CGRectMake(minX(self.identitylabel), maxY(self.identitylabel)+6, fromLabWidth, 15);
     
@@ -339,7 +341,19 @@
     }
     else
     {
-        _positionLabel.text = _model.position;
+        if ([_model.position containsString:@"(null)"]) {
+            NSString *string1 = _model.position;
+            NSString *string2 = @"(null)";
+            NSRange range = [string1 rangeOfString:string2];
+            int location = range.location;
+            int leight = range.length;
+            NSString *addressString = [string1 substringToIndex:range.location];
+            _positionLabel.text = addressString;
+        }
+        else
+        {
+            _positionLabel.text = _model.position;
+        }
     }
     
     _contentLabel.text = _model.text;

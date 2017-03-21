@@ -260,7 +260,7 @@
 - (void)getPhotosBytes
 {
     if (!self.isSelectOriginalPhoto) return;
-    
+    ZEBLog(@"-------%@",self.arraySelectPhotos);
     if (self.arraySelectPhotos.count > 0) {
         weakify(self);
         [[ZLPhotoTool sharePhotoTool] getPhotosBytesWithArray:self.arraySelectPhotos completion:^(NSString *photosBytes) {

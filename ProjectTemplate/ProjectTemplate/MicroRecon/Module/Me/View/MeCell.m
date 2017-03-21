@@ -13,7 +13,8 @@
 
 - (void)awakeFromNib {
     [super awakeFromNib];
-    self.avaterImgView.layer.cornerRadius=30;
+//    self.avaterImgView.layer.cornerRadius=30;
+    self.avaterImgView.layer.cornerRadius=6;
     self.avaterImgView.layer.masksToBounds=YES;
     self.avaterImgView.contentMode = UIViewContentModeScaleAspectFill;
     [self.show2Code setEnlargeEdge:15];

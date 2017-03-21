@@ -27,13 +27,15 @@
 
 @property (weak, nonatomic) NSIndexPath *selectedIndexPath;
 
+@property (nonatomic, assign) BOOL isFirist;
+
 @end
 
 @implementation XMLocationController
 
 - (void)viewDidLoad{
     [super viewDidLoad];
-    
+    self.isFirist = YES;
     if ([self.locationStr isEqualToString:@"circle"])
     {
         self.title = @"位置";
@@ -182,6 +184,10 @@ updatingLocation:(BOOL)updatingLocation
             [self searchNearBy:self.coordinate];
         }
         
+    }
+    if (self.isFirist) {
+        self.isFirist = NO;
+        [self.mapView setCenterCoordinate:userLocation.coordinate animated:YES];
     }
 }
 

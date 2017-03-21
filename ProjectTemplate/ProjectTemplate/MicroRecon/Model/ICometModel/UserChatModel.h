@@ -32,6 +32,7 @@
 @property(nonatomic,nonnull,copy)NSString *RID;
 @property(nonatomic,nonnull,copy)NSString *HEADPIC;
 @property(nonatomic,nonnull,copy)NSString *TYPE;
+@property(nonatomic,nonnull,copy)NSString *ATALARM;
 @property(nonatomic,nonnull,copy)NSString *CMD;
 @property(nonatomic,nonnull,copy)NSString *MSGID;
 @property(nonatomic,nonnull,copy)NSString *TIME;
@@ -40,7 +41,7 @@
 @property(nonatomic,nonnull,strong) GPSModel *GPS;
 @property(nonatomic,nonnull,strong) MSGModel *MSG;
 @property(nonatomic,nonnull,strong)NSString *beginTime;
-@property(nonatomic,nonnull,copy)NSString *FIRE;
+//@property(nonatomic,nonnull,copy)NSString *FIRE;
 @property(nonatomic,nonnull,copy)NSString *timeStr;
 //@property (nonatomic, nonnull, copy) NSString *markdataId;//标记唯一标识
 
@@ -48,7 +49,7 @@
 
 @interface GPSModel : MTLModel<MTLJSONSerializing>
 @property(nonatomic,nonnull,copy) NSString *H;
-@property(nonatomic,nonnull,copy) NSString * W;
+@property(nonatomic,nonnull,copy) NSString *W;
 @end
 
 

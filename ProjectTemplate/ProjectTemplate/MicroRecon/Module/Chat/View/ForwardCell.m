@@ -54,19 +54,27 @@
     NSString *imageStr;
     switch ([_tModel.type integerValue]) {
         case 0:
-            imageStr = @"group_zhencha";
+            // imageStr = @"group_zhencha";
+            imageStr = @"G_zhencha";
             break;
         case 1:
-            imageStr = @"group_qunliao";
+            // imageStr = @"group_qunliao";
+            imageStr = @"G_zudui";
             break;
         case 2:
-            imageStr = @"group_anbao";
+            // imageStr = @"group_anbao";
+            imageStr = @"G_pancha";
             break;
         case 3:
-            imageStr = @"group_xunkong";
+            //imageStr = @"group_xunkong";
+            imageStr = @"G_xunkong";
             break;
         case 4:
-            imageStr = @"group_sos";
+            //  imageStr = @"group_sos";
+            imageStr = @"G_zengyuan";
+            break;
+        case 5:
+            imageStr = @"G_duikang";
             break;
         default:
             imageStr = @"ph_g";

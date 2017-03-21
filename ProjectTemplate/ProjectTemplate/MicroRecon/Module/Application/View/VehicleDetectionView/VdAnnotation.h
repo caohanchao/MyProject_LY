@@ -19,6 +19,7 @@
 @property (nonatomic, copy) NSString *LaneNumber;// 车道编号
 @property (nonatomic, copy) NSString *bayonetName;// 车道名称
 @property (nonatomic, copy) NSString *iconUrl; // 图片url
+@property (nonatomic, copy) NSString *kknum; // 经过次数
 /**大头针的图片名*/
 @property (nonatomic, strong) UIImage  *icon;
 

@@ -16,7 +16,9 @@ typedef NS_ENUM(NSUInteger, XMChatMoreItemType){
     XMChatMoreItemAlbum /**< 显示相册 */,
     XMChatMoreItemLocation /**< 显示地理位置 */,
     XMChatMoreItemVideoRecorder /**< 录制视频 */,
+    XMchatMoreItemFile  /**<发送文件> */,
     XMChatMoreItemPublicTask    /**< 发布任务 */,
+    XMChatMoreItemCallRoll    /**< 群点名 */,
 };
 
 @protocol XMChatMoreViewDataSource;

@@ -18,6 +18,7 @@
  */
 + (void)detectorQRCodeImageWithSourceImage:(UIImage *)sourceImage isDrawWRCodeFrame:(BOOL)isDrawWRCodeFrame completeBlock:(void(^)(NSArray *resultArray, UIImage *resultImage))completeBlock
 {
+    
     // 0.创建上下文
     CIContext *context = [[CIContext alloc] init];
     // 1.创建一个探测器

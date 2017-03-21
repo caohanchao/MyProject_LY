@@ -93,6 +93,8 @@
  */
 @property (nonatomic, strong) UILabel *fireMessageTimeLabel;
 
+@property (nonatomic, assign) NSInteger index; // row
+
 //阅后即焚的状态类型
 @property (nonatomic, assign) ChatFireMessageType fireMessageType;
 @property (nonatomic, strong) NSString * fireType;

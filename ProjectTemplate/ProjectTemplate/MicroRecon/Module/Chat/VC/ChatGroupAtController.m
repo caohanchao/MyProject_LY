@@ -112,7 +112,7 @@ static CGFloat viewOffset = 64;
     self.searchBar.delegate = self;
     self.searchBar.placeholder = @"搜索";
     self.searchBar.returnKeyType = UIReturnKeySearch;
-    
+    self.searchBar.enablesReturnKeyAutomatically = YES; //这里设置为无文字就灰色不可点
     [self.view addSubview:self.searchBar];
     
     _resultLabel = [CHCUI createLabelWithbackGroundColor:nil textAlignment:NSTextAlignmentCenter font:ZEBFont(15) textColor:zGrayColor text:@"没有更多的搜索结果"];

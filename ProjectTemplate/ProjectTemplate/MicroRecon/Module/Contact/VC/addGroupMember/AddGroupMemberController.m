@@ -179,7 +179,7 @@
 
     
     _commitBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    _commitBtn.frame = CGRectMake(0, 0,65, 40);
+    _commitBtn.frame = CGRectMake(0, 0,75, 40);
     
     _commitBtn.titleLabel.font = ZEBFont(16);
     [_commitBtn setTitle:@"确定" forState:UIControlStateNormal];
@@ -356,6 +356,17 @@
 
     ZEBLog(@"全部文字textField.text--%@,  刚加的的文字--%@, 他的位置--%@", textField.text,  string,NSStringFromRange(range) );
     
+    if ([[[UITextInputMode currentInputMode]primaryLanguage] isEqualToString:@"emoji"])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    if ([NSString containEmoji:string])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+
     if (self.type == FRIEND) {
         [textField addTarget:self action:@selector(textFieldEditChanged:) forControlEvents:UIControlEventEditingChanged];
         
@@ -548,7 +559,8 @@
 //    CGFloat widthBtn = btnMargin;
     
     NSArray *titleAry = @[@"好友",@"组队",@"单位"];
-    NSArray *imageAry = @[@"contact_friend_icon",@"contact_team_icon",@"contact_organization_icon"];
+   // NSArray *imageAry = @[@"contact_friend_icon",@"contact_team_icon",@"contact_organization_icon"];
+     NSArray *imageAry = @[@"C_haoyou",@"C_zudui",@"C_danwei"];
     for (int i = 0; i < 3; i++) {
         UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
 //        btn.frame = CGRectMake(btnMargin + i*(btnMargin*2+1+widthBtn), TopMargin, widthBtn, heightBtn);
@@ -556,7 +568,7 @@
         if (i == 0) {
             btn.frame = CGRectMake(left+i*(widthBtn+wid) , TopMargin, widthBtn, heightBtn);
         }else if (i == 1){
-            btn.frame = CGRectMake(left+i*(widthBtn+wid) , TopMargin, widthBtn+10, heightBtn);
+            btn.frame = CGRectMake(left+i*(widthBtn+wid+5) , TopMargin, widthBtn, heightBtn);
         }else if (i == 2){
             btn.frame = CGRectMake(left+i*(widthBtn+wid+5), TopMargin, widthBtn, heightBtn);
         }
@@ -571,7 +583,7 @@
         UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(minX(btn), maxY(btn), widthBtn, 80 - 2*TopMargin - heightBtn+5)];
         if(i == 1)
         {
-            title.frame = CGRectMake(minX(btn)+5, maxY(btn), widthBtn, 80 - 2*TopMargin - heightBtn+5);
+            title.frame = CGRectMake(minX(btn), maxY(btn), widthBtn, 80 - 2*TopMargin - heightBtn+5);
         }
         title.text = titleAry[i];
         title.textAlignment = NSTextAlignmentCenter;

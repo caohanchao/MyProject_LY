@@ -27,6 +27,8 @@
 #import "WarningView.h"
 #import "PhysicsViewController.h"
 #import "SeePathViewController.h"
+#import "NewMarkViewController.h"
+
 //#import "UIViewController+BackButtonHandler.h"
 
 @interface ChatMapViewController () {
@@ -115,6 +117,8 @@
     //跳转记录详情界面
     [LYRouter registerURLPattern:@"ly://skiprecorddesviewcontroller" toHandler:^(NSDictionary *routerParameters) {
         NSDictionary *userInfo = routerParameters[LYRouterParameterUserInfo];
+//        NewMarkViewController *recordDes = [[NewMarkViewController alloc] init];
+//        recordDes.editMode = isOnlyReadMode;
         RecordDesViewController *recordDes = [[RecordDesViewController alloc] init];
         if ([userInfo[@"GetrecordByGroupModel"] isKindOfClass:[GetrecordByGroupModel class]]) {
            GetrecordByGroupModel *gModel = userInfo[@"GetrecordByGroupModel"];
@@ -254,7 +258,11 @@
     [super viewWillAppear:animated];
     [self.navigationController setNavigationBarHidden:YES];
     [[NSUserDefaults standardUserDefaults] setBool:YES forKey:IsChatMap];
+    
+    [[NSUserDefaults standardUserDefaults] setObject:@"1" forKey:@"messageType"];
     [[NSUserDefaults standardUserDefaults] synchronize];
+    
+  //  [SDImageCache sharedImageCache].shouldCacheImagesInMemory = NO;
 }
 - (void)viewWillDisappear:(BOOL)animated {
 
@@ -263,6 +271,8 @@
     [self.navigationController setNavigationBarHidden:NO];
     [[NSUserDefaults standardUserDefaults] setBool:NO forKey:IsChatMap];
     [[NSUserDefaults standardUserDefaults] synchronize];
+    
+   // [SDImageCache sharedImageCache].shouldCacheImagesInMemory = YES;
 }
 - (void)initall {
 
@@ -701,21 +711,28 @@
     
     NSMutableDictionary *parma = [NSMutableDictionary dictionary];
     if ([self.workId isEqualToString:chooseAll]) {
-        self.workId = @"";
+        SuspectlistModel *mdoel = self.taskArray[1];
+        self.workId = mdoel.suspectid;
     }
     if ([self.workName isEqualToString:chooseAll]) {
         self.workName = @"";
     }
+    
     parma[@"longitude"]  = _longitude;
     parma[@"latitude"] = _latitude;
     parma[@"gid"] = self.gid;//群ID
-//    parma[@"direction"] = [NSString stringWithFormat:@"%ld",self.dircation];//摄像头方向
+    parma[@"direction"] = [NSString stringWithFormat:@"%ld",self.dircation];//摄像头方向
     parma[@"workid"] = self.workId;//任务ID
     parma[@"workname"] = self.workName;//任务名称
     parma[@"mode"] = [NSString stringWithFormat:@"%ld",self.markType];//标记类型
-//    parma[@"type"] = [NSString stringWithFormat:@"%ld",self.signType];//摄像头类型 走访标记类型
+    parma[@"type"] = [NSString stringWithFormat:@"%ld",self.signType];//摄像头类型 走访标记类型
     
     ZEBLog(@"看看%@",parma);
+    
+//    NewMarkViewController *nvc = [[NewMarkViewController alloc] init];
+//    nvc.markParam = parma;
+//    nvc.editMode = isOnlyWriteMode;
+//    [self.navigationController pushViewController:nvc animated:YES];
     
     CameraMarkViewController *markVC = [[CameraMarkViewController alloc]init];
     markVC.fromWhere = OtherController;

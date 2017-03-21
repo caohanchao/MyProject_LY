@@ -213,7 +213,7 @@ NSString *const kXMNAudioDataKey;
 #pragma mark - AVAudioPlayerDelegate
 
 - (void)audioPlayerDidFinishPlaying:(AVAudioPlayer *)player successfully:(BOOL)flag {
-    [self setAudioPlayerState:XMNVoiceMessageStateNormal];
+    [self setAudioPlayerState:XMNVoiceMessageStateFinish];
     
 //    //删除近距离事件监听
 //    [[UIDevice currentDevice] setProximityMonitoringEnabled:NO];
@@ -225,10 +225,16 @@ NSString *const kXMNAudioDataKey;
     });
     
 }
-
+- (void)audioPlayerDecodeErrorDidOccur:(AVAudioPlayer *)player error:(NSError * __nullable)error {
+    
+}
 #pragma mark - NSNotificationCenter Methods
 - (void)applicationWillResignActive:(UIApplication *)application {
 
+    if(self.index < 0){
+        return;
+    }
+    
     [self cancelOperation];
     [self stopAudioPlayer];
     [self setAudioPlayerState:XMNVoiceMessageStateCancel];
@@ -276,7 +282,7 @@ NSString *const kXMNAudioDataKey;
     if (self.delegate && [self.delegate respondsToSelector:@selector(audioPlayerStateDidChanged:forIndex:)]) {
         [self.delegate audioPlayerStateDidChanged:_audioPlayerState forIndex:self.index];
     }
-    if (_audioPlayerState == XMNVoiceMessageStateCancel || _audioPlayerState == XMNVoiceMessageStateNormal) {
+    if (_audioPlayerState == XMNVoiceMessageStateCancel || _audioPlayerState == XMNVoiceMessageStateNormal||_audioPlayerState == XMNVoiceMessageStateFinish) {
         _URLString = nil;
         _index = NSUIntegerMax;
     }

@@ -9,7 +9,7 @@
 #import "ChatLogic.h"
 #import "HttpsManager.h"
 #import "BaseResponseModel.h"
-
+#import "FileManager.h"
 
 @implementation ChatLogic
 
@@ -50,8 +50,19 @@
             [[[DBManager sharedManager] personnelInformationSQ] deletePersonelInfomationFriendsListModel:chatId];
             [[NSNotificationCenter defaultCenter] postNotificationName:RefreshFriendsNotification object:nil];
         }
-
+        if ([baseModel.resultcode isEqualToString:@"0"]) {
+            
+            NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:reponse options:NSJSONReadingMutableContainers error:nil];
+            ZEBLog(@"dict:%@",dict);
+//            NSMutableString *c = [[FileManager shareManager] readFileByPath:@"message.log"];
+//            [c appendString:content];
+//            NSString *messageInfo = [NSString stringWithFormat:@"\n--------Log Exception---------\nappInfo             :\n%@\n\ncontent         :\n%@\n\n", [[FileManager shareManager] getmyAppInfo],c];
+//            [[FileManager shareManager] writeFile:messageInfo ByPath:@"message.log"];
+//
+//            NSLog(@"%@------%@", exceptionInfo,[NSString stringWithFormat:@"%@/Documents/message.log",NSHomeDirectory()]);
+        }
         successBlock(task, reponse);
+        
     } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
         failureBlock(task, error);
     }];
@@ -72,6 +83,9 @@
         failureBlock(task, error);
     }];
 }
+
+
+
 
 - (void) switchPushLogicWithPushType:(nonnull NSString *)pushType success:(nonnull void(^)(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse))successBlock failure:(nonnull void(^)(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error))failureBlock
 {

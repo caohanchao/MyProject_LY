@@ -12,8 +12,16 @@
 static NSTimeInterval cacheTime =  (double)604800;
 
 @implementation ZEBCache
+
+// 清除根聊天有关的图片 语音 视频
++ (void)clearAllChat {
+    [self clearAudioCaches];
+    [self clearVideoCaches];
+    [self clearOriginalImageCaches];
+}
+
 //视频缓存的路径
-+ (NSURL *)videoCacheUrlString:(NSString *)urlString chatId:(NSString *)chatId{
++ (NSURL *)videoCacheUrlString:(NSString *)urlString chatId:(NSString *)chatId {
     
     NSError *error = nil;
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
@@ -30,12 +38,35 @@ static NSTimeInterval cacheTime =  (double)604800;
     ZEBLog(@"%@",urlPath);
     return urlPath;
 }
+
+
+//+ (NSURL *)fileCacheUrlString:(NSString *)urlString chatId:(NSString *)chatId {
+//    NSError *error = nil;
+//    //
+////    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+////    NSString *cachesDirectory = [paths objectAtIndex:0];
+////    NSString *directoryPath = [NSString stringWithFormat:@"%@/%@/%@",cachesDirectory,AudioscachePath(),MD5Hash(chatId)];
+//    
+//    NSString *directoryPath = [[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:@"LYFileCache1"];
+//    
+//    if (![[NSFileManager defaultManager] fileExistsAtPath:directoryPath isDirectory:nil]) {
+//        [[NSFileManager defaultManager] createDirectoryAtPath:directoryPath
+//                                  withIntermediateDirectories:YES
+//                                                   attributes:nil
+//                                                        error:&error];
+//    }
+//    NSURL *urlPath = [NSURL URLWithString:[NSString stringWithFormat:@"file://%@/%@",directoryPath,MD5Hash(urlString)]];
+//    ZEBLog(@"%@",urlPath);
+//    return urlPath;
+//}
+
 //语音缓存的路径
 + (NSURL *)audioCacheUrlString:(NSString *)urlString chatId:(NSString *)chatId {
     
     NSError *error = nil;
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
     NSString *cachesDirectory = [paths objectAtIndex:0];
+
     NSString *directoryPath = [NSString stringWithFormat:@"%@/%@/%@",cachesDirectory,AudioscachePath(),MD5Hash(chatId)];
     
     if (![[NSFileManager defaultManager] fileExistsAtPath:directoryPath isDirectory:nil]) {
@@ -48,7 +79,17 @@ static NSTimeInterval cacheTime =  (double)604800;
     ZEBLog(@"%@",urlPath);
     return urlPath;
 }
-
+//清空所有语音缓存
++ (void)clearAudioCaches {
+    NSError *error = nil;
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+    NSString *cachesDirectory = [paths objectAtIndex:0];
+    NSString *directoryPath = [NSString stringWithFormat:@"%@/%@",cachesDirectory,AudioscachePath()];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:directoryPath isDirectory:nil]) {
+        [[NSFileManager defaultManager] removeItemAtPath:directoryPath error:&error];
+    }
+    
+}
 //清空所有视频缓存
 + (void)clearVideoCaches {
     NSError *error = nil;
@@ -80,6 +121,65 @@ static NSTimeInterval cacheTime =  (double)604800;
     ZEBLog(@"%@",[error description]);
     return NO;
 }
+//高清图片缓存的路径
++ (NSURL *)originalImageCacheUrlStringUrl:(NSString *)url {
+    
+    NSError *error = nil;
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+    NSString *cachesDirectory = [paths objectAtIndex:0];
+    NSString *directoryPath = [NSString stringWithFormat:@"%@/%@/%@",cachesDirectory,ImagescachePath(),OriginalscachePath()];
+    
+    if (![[NSFileManager defaultManager] fileExistsAtPath:directoryPath isDirectory:nil]) {
+        [[NSFileManager defaultManager] createDirectoryAtPath:directoryPath
+                                  withIntermediateDirectories:YES
+                                                   attributes:nil
+                                                        error:&error];
+    }
+    NSString *imagePath = [NSString stringWithFormat:@"%@/%@.png",directoryPath,MD5Hash(url)];
+    NSURL *urlPath = [NSURL URLWithString:[NSString stringWithFormat:@"file://%@",imagePath]];
+    return urlPath;
+}
+//高清图片缓存的路径
++ (void)originalImageCacheUrlString:(UIImage *)image url:(NSString *)url {
+    
+    NSError *error = nil;
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+    NSString *cachesDirectory = [paths objectAtIndex:0];
+    NSString *directoryPath = [NSString stringWithFormat:@"%@/%@/%@",cachesDirectory,ImagescachePath(),OriginalscachePath()];
+    
+    if (![[NSFileManager defaultManager] fileExistsAtPath:directoryPath isDirectory:nil]) {
+        [[NSFileManager defaultManager] createDirectoryAtPath:directoryPath
+                                  withIntermediateDirectories:YES
+                                                   attributes:nil
+                                                        error:&error];
+    }
+    NSString *imagePath = [NSString stringWithFormat:@"%@/%@.png",directoryPath,MD5Hash(url)];
+    ZEBLog(@"%@-------------%@",image,imagePath);
+    [UIImageJPEGRepresentation(image, 1.0) writeToFile:imagePath atomically:YES];
+}
+//获取缓存高清图片
++ (UIImage *)originalImageCacheUrl:(NSString *)url {
+    NSError *error = nil;
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+    NSString *cachesDirectory = [paths objectAtIndex:0];
+    NSString *directoryPath = [NSString stringWithFormat:@"%@/%@/%@/%@.png",cachesDirectory,ImagescachePath(),OriginalscachePath(),MD5Hash(url)];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:directoryPath isDirectory:nil]) {
+        UIImage *image = [[UIImage alloc] initWithData:[NSData dataWithContentsOfFile:directoryPath]];
+        return image;
+    }
+    return [[UIImage alloc] init];
+}
+//清空所有高清图缓存
++ (void)clearOriginalImageCaches {
+    NSError *error = nil;
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+    NSString *cachesDirectory = [paths objectAtIndex:0];
+    NSString *directoryPath = [NSString stringWithFormat:@"%@/%@/%@",cachesDirectory,ImagescachePath(),OriginalscachePath()];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:directoryPath isDirectory:nil]) {
+        [[NSFileManager defaultManager] removeItemAtPath:directoryPath error:&error];
+    }
+    
+}
 //图片缓存的路径
 + (void)imageCacheUrlString:(UIImage *)image alarm:(NSString *)alarm {
 
@@ -110,7 +210,7 @@ static NSTimeInterval cacheTime =  (double)604800;
     }
     return [UIImage imageNamed:@"ph_s"];
 }
-//删除指定消息的图片缓存
+//删除人图像的图片缓存
 + (void)clearImageCaches {
     NSError *error = nil;
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);

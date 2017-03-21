@@ -14,6 +14,7 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import "SystemSound.h"
 #import  "ChatBusiness.h"
+#import "PullMessageLogic.h"
 @interface CUrlServer()
 @property (nonatomic, strong) MessageDAO *messageDAO;
 @property (nonatomic, assign) BOOL firstInit;
@@ -39,13 +40,24 @@ size_t icomet_callback(char *ptr, size_t size, size_t nmemb, void *userdata){
     if(server.firstInit){
         server.firstInit = NO;
         // 获取历史消息
-        [[ChatLogic sharedManager] logicGetHistoryMessage:^(NSProgress * _Nonnull progress) {
-            NSLog(@"getHistoryMessage progress");
-        } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {
-            NSLog(@"getHistoryMessage success");
-        } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-            NSLog(@"getHistoryMessage failuer");
-            server.firstInit = YES;
+//        [[ChatLogic sharedManager] logicGetHistoryMessage:^(NSProgress * _Nonnull progress) {
+//            NSLog(@"getHistoryMessage progress");
+//        } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse) {
+//            NSLog(@"getHistoryMessage success");
+//        } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+//            NSLog(@"getHistoryMessage failuer");
+//            server.firstInit = YES;
+//        }];
+        
+        [[PullMessageLogic sharedManager] logicPullHistoryMessage:^(NSProgress * _Nonnull progress) {
+            
+        } completion:^(id  _Nonnull aResponseObject, NSError * _Nullable anError) {
+            if (anError == nil) {
+                
+            } else {
+                server.firstInit = YES;
+            }
+            
         }];
     }
     
@@ -58,6 +70,7 @@ size_t icomet_callback(char *ptr, size_t size, size_t nmemb, void *userdata){
     s = [s stringByReplacingOccurrencesOfString:@"\"{" withString:@"{"];
     s = [s stringByReplacingOccurrencesOfString:@"}\"" withString:@"}"];
     s = [s stringByReplacingOccurrencesOfString:@"\\\\/" withString:@"/"];
+    s = [s transferredMeaningWithEnter];
     NSData *data = [s dataUsingEncoding:NSUTF8StringEncoding];
     if (data) {
         NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:data
@@ -122,10 +135,28 @@ size_t icomet_callback(char *ptr, size_t size, size_t nmemb, void *userdata){
         {
             [[[DBManager sharedManager] uploadingSQ] deleteUploading:model.cuid];
             
+//            if ([model.FIRE containsString:@"LOCK"]) {
+//                if ([model.mtype isEqualToString:@"S"]||[model.mtype isEqualToString:@"P"]||[model.mtype isEqualToString:@"V"]) {
+//                    
+//                }else {
+//                    // 将消息存入到聊天记录表和消息列表中
+//                    [[[DBManager sharedManager] MessageDAO] insertMessage:model];
+//                    
+//                    [[[DBManager sharedManager] UserlistDAO] insertOrUpdateUserlist:model];
+//                }
+//            }
+//            else
+//            {
+//                // 将消息存入到聊天记录表和消息列表中
+//                [[[DBManager sharedManager] MessageDAO] insertMessage:model];
+//                
+//                [[[DBManager sharedManager] UserlistDAO] insertOrUpdateUserlist:model];
+//            }
             // 将消息存入到聊天记录表和消息列表中
             [[[DBManager sharedManager] MessageDAO] insertMessage:model];
             
             [[[DBManager sharedManager] UserlistDAO] insertOrUpdateUserlist:model];
+           
             
             //通知主线程刷新
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -136,21 +167,36 @@ size_t icomet_callback(char *ptr, size_t size, size_t nmemb, void *userdata){
                 // 通知消息列表刷新
                 [notification postNotificationName:@"ReceiveMessage" object:model];
                 
-                if (![model.cuid isEqualToString:@""]) {
-                    
-                    //通知刷新聊天界面,当视频，图片上传成功
-                    [notification postNotificationName:@"ImageVideoComing" object:model.cuid];
+                if (![[LZXHelper isNullToString:model.cuid] isEqualToString:@""] && [model.sid isEqualToString:[kZEBUserDefaults objectForKey:@"alarm"]] && ([@"P" isEqualToString:model.mtype] || [@"V" isEqualToString:model.mtype] ||[@"D" isEqualToString:model.mtype])) {
+                    //通知刷新聊天界面,当视频，图片,文件上传成功
+                    [notification postNotificationName:@"ImageVideoComing" object:model];
                     
                 }else {
                     // 通知聊天页面刷新
                     NSString *chatId = [[NSUserDefaults standardUserDefaults] objectForKey:@"chatId"];
-                    if (([@"G" isEqualToString:model.type] && [model.rid isEqualToString:chatId]) ||
+
+                    if ([model.rid isEqualToString:model.sid]) { // 文件助手
+                        if (([@"S" isEqualToString:model.type] && [model.sid isEqualToString:chatId] && [[LZXHelper isNullToString:model.cuid] isEqualToString:@""])) {
+                            
+                            [notification postNotificationName:@"ReceiveChatMessage" object:model];
+                            
+                        } else if ([@"S" isEqualToString:model.type] ){
+                            
+                            [notification postNotificationName:@"refreshUIByMessageCuid" object:model];
+                            
+                        }
+                    }else { // 其它消息
+                    if (([@"G" isEqualToString:model.type] && [model.rid isEqualToString:chatId] && ![model.sid isEqualToString:[kZEBUserDefaults objectForKey:@"alarm"]]) ||
                         ([@"S" isEqualToString:model.type] && [model.sid isEqualToString:chatId])) {
-                        
+
                         [notification postNotificationName:@"ReceiveChatMessage" object:model];
                         
+                    } else if ([@"G" isEqualToString:model.type] ||
+                              [@"S" isEqualToString:model.type] ){
+                        [notification postNotificationName:@"refreshUIByMessageCuid" object:model];
                     }
-                }
+                    }}
+
             });
         }
         
@@ -165,6 +211,7 @@ size_t icomet_callback(char *ptr, size_t size, size_t nmemb, void *userdata){
         dispatch_async(dispatch_get_main_queue(), ^{
             if (![model.sid isEqualToString:alarm]) {
                 [[NSNotificationCenter defaultCenter] postNotificationName:AddFriendNews object:nil];
+                [[NSNotificationCenter defaultCenter] postNotificationName:tabbarShowRedLabel object:@"1"];
             }
             [[NSNotificationCenter defaultCenter] postNotificationName:RefreshFriendsNotification object:nil];
         });
@@ -318,22 +365,34 @@ size_t icomet_callback(char *ptr, size_t size, size_t nmemb, void *userdata){
                 [[NSNotificationCenter defaultCenter] postNotificationName:RefreshGroupNameNotification object:param];
             }
             
+
+            // 通知聊天页面刷新
+            NSString *chatId = [[NSUserDefaults standardUserDefaults] objectForKey:@"chatId"];
             
-            if (![model.cuid isEqualToString:@""]) {
-                
-                //通知刷新聊天界面,当视频，图片上传成功
-                [notification postNotificationName:@"ImageVideoComing" object:model.cuid];
-                
-            }else {
-                // 通知聊天页面刷新
-                NSString *chatId = [[NSUserDefaults standardUserDefaults] objectForKey:@"chatId"];
-                if (([@"G" isEqualToString:model.type] && [model.rid isEqualToString:chatId]) ||
-                    ([@"S" isEqualToString:model.type] && [model.sid isEqualToString:chatId])) {
+            if ([model.rid isEqualToString:model.sid]) { // 文件助手
+                if (([@"S" isEqualToString:model.type] && [model.sid isEqualToString:chatId] && [[LZXHelper isNullToString:model.cuid] isEqualToString:@""])) {
                     
                     [notification postNotificationName:@"ReceiveChatMessage" object:model];
                     
+                } else if ([@"S" isEqualToString:model.type] ){
+                    
+                    [notification postNotificationName:@"refreshUIByMessageCuid" object:model];
+                    
                 }
+            }else { // 其它消息
+            if (([@"G" isEqualToString:model.type] && [model.rid isEqualToString:chatId] && ![model.sid isEqualToString:[kZEBUserDefaults objectForKey:@"alarm"]]) ||
+                ([@"S" isEqualToString:model.type] && [model.sid isEqualToString:chatId])) {
+                
+                
+                [notification postNotificationName:@"ReceiveChatMessage" object:model];
+                
+            }else if ([@"G" isEqualToString:model.type] ||
+                      [@"S" isEqualToString:model.type] ){
+                [notification postNotificationName:@"refreshUIByMessageCuid" object:model];
+            
             }
+            }
+            
         });
     }else if (model && [@"5" isEqualToString:model.cmd]) {//发起任务
         
@@ -361,8 +420,16 @@ size_t icomet_callback(char *ptr, size_t size, size_t nmemb, void *userdata){
         }
         if (![[[DBManager sharedManager] GrouplistSQ] isExistGroupForGid:model.rid]) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                //刷新组队界面
-                [[NSNotificationCenter defaultCenter] postNotificationName:ChatListReoloadGrouplistNotification object:model.rid];
+                // 通知聊天页面刷新
+                NSString *chatId = [[NSUserDefaults standardUserDefaults] objectForKey:@"chatId"];
+                
+                if (([@"G" isEqualToString:model.type] && [model.rid isEqualToString:chatId])) {
+                    
+                    //刷新组队界面
+                    [[NSNotificationCenter defaultCenter] postNotificationName:ChatListReoloadGrouplistNotification object:model.rid];
+                    
+                }
+                
             });
             
             
@@ -379,6 +446,9 @@ size_t icomet_callback(char *ptr, size_t size, size_t nmemb, void *userdata){
             NSString *chatId = [[NSUserDefaults standardUserDefaults] objectForKey:@"chatId"];
             if (([@"G" isEqualToString:model.type] && [model.rid isEqualToString:chatId])) {
                 [notification postNotificationName:@"ReceiveChatMessage" object:model];
+            }else if ([@"G" isEqualToString:model.type] ||
+                      [@"S" isEqualToString:model.type] ){
+                [notification postNotificationName:@"refreshUIByMessageCuid" object:model];
             }
         });
         
@@ -449,6 +519,37 @@ size_t icomet_callback(char *ptr, size_t size, size_t nmemb, void *userdata){
                 [notification postNotificationName:ChatControllerRefreshUINotification object:nil];
                 // 通知消息列表刷新
                 [notification postNotificationName:@"chatlistRefreshNotification" object:nil];
+            });
+        }
+        if ([model.mtype isEqualToString:@"3"])
+        {//收到一键求助消息
+            if (![model.sid isEqualToString:[[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"]]) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    NSData *rsdata = [s dataUsingEncoding:NSUTF8StringEncoding];
+                    NSDictionary *rsdict = [NSJSONSerialization JSONObjectWithData:rsdata
+                                                                           options:NSJSONReadingMutableContainers error:nil];
+                    
+                    NSDictionary *dicts =[[NSDictionary alloc] initWithObjectsAndKeys:rsdict,@"receive", nil];
+                       [LYRouter openURL:@"ly://CallHelpReceiveHelp" withUserInfo:dicts completion:nil];
+                });
+            }
+        }
+        else if ([model.mtype isEqualToString:@"5"])
+        {//有人回应了求助
+            dispatch_async(dispatch_get_main_queue(), ^{
+                
+                NSDictionary *userDict =[[NSDictionary alloc] initWithObjectsAndKeys:model.sid,@"userAlarm", nil];
+                [LYRouter openURL:@"ly://UserSureHelpCallHelp" withUserInfo:userDict completion:nil];
+            });
+            
+        }
+        else if ([model.mtype isEqualToString:@"4"])
+        {//有人取消了回应
+            dispatch_async(dispatch_get_main_queue(), ^{
+                
+                NSDictionary *userDict =[[NSDictionary alloc] initWithObjectsAndKeys:model.sid,@"userAlarm", nil];
+                [LYRouter openURL:@"ly://CallHelpCancelHelp" withUserInfo:userDict completion:nil];
+                 [LYRouter openURL:@"ly://UserCancelCallHelp" withUserInfo:userDict completion:nil];
             });
         }
     }

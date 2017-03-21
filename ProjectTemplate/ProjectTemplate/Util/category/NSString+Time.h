@@ -11,6 +11,7 @@
 @interface NSString (Time)
 
 - (NSString *)timeChangeHHmm;
+- (NSString *)rollCallDetailTimeChangeHHmm;
 - (NSString *)timeChaneTodayOrYesterdayOrOther;
 - (NSString *)timeChaneForWorkList;
 -(NSString *)getMMSSFromSS;

@@ -31,7 +31,8 @@
 }
 - (void)createUI {
     
-    _imageTU = [[UIImageView alloc] initWithCornerRadiusAdvance:20 rectCornerType:UIRectCornerAllCorners];
+//    _imageTU = [[UIImageView alloc] initWithCornerRadiusAdvance:20 rectCornerType:UIRectCornerAllCorners];
+    _imageTU = [[UIImageView alloc] initWithCornerRadiusAdvance:6 rectCornerType:UIRectCornerAllCorners];
     _imageTU.frame = CGRectMake(LeftMargin, TopMargin, 40, 40);
     _imageTU.contentMode = UIViewContentModeScaleAspectFill;
     
@@ -116,36 +117,38 @@
     NSString *str =  [NSString stringWithFormat:@" %@ ",DE_name];
     
     CGFloat width =_postnameL.frame.size.width;
-    width = [LZXHelper textWidthFromTextString:str height:20 fontSize:12];
+//    width = [LZXHelper textWidthFromTextString:str height:20 fontSize:12];
+    width = 0;
     
-    if ([[LZXHelper isNullToString:DE_type] isEqualToString:@""]) {
-        _postnameL.layer.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"].CGColor;
-        
-        _postnameL.text = [NSString stringWithFormat:@" 武汉市公安局 "];
-         width = [LZXHelper textWidthFromTextString:_postnameL.text height:20 fontSize:12];
-        
-        
-    }else {
-        if ([DE_type isEqualToString:@"0"]) {//0警察公务组织紫，1技术支持绿
-            _postnameL.layer.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"].CGColor;
-            _postnameL.text = [NSString stringWithFormat:@" %@ ",self.model.RE_post];
-            width = [LZXHelper textWidthFromTextString:_postnameL.text height:20 fontSize:12];
-            
-        }else if ([DE_type isEqualToString:@"1"]) {
-            _postnameL.layer.backgroundColor = [UIColor colorWithHexString:@"#6cd9a3"].CGColor;
-            _postnameL.text = [NSString stringWithFormat:@" %@ ",self.model.RE_post];
-            width = [LZXHelper textWidthFromTextString:_postnameL.text height:20 fontSize:12];
-        }
-        
-    }
-    if (width>140)
-    {
-        _postnameL.frame = CGRectMake(LeftMargin + 50, TopMargin+10, 140, 20);
-    }else{
-        _postnameL.frame = CGRectMake(LeftMargin + 50, TopMargin+10, width+8, 20);
-    }
+//    if ([[LZXHelper isNullToString:DE_type] isEqualToString:@""]) {
+//        _postnameL.layer.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"].CGColor;
+//        
+//        _postnameL.text = [NSString stringWithFormat:@" 武汉市公安局 "];
+//         width = [LZXHelper textWidthFromTextString:_postnameL.text height:20 fontSize:12];
+//        
+//        
+//    }else {
+//        if ([DE_type isEqualToString:@"0"]) {//0警察公务组织紫，1技术支持绿
+//            _postnameL.layer.backgroundColor = [UIColor colorWithHexString:@"#96b0fb"].CGColor;
+//            _postnameL.text = [NSString stringWithFormat:@" %@ ",self.model.RE_post];
+//            width = [LZXHelper textWidthFromTextString:_postnameL.text height:20 fontSize:12];
+//            
+//        }else if ([DE_type isEqualToString:@"1"]) {
+//            _postnameL.layer.backgroundColor = [UIColor colorWithHexString:@"#6cd9a3"].CGColor;
+//            _postnameL.text = [NSString stringWithFormat:@" %@ ",self.model.RE_post];
+//            width = [LZXHelper textWidthFromTextString:_postnameL.text height:20 fontSize:12];
+//        }
+//        
+//    }
+//    if (width>140)
+//    {
+//        _postnameL.frame = CGRectMake(LeftMargin + 50, TopMargin+10, 140, 20);
+//    }else{
+//        _postnameL.frame = CGRectMake(LeftMargin + 50, TopMargin+10, width+8, 20);
+//    }
     
-    _labelName.frame = CGRectMake(maxX(_postnameL)+10, minY(_imageTU), 150, 40);
+//    _labelName.frame = CGRectMake(maxX(_postnameL)+10, minY(_imageTU), 150, 40);
+    _labelName.frame = CGRectMake(LeftMargin + 50, minY(_imageTU), 150, 40);
     
     if ([_model.isSelect boolValue]) {
         

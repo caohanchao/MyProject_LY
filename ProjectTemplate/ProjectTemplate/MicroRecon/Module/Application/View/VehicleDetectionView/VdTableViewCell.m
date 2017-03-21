@@ -13,7 +13,7 @@
 @interface VdTableViewCell ()
 
 @property (nonatomic, strong) UILabel *timeLabel;
-@property (nonatomic, strong) UIImageView *mapImageView;
+@property (nonatomic, strong) UILabel *mapImageView;
 @property (nonatomic, strong) UILabel *bayonetNameLabel;
 @property (nonatomic, weak) UILabel *line;
 @end
@@ -37,7 +37,7 @@
     self.timeLabel = [CHCUI createLabelWithbackGroundColor:nil textAlignment:NSTextAlignmentRight font:ZEBFont(10) textColor:CHCHexColor(@"a6a6a6") text:@""];
     self.timeLabel.textAlignment = NSTextAlignmentRight;
     
-    self.mapImageView = [CHCUI createImageWithbackGroundImageV:@"vd_annotation_small"];
+    self.mapImageView = [CHCUI createLabelWithbackGroundColor:nil textAlignment:NSTextAlignmentCenter font:ZEBFont(12) textColor:zBlackColor text:@""];
     
     self.bayonetNameLabel = [CHCUI createLabelWithbackGroundColor:nil textAlignment:NSTextAlignmentLeft font:ZEBFont(TitleFont) textColor:CHCHexColor(@"000000") text:@""];
     
@@ -56,7 +56,8 @@
     [self.mapImageView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.centerY.equalTo(self.mas_centerY);
         make.left.equalTo(self.mas_left).offset(12);
-        make.size.mas_equalTo(CGSizeMake(12, 12));
+        make.height.equalTo(@12);
+        make.width.mas_equalTo(25);
  
     }];
     
@@ -77,13 +78,20 @@
 - (void)setBayonetName:(NSString *)bayonetName {
 
     _bayonetName = bayonetName;
-    self.bayonetNameLabel.text = [NSString stringWithFormat:@"卡口名称：%@",[LZXHelper isNullToString:_bayonetName]];
+    NSString *name = [LZXHelper isNullToString:_bayonetName];
+    if ([name isEqualToString:@""]) {
+        name = @"未知";
+    }
+    self.bayonetNameLabel.text = [NSString stringWithFormat:@"卡口名称：%@",name];
 }
 - (void)setTime:(NSString *)time {
     _time = time;
     self.timeLabel.text = [_time timeChangeHHmm];
 }
-
+- (void)setIndex:(NSInteger)index {
+    _index = index;
+    self.mapImageView.text = [NSString stringWithFormat:@"%ld",_index];
+}
 - (void)awakeFromNib {
     [super awakeFromNib];
     // Initialization code

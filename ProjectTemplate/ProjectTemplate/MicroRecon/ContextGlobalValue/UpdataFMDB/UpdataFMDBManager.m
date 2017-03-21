@@ -39,6 +39,26 @@
         [self versionStr104beta];
         [self versionStr105beta];
         [self versionStr107beta];
+    }else if ([versionStr isEqualToString:FMDBVersion5]) {
+        [self versionStr104beta];
+        [self versionStr105beta];
+        [self versionStr107beta];
+    }else if ([versionStr isEqualToString:FMDBVersion6]) {
+        [self versionStr104beta];
+        [self versionStr105beta];
+        [self versionStr107beta];
+    }else if ([versionStr isEqualToString:FMDBVersion7]) {
+        [self versionStr104beta];
+        [self versionStr105beta];
+        [self versionStr107beta];
+    }else if ([versionStr isEqualToString:FMDBVersion8]) {
+        [self versionStr104beta];
+        [self versionStr105beta];
+        [self versionStr107beta];
+    }else if ([versionStr isEqualToString:FMDBVersion2_0]) {
+        [self versionStr104beta];
+        [self versionStr105beta];
+        [self versionStr107beta];
     }
 }
 - (void)versionStr104beta {
@@ -119,6 +139,17 @@
                 ZEBLog(@"插入失败");
             }
         }
+        if (![db columnExists:@"me_msgNotShow" inTableWithName:@"tb_message"]){
+            NSString *alertStr = [NSString stringWithFormat:@"ALTER TABLE %@ ADD %@ TEXT",@"tb_message",@"me_msgNotShow"];
+            BOOL worked = [db executeUpdate:alertStr];
+            if(worked){
+                ZEBLog(@"插入成功");
+            }else{
+                ZEBLog(@"插入失败");
+            }
+        }
     }];
 }
+
+
 @end

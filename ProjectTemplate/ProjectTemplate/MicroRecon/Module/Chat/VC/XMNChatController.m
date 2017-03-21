@@ -6,6 +6,7 @@
 //  Copyright © 2015年 xmfraker. All rights reserved.
 //
 
+
 #import "XMNChatController.h"
 
 #import "UITableView+FDTemplateLayoutCell.h"
@@ -42,10 +43,29 @@
 #import "GroupDesModel.h"
 #import "ZMLPlaceholderTextView.h"
 #import "XMNMessageStateManager.h"
+#import "XMNChatFireImageMessageCell.h"
+#import "XMNChatFileMessageCell.h"
 #import "MessageDoubleTapViewController.h"
 #import "UIViewController+BackButtonHandler.h"
+#import "ZEBPhotoBrowser.h"
+#import "Photo.h"
+#import "UIImage+UIImageScale.h"
+#import "ChatTableView.h"
+#import "Timer.h"
+#import "EmojiViewController.h"
+#import "CreateCollCallViewController.h"
+
+#import "CJFlieLookUpVC.h"
+
+#import "GroupMemberBaseModel.h"
+
+
 @class chatModel;
-@interface XMNChatController () <XMChatBarDelegate,XMNAVAudioPlayerDelegate,XMNChatMessageCellDelegate,XMNChatViewModelDelegate,CollectCopyDelegate>
+@interface XMNChatController () <XMChatBarDelegate,XMNAVAudioPlayerDelegate,XMNChatMessageCellDelegate,XMNChatViewModelDelegate,CollectCopyDelegate> {
+    UIActivityIndicatorView* _activity;
+    UIView* _headView;
+    Timer *timer;
+}
 
 
 @property (nonatomic, strong) UILabel *attentionLabel;
@@ -68,8 +88,10 @@
 @property (nonatomic,strong) NSArray *array;
 @property (nonatomic,copy) NSString *codeStr;
 @property (nonatomic,strong) NSURL *filePath;
-@property (nonatomic,strong)IDMPhotoBrowser *browser;
+//@property (nonatomic,strong)IDMPhotoBrowser *browser;
 @property (nonatomic,assign) BOOL hidden;
+
+@property (nonatomic,strong)ZEBPhotoBrowser *browser;
 
 @property(nonatomic,strong)NearestImage  *nearsetImage;
 
@@ -80,6 +102,12 @@
 @property(nonatomic,strong)XMNChatMessageCell  * lastSelsetCell;
 
 @property (nonatomic,assign) BOOL isExistTimeout;
+
+@property (nonatomic,assign) BOOL isShowBrowser;
+
+@property (nonatomic, assign) BOOL isDeleteLoadNewData;
+
+@property (nonatomic, strong) NSMutableArray *memberDataArray;
 
 @end
 
@@ -109,11 +137,14 @@
 }
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [[SDImageCache sharedImageCache] clearMemory];
+    [timer stop];
 }
 - (void)viewDidLoad {
     [super viewDidLoad];
     
     self.navigationItem.title = self.chatterName;
+    
     [self createRightBarBtn];
     [XMNAVAudioPlayer sharePlayer].delegate = self;
     self.chatViewModel = [[XMNChatViewModel alloc] initWithParentVC:self];
@@ -128,6 +159,21 @@
     [self.view addSubview:self.chatBar];
     [self.view addSubview:self.tableView];
     self.tableView.userInteractionEnabled=YES;
+    
+    if (_messageChatType == 0) {
+        timer = [Timer sharedTimer];
+        [timer countDownWithTableView:_tableView dataSource:self.dataArray];
+        [self.tableView reloadData];
+        
+        [[NSUserDefaults standardUserDefaults] setObject:@"0" forKey:@"messageType"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
+    else
+    {
+        [[NSUserDefaults standardUserDefaults] setObject:@"1" forKey:@"messageType"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
+    
     
     
 //    [self makeConstraints];
@@ -158,6 +204,16 @@
     //阅后即焚别人已读
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(fireMessageBeRead:) name:ReadFireMessageNotification object:nil];
     
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(refreshUIByMessageCuid:) name:@"refreshUIByMessageCuid" object:nil];
+    
+    //注册路由
+    WeakSelf
+    //普通群跳转点名
+    [LYRouter registerURLPattern:@"ly://gotoCallRoll" toHandler:^(NSDictionary *routerParameters) {
+        
+        [weakSelf httpGetGroupMemberInfo];
+    }];
+    
     [self scrollToBottom:NO];
     
     _selectIndexArray = [NSMutableArray arrayWithCapacity:0];
@@ -176,6 +232,20 @@
     
 }
 
+#pragma mark -
+#pragma mark 自己发消息自己回调
+- (void)refreshUIByMessageCuid:(NSNotification *)notification {
+    ICometModel *model = notification.object;
+    NSInteger count = self.dataArray.count;
+    for (int i = 0; i < count; i++) {
+        NSMutableDictionary *message = self.dataArray[i];
+        if ([model.cuid isEqualToString:message[kXMNMessageConfigurationCUIDKey]]) {
+            message[kXMNMessageConfigurationQIDKey] = [NSString stringWithFormat:@"%ld",model.qid];
+            [self.tableView reloadData];
+            break;
+        }
+    }
+}
 
 - (BOOL)navigationShouldPopOnBackButton {
     NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
@@ -197,8 +267,25 @@
 }
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-
+    if (self.isShowBrowser) {
+        self.navigationController.navigationBar.hidden = YES;
+    }
+    
+   // [SDImageCache sharedImageCache].shouldCacheImagesInMemory = NO;
+//    self.navigationController.navigationBar.hidden = NO;
 }
+
+- (void)viewWillDisappear:(BOOL)animated{
+    
+    [super viewWillDisappear:animated];
+//    self.navigationController.navigationBar.hidden = NO;
+    [[XMNAVAudioPlayer sharePlayer] stopAudioPlayer];
+    [XMNAVAudioPlayer sharePlayer].index = NSUIntegerMax;
+    [XMNAVAudioPlayer sharePlayer].URLString = nil;
+   // [SDImageCache sharedImageCache].shouldCacheImagesInMemory = YES;
+}
+
+
 //展示提醒框
 - (void)showHind:(NSNotification *)notification {
     
@@ -224,15 +311,34 @@
     
     _dataArray = nil;
     self.chatViewModel.dataArray = self.dataArray;
+    [timer countDownWithTableView:_tableView dataSource:self.dataArray];
     [self.tableView reloadData];
 }
 
 - (void)imageVideoComingrefreshUI:(NSNotification *)notification {
-   // NSString *cuid = notification.object;
-    _dataArray = nil;
-    self.chatViewModel.dataArray = self.dataArray;
-    [self.tableView reloadData];
+    ICometModel *model = notification.object;
+    NSInteger index = [self modelIndex:model];
+    if (index >= 0) {
+        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
+        [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+    }
 }
+
+- (NSInteger)modelIndex:(ICometModel *)model {
+    
+    NSInteger j = -1;
+    NSInteger count = self.chatViewModel.dataArray.count;
+    for (int i = 0; i < count; i++) {
+        NSMutableDictionary *message = self.chatViewModel.dataArray[i];
+        if ([model.cuid isEqualToString:message[kXMNMessageConfigurationCUIDKey]]) {
+            message[kXMNMessageConfigurationQIDKey] = @(model.qid);
+            j = i;
+            break;
+        }
+    }
+    return j;
+}
+
 - (void)createRightBarBtn {
 
 
@@ -242,16 +348,19 @@
     
     if ([chatType isEqualToString:@"S"]) {
         BOOL ret = [[[DBManager sharedManager] personnelInformationSQ] isFriendExistForAlarm:chatId];
+        NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+        
         if (ret) {
-            
-            UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
-            button.frame = CGRectMake(0, 0, 40, 40);
-            
-            [button addTarget:self action:@selector(rightBtnG:) forControlEvents:UIControlEventTouchUpInside];
-            [button setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-            [button setBackgroundImage:[UIImage imageNamed:@"chat_person_normal"] forState:UIControlStateNormal];
-            UIBarButtonItem *rightBar = [[UIBarButtonItem alloc] initWithCustomView:button];
-            self.navigationItem.rightBarButtonItem = rightBar;
+            if (![chatId isEqualToString:alarm]) {
+                UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+                button.frame = CGRectMake(0, 0, 40, 40);
+                
+                [button addTarget:self action:@selector(rightBtnG:) forControlEvents:UIControlEventTouchUpInside];
+                [button setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+                [button setBackgroundImage:[UIImage imageNamed:@"chat_person_normal"] forState:UIControlStateNormal];
+                UIBarButtonItem *rightBar = [[UIBarButtonItem alloc] initWithCustomView:button];
+                self.navigationItem.rightBarButtonItem = rightBar;   
+            }
         }
     }else if ([chatType isEqualToString:@"G"]) {
         BOOL ret = [[[DBManager sharedManager] GrouplistSQ] isExistGroupForGid:chatId];
@@ -301,13 +410,7 @@
     
     
 }
-- (void)viewWillDisappear:(BOOL)animated{
 
-    [super viewWillDisappear:animated];
-    [[XMNAVAudioPlayer sharePlayer] stopAudioPlayer];
-    [XMNAVAudioPlayer sharePlayer].index = NSUIntegerMax;
-    [XMNAVAudioPlayer sharePlayer].URLString = nil;
-}
 
 
 //-(void)timeCompare:(NSMutableDictionary *)dict withTime:(NSString *)time
@@ -412,7 +515,12 @@
     
     NSMutableDictionary *textMessageDict = [NSMutableDictionary dictionary];
 //    textMessageDict[kXMNMessageConfigurationQIDKey] =@(self.qid);
-    textMessageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeText);
+    if ([message rangeOfString:@"[img]file:///storage/emulated/0/MicroRecon/Emoticons/"].location == NSNotFound) {
+      textMessageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeText);
+    }else {
+      textMessageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeEmotions);
+    }
+    
     textMessageDict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSelf);
     textMessageDict[kXMNMessageConfigurationGroupKey] = @(self.messageChatType);
     textMessageDict[kXMNMessageConfigurationTextKey] = message;
@@ -443,10 +551,18 @@
     
 }
 
-- (void)chatBar:(XMChatBar *)chatBar sendVoice:(NSString *)voiceFileName seconds:(NSTimeInterval)seconds{
+- (void)chatBar:(XMChatBar *)chatBar sendVoice:(NSString *)voiceFileName seconds:(NSTimeInterval)seconds withType:(ChatFireMessageType)messageType{
+    
+    if (messageType == messageLock) {
+        self.fireMessageType = messageLock;
+    }
+    else
+    {
+        self.fireMessageType = messageUNLock;
+    }
     
     NSMutableDictionary *voiceMessageDict = [NSMutableDictionary dictionary];
-//    voiceMessageDict[kXMNMessageConfigurationQIDKey] =@(self.qid);
+    //    voiceMessageDict[kXMNMessageConfigurationQIDKey] =@(self.qid);
     voiceMessageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeVoice);
     voiceMessageDict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSelf);
     voiceMessageDict[kXMNMessageConfigurationGroupKey] = @(self.messageChatType);
@@ -457,23 +573,46 @@
     voiceMessageDict[kXMNMessageConfigurationAlarmKey] = self.alarm;
     voiceMessageDict[kXMNMessageConfigurationVoiceKey] = voiceFileName;
     voiceMessageDict[kXMNMessageConfigurationVoiceSecondsKey] = @(seconds);
+    
+    if (self.fireMessageType == messageLock) {
+        voiceMessageDict[kXMNMessageConfigurationFireKey] = @"LOCK";
+    }
+    else
+    {
+        voiceMessageDict[kXMNMessageConfigurationFireKey] = @"";
+    }
+    
     NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
     [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
     NSString *time = [formatter stringFromDate:[NSDate date]];
-//    voiceMessageDict[kXMNMessageConfigurationTimeKey] = time;
-     [self timeCompare:voiceMessageDict withTime:time];
+    //    voiceMessageDict[kXMNMessageConfigurationTimeKey] = time;
+    [self timeCompare:voiceMessageDict withTime:time];
     
-
+    
     
     [self addMessage:voiceMessageDict];
     
 }
 
-- (void)chatBar:(XMChatBar *)chatBar sendPictures:(NSArray *)pictures{
+- (void)chatBar:(XMChatBar *)chatBar sendPictures:(NSArray *)pictures withType:(ChatFireMessageType)messageType{
+    
+    if (messageType == messageLock) {
+        self.fireMessageType = messageLock;
+    }
+    else
+    {
+        self.fireMessageType = messageUNLock;
+    }
     
     NSMutableDictionary *imageMessageDict = [NSMutableDictionary dictionary];
-//    imageMessageDict[kXMNMessageConfigurationQIDKey] =@(self.qid);
-    imageMessageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeImage);
+    //    imageMessageDict[kXMNMessageConfigurationQIDKey] =@(self.qid);
+    if (messageType == messageLock) {
+        imageMessageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeFireImage);
+    }
+    else
+    {
+        imageMessageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeImage);
+    }
     imageMessageDict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSelf);
     imageMessageDict[kXMNMessageConfigurationGroupKey] = @(self.messageChatType);
     imageMessageDict[kXMNMessageConfigurationImageKey] = [pictures firstObject];
@@ -485,19 +624,88 @@
     NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
     [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
     NSString *time = [formatter stringFromDate:[NSDate date]];
-//    imageMessageDict[kXMNMessageConfigurationTimeKey] = time;
+    //    imageMessageDict[kXMNMessageConfigurationTimeKey] = time;
     
-     [self timeCompare:imageMessageDict withTime:time];
-
+    [self timeCompare:imageMessageDict withTime:time];
     
+    if (self.fireMessageType == messageLock) {
+        imageMessageDict[kXMNMessageConfigurationFireKey] = @"LOCK";
+    }
+    else
+    {
+        imageMessageDict[kXMNMessageConfigurationFireKey] = @"";
+    }
     
     [self addMessage:imageMessageDict];
     
 }
 
+- (void)chatBar:(XMChatBar *)chatBar sendfile:(CJFileObjModel *)fileModel {
+    NSMutableDictionary *fileMessageDict = [NSMutableDictionary dictionary];
+    //    locationMessageDict[kXMNMessageConfigurationQIDKey] =@(self.qid);
+    fileMessageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeFiles);
+    fileMessageDict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSelf);
+    fileMessageDict[kXMNMessageConfigurationGroupKey] = @(self.messageChatType);
+    fileMessageDict[kXMNMessageConfigurationTextKey] = fileModel.name;
+    fileMessageDict[kXMNMessageConfigurationNicknameKey] = self.name;
+    fileMessageDict[kXMNMessageConfigurationAvatarKey] = self.headpic;
+    fileMessageDict[kXMNMessageConfigurationDETypeKey] = [[NSUserDefaults standardUserDefaults] objectForKey:DEType];
+    fileMessageDict[kXMNMessageConfigurationDENameKey] = [[NSUserDefaults standardUserDefaults] objectForKey:DEName];
+    fileMessageDict[kXMNMessageConfigurationAlarmKey] = self.alarm;
+    fileMessageDict[kXMNMessageConfigurationFileSizeKey] = fileModel.fileSize;
+    fileMessageDict[kXMNMessageConfigurationFileKey] = fileModel; 
+    
+//    if(fileModel.fileUrl){
+//        fileMessageDict[kXMNMessageConfigurationFileKey] = fileModel.filePath;   //[NSString Class]
+//    }else {
+//        fileMessageDict[kXMNMessageConfigurationFileKey] = fileModel.asset;     //[PHAsset Class]
+//    }
+    
+    NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    NSString *time = [formatter stringFromDate:[NSDate date]];
+    
+    //    locationMessageDict[kXMNMessageConfigurationTimeKey] = time;
+    
+    [self timeCompare:fileMessageDict withTime:time];
+    [self addMessage:fileMessageDict];
+}
+
+//- (void)chatBar:(XMChatBar *)chatBar sendfile:(NSString *)fileURL withName:(NSString *)fileName withSize:(NSString *)fileSize orAsset:(PHAsset *)asset {
+//    
+////    kXMNMessageConfigurationFileKey
+//    NSMutableDictionary *fileMessageDict = [NSMutableDictionary dictionary];
+//    //    locationMessageDict[kXMNMessageConfigurationQIDKey] =@(self.qid);
+//    fileMessageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeLocation);
+//    fileMessageDict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSelf);
+//    fileMessageDict[kXMNMessageConfigurationGroupKey] = @(self.messageChatType);
+//    fileMessageDict[kXMNMessageConfigurationTextKey] = fileName;
+//    fileMessageDict[kXMNMessageConfigurationNicknameKey] = self.name;
+//    fileMessageDict[kXMNMessageConfigurationAvatarKey] = self.headpic;
+//    fileMessageDict[kXMNMessageConfigurationDETypeKey] = [[NSUserDefaults standardUserDefaults] objectForKey:DEType];
+//    fileMessageDict[kXMNMessageConfigurationDENameKey] = [[NSUserDefaults standardUserDefaults] objectForKey:DEName];
+//    fileMessageDict[kXMNMessageConfigurationAlarmKey] = self.alarm;
+//    
+//    if(fileURL){
+//        fileMessageDict[kXMNMessageConfigurationFileKey] = fileURL;   //[NSString Class]
+//    }else {
+//        fileMessageDict[kXMNMessageConfigurationFileKey] = asset;     //[PHAsset Class]
+//    }
+//    
+//    NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
+//    [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+//    NSString *time = [formatter stringFromDate:[NSDate date]];
+//    
+//    //    locationMessageDict[kXMNMessageConfigurationTimeKey] = time;
+//    
+//    [self timeCompare:fileMessageDict withTime:time];
+//    [self addMessage:fileMessageDict];
+//    
+//}
+
 - (void)chatBar:(XMChatBar *)chatBar sendLocation:(NSString *)location locationText:(NSString *)locationText{
     NSMutableDictionary *locationMessageDict = [NSMutableDictionary dictionary];
-//    locationMessageDict[kXMNMessageConfigurationQIDKey] =@(self.qid);
+    //    locationMessageDict[kXMNMessageConfigurationQIDKey] =@(self.qid);
     locationMessageDict[kXMNMessageConfigurationTypeKey] = @(XMNMessageTypeLocation);
     locationMessageDict[kXMNMessageConfigurationOwnerKey] = @(XMNMessageOwnerSelf);
     locationMessageDict[kXMNMessageConfigurationGroupKey] = @(self.messageChatType);
@@ -511,10 +719,10 @@
     NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
     [formatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
     NSString *time = [formatter stringFromDate:[NSDate date]];
-//    locationMessageDict[kXMNMessageConfigurationTimeKey] = time;
+    //    locationMessageDict[kXMNMessageConfigurationTimeKey] = time;
     
-     [self timeCompare:locationMessageDict withTime:time];
-
+    [self timeCompare:locationMessageDict withTime:time];
+    
     
     
     [self addMessage:locationMessageDict];
@@ -618,8 +826,18 @@
 
 - (void)messageCellTappedMessage:(XMNChatMessageCell *)messageCell {
     NSIndexPath *indexPath = [self.tableView indexPathForCell:messageCell];
-   
+    
     switch (messageCell.messageType) {
+        case XMNMessageTypeEmotions:
+        {
+            NSMutableDictionary * dic =  self.dataArray[indexPath.row];
+            NSString *image = dic[kXMNMessageConfigurationTextKey];
+            NSArray *images = [image componentsSeparatedByString:@"/"];
+            EmojiViewController *emojiCon = [[EmojiViewController alloc] init];
+            emojiCon.emojiName = [images lastObject];
+            [self.navigationController pushViewController:emojiCon animated:YES];
+        }
+            break;
         case XMNMessageTypeText:
         {
             NSMutableDictionary * dic =  self.dataArray[indexPath.row];
@@ -627,18 +845,41 @@
             
             NSString * ownerStr = [NSString stringWithFormat:@"%@",dic[kXMNMessageConfigurationOwnerKey]];
             
-             if ([str containsString:@"LOCK"]){
+            if ([str containsString:@"LOCK"]){
                 if (![ownerStr isEqualToString:@"2"]) {
                     
-                    dic[kXMNMessageConfigurationFireKey] = @"UNLOCK";
                     ICometModel * model = [[[DBManager sharedManager]MessageDAO]selectMessageByQid:[dic[kXMNMessageConfigurationQIDKey]integerValue]];
-                   [[[DBManager sharedManager]MessageDAO]updateMsgfireUserlist:model.msGid fire:@"UNLOCK"];
+                    [[[DBManager sharedManager]MessageDAO]updateMsgfireUserlist:model.msGid fire:@"UNLOCK"];
                     [self messageFirelForQid:model];
+                    
+                    if (![_selectIndexArray containsObject:model.msGid])
+                    {
+                        [_selectIndexArray addObject:model.msGid];
+                        
+                        dic[kXMNMessageConfigurationFireKey] = @"UNLOCK";
+                        
+                        int a = [dic[kXMNMessageConfigurationTextKey] length];
+                        if (a>18) {
+                            a = 10+(a-18)/2;
+                        }
+                        else
+                        {
+                            a = 10;
+                        }
+                        messageCell.fireMessageTimeLabel.text = [NSString stringWithFormat:@"%d",a];
+                        dic[kXMNMessageConfigurationTimerStrKey] = [NSString stringWithFormat:@"%d",a];
+                        
+                        [[[DBManager sharedManager]MessageDAO]updateMsgTimeUserlist:model.msGid fire:[NSString stringWithFormat:@"%d",a]];
+                        
+                        [self.dataArray replaceObjectAtIndex:indexPath.row withObject:dic];
+                        [timer countDownWithTableView:_tableView dataSource:self.dataArray];
+                    }
+                    
                     
                     NSString *  messageAtindex = [NSString stringWithFormat:@"%ld",(long)indexPath.row];
                     [_selectLabelDic setObject:messageCell forKey:model.msGid];
-                    messageCell.fireMessageTimeLabel.hidden = NO;
-                    [self getTimeoutWith:messageCell withMSGID:model.msGid withInfo:dic[kXMNMessageConfigurationTextKey] withModel:model];
+                    //  messageCell.fireMessageTimeLabel.hidden = NO;
+                    //    [self getTimeoutWith:messageCell withMSGID:model.msGid withInfo:dic[kXMNMessageConfigurationTextKey] withModel:model];
                     
                     [self.tableView reloadData];
                 }
@@ -647,7 +888,7 @@
             break;
         case XMNMessageTypeImage:
         {
-           // XMNChatImageMessageCell *imageCell = (XMNChatImageMessageCell *)messageCell;
+            XMNChatImageMessageCell *imageCell = (XMNChatImageMessageCell *)messageCell;
             NSUInteger index = 0;
             NSMutableArray *photos = [NSMutableArray array];
             for (int i = 0; i < self.dataArray.count; i++) {
@@ -655,49 +896,90 @@
                 if ([dict[kXMNMessageConfigurationTypeKey] isEqual: @(XMNMessageTypeImage)]) {
                     id image = dict[kXMNMessageConfigurationImageKey];
                     if ([image isKindOfClass:NSString.class]) {
-                        IDMPhoto *photo = [IDMPhoto photoWithURL:[NSURL URLWithString:image]];
-                        [photos addObject:photo];
+//                        IDMPhoto *photo = [IDMPhoto photoWithURL:[NSURL URLWithString:image]];
+                        [photos addObject:image];
                     } else if ([image isKindOfClass:UIImage.class]) {
-                        IDMPhoto *photo = [IDMPhoto photoWithImage:image];
-                        [photos addObject:photo];
+//                        IDMPhoto *photo = [IDMPhoto photoWithImage:image];
+                        [photos addObject:image];
                     }
                     if (i == indexPath.row) {
                         index = photos.count - 1;
                     }
                 }
             }
+            ZEBPhotoBrowser *browser = [ZEBPhotoBrowser showFromImageView:imageCell.messageImageView withURLStrings:[self getImageArray:photos] placeholderImage:nil atIndex:index coverView:self.view dismiss:^(UIImage * _Nullable image, NSInteger index) {
+                self.navigationController.navigationBar.hidden = NO;
+                self.isShowBrowser = NO;
+                
+            }];
+            WeakSelf
+            browser.timeLabel.hidden = YES;
+            browser.progressView.hidden = YES;
+            browser.isFire = NO;
+            
+            browser.longPressBlock=^(UIImage *image, Photo *photo){
 
-            IDMPhotoBrowser *browser = [[IDMPhotoBrowser alloc] initWithPhotos:photos];
-            // IDMPhotoBrowser功能设置
-            browser.displayActionButton = NO;
-            browser.displayArrowButton = NO;
-            browser.displayCounterLabel = YES;
-            browser.displayDoneButton = NO;
-            browser.autoHideInterface = NO;
-            browser.usePopAnimation = YES;
-            browser.disableVerticalSwipe = YES;
-           // browser.scaleImage = imageCell.messageImageView.image;
-            // 设置初始页面
-            [browser setInitialPageIndex:index];
-            self.browser=browser;
-            browser.longPressGesResponse=^(UIImage *image){
-            self.image=image;
-            [ZEBIdentify2Code detectorQRCodeImageWithSourceImage:image isDrawWRCodeFrame:NO completeBlock:^(NSArray *resultArray, UIImage *resultImage) {
-                    if (resultArray.count==0) {
-                    self.array=@[@"保存到相册"];
+                if (photo.original) {
+                    if (photo.isDownload) {
+                        weakSelf.image = [ZEBCache originalImageCacheUrl:photo.originalUrl];//[[[SDWebImageManager sharedManager] imageCache] imageFromDiskCacheForKey:[NSString stringWithFormat:@"%@&%@",photo.originalUrl,@"originalUrl"]];
                     }else{
-                    self.array=@[@"保存到相册",@"识别二维码"];
-                        self.codeStr=resultArray.firstObject;
+                        weakSelf.image = image;
+                    }
+                }else {
+                        weakSelf.image = image;
+                }
+
+                UIImage *sourceImage = [weakSelf.image compressionImageToDataMaxFileSize:500];
+                [ZEBIdentify2Code detectorQRCodeImageWithSourceImage:sourceImage isDrawWRCodeFrame:NO completeBlock:^(NSArray *resultArray, UIImage *resultImage) {
+                    if (resultArray.count==0) {
+                        weakSelf.array=@[@"保存到相册"];
+                    }else{
+                        weakSelf.array=@[@"保存到相册",@"识别二维码"];
+                        weakSelf.codeStr = resultArray.firstObject;
                     }
                     CollectCopyView *collect=[[CollectCopyView alloc]initWidthName:self.array];
-                    collect.delegate=self;
+                    collect.delegate=weakSelf;
                     [collect show];
                 }];
             };
-            self.modalPresentationStyle=UIModalPresentationPageSheet;
-            UINavigationController *navigation=[[UINavigationController alloc]initWithRootViewController:browser];
+            browser.downLoadCompleteBlock = ^(UIImage *image) {
+                [weakSelf.tableView reloadData];
+            };
             
-            [self presentViewController:navigation animated:YES completion:nil];
+            self.browser = browser;
+            self.isShowBrowser = YES;
+            self.navigationController.navigationBar.hidden = YES;
+//            IDMPhotoBrowser *browser = [[IDMPhotoBrowser alloc] initWithPhotos:photos];
+//            // IDMPhotoBrowser功能设置
+//            browser.displayActionButton = NO;
+//            browser.displayArrowButton = NO;
+//            browser.displayCounterLabel = YES;
+//            browser.displayDoneButton = NO;
+//            browser.autoHideInterface = NO;
+//            browser.usePopAnimation = YES;
+//            browser.disableVerticalSwipe = YES;
+//           // browser.scaleImage = imageCell.messageImageView.image;
+//            // 设置初始页面
+//            [browser setInitialPageIndex:index];
+//            self.browser=browser;
+//            browser.longPressGesResponse=^(UIImage *image){
+//            self.image=image;
+//            [ZEBIdentify2Code detectorQRCodeImageWithSourceImage:image isDrawWRCodeFrame:NO completeBlock:^(NSArray *resultArray, UIImage *resultImage) {
+//                    if (resultArray.count==0) {
+//                    self.array=@[@"保存到相册"];
+//                    }else{
+//                    self.array=@[@"保存到相册",@"识别二维码"];
+//                        self.codeStr=resultArray.firstObject;
+//                    }
+//                    CollectCopyView *collect=[[CollectCopyView alloc]initWidthName:self.array];
+//                    collect.delegate=self;
+//                    [collect show];
+//                }];
+//            };
+//            self.modalPresentationStyle=UIModalPresentationPageSheet;
+//            UINavigationController *navigation=[[UINavigationController alloc]initWithRootViewController:browser];
+//            
+//            [self presentViewController:navigation animated:YES completion:nil];
         }
             break;
         case XMNMessageTypeVoice:
@@ -741,6 +1023,180 @@
             [self presentViewController:vc animated:YES completion:nil];
         }
             break;
+        case XMNMessageTypeFireImage:
+        {
+            XMNChatFireImageMessageCell *imageCell = (XMNChatFireImageMessageCell *)messageCell;
+            NSUInteger index = 0;
+            NSMutableArray *photos = [NSMutableArray array];
+            
+            NSMutableDictionary * dic =  self.dataArray[indexPath.row];
+            NSString * str = dic[kXMNMessageConfigurationFireKey];
+            
+            NSString * ownerStr = [NSString stringWithFormat:@"%@",dic[kXMNMessageConfigurationOwnerKey]];
+            
+            for (int i = 0; i < self.dataArray.count; i++) {
+                NSDictionary *dict = self.dataArray[i];
+                if ([dict[kXMNMessageConfigurationTypeKey] isEqual: @(XMNMessageTypeFireImage)]) {
+                    id image = dict[kXMNMessageConfigurationImageKey];
+                    if ([image isKindOfClass:NSString.class]) {
+                        //                        IDMPhoto *photo = [IDMPhoto photoWithURL:[NSURL URLWithString:image]];
+                        [photos addObject:image];
+                    } else if ([image isKindOfClass:UIImage.class]) {
+                        //                        IDMPhoto *photo = [IDMPhoto photoWithImage:image];
+                        [photos addObject:image];
+                    }
+                    if (i == indexPath.row) {
+                        index = photos.count - 1;
+                    }
+                }
+            }
+            ZEBPhotoBrowser *browser = [ZEBPhotoBrowser showFromImageView:imageCell.messageImageView withURLStrings:[self getImageArray:photos] placeholderImage:nil atIndex:index coverView:self.view dismiss:^(UIImage * _Nullable image, NSInteger index) {
+                self.navigationController.navigationBar.hidden = NO;
+                self.isShowBrowser = NO;
+                
+            }];
+            WeakSelf
+            
+            if ([ownerStr isEqualToString:@"2"])
+            {
+                browser.timeLabel.hidden = YES;
+                browser.progressView.hidden = YES;
+                browser.isFire = NO;
+            }
+            else
+            {
+                browser.timeLabel.hidden = NO;
+                browser.progressView.hidden = NO;
+                browser.isFire = YES;
+            }
+            
+            browser.longPressBlock=^(UIImage *image, Photo *photo){
+                
+                if (photo.original) {
+                    if (photo.isDownload) {
+                        weakSelf.image = [ZEBCache originalImageCacheUrl:photo.originalUrl];//[[[SDWebImageManager sharedManager] imageCache] imageFromDiskCacheForKey:[NSString stringWithFormat:@"%@&%@",photo.originalUrl,@"originalUrl"]];
+                    }else{
+                        weakSelf.image = image;
+                    }
+                }else {
+                    weakSelf.image = image;
+                }
+                
+                UIImage *sourceImage = [weakSelf.image compressionImageToDataMaxFileSize:500];
+                [ZEBIdentify2Code detectorQRCodeImageWithSourceImage:sourceImage isDrawWRCodeFrame:NO completeBlock:^(NSArray *resultArray, UIImage *resultImage) {
+                    if (resultArray.count==0) {
+                        weakSelf.array=@[@"保存到相册"];
+                    }else{
+                        weakSelf.array=@[@"保存到相册",@"识别二维码"];
+                        weakSelf.codeStr = resultArray.firstObject;
+                    }
+                    CollectCopyView *collect=[[CollectCopyView alloc]initWidthName:self.array];
+                    collect.delegate=weakSelf;
+                    [collect show];
+                }];
+            };
+            browser.downLoadCompleteBlock = ^(UIImage *image) {
+                [weakSelf.tableView reloadData];
+            };
+            
+            
+            ICometModel * model = [[[DBManager sharedManager]MessageDAO]selectMessageByQid:[dic[kXMNMessageConfigurationQIDKey]integerValue]];
+            
+            if ([str containsString:@"LOCK"]&&![str isEqualToString:@"UNLOCK"]){
+                if (![ownerStr isEqualToString:@"2"]) {
+                    
+                    //    imageCell.fireMessageLockVI.hidden = YES;
+                    //    imageCell.fireMessageTimeLabel.hidden = NO;
+                    
+                    [[[DBManager sharedManager]MessageDAO]updateMsgfireUserlist:model.msGid fire:@"UNLOCK"];
+                    [self messageFirelForQid:model];
+                    
+                    if (![_selectIndexArray containsObject:model.msGid])
+                    {
+                        [_selectIndexArray addObject:model.msGid];
+                    }
+                    
+                    dic[kXMNMessageConfigurationFireKey] = @"UNLOCK";
+                    
+                    imageCell.fireMessageTimeLabel.text = [NSString stringWithFormat:@"30"];
+                    dic[kXMNMessageConfigurationTimerStrKey] = [NSString stringWithFormat:@"30"];
+                    
+                    [[[DBManager sharedManager]MessageDAO]updateMsgTimeUserlist:model.msGid fire:[NSString stringWithFormat:@"30"]];
+                    
+                    browser.timeStr = @"30";
+                    
+                    [self.dataArray replaceObjectAtIndex:indexPath.row withObject:dic];
+                    [timer countDownWithTableView:_tableView dataSource:self.dataArray];
+                    
+                    [self.tableView reloadData];
+                }
+            }
+            else if ([str isEqualToString:@"UNLOCK"])
+            {
+                browser.timeStr = model.timeStr;
+            }
+            
+            self.browser = browser;
+            self.isShowBrowser = YES;
+            self.navigationController.navigationBar.hidden = YES;
+            
+        }
+            break;
+            case XMNMessageTypeFiles:
+        {
+            NSMutableDictionary * dic =  self.dataArray[indexPath.row];
+            
+            if ([dic[kXMNMessageConfigurationFileKey] isKindOfClass:[CJFileObjModel class]]) {
+                CJFileObjModel *actualFile = dic[kXMNMessageConfigurationFileKey];
+                NSString *cachePath =actualFile.filePath;
+                NSLog(@"调用文件查看控制器%@---type %zd, %@",actualFile.name,actualFile.fileType,cachePath);
+                CJFlieLookUpVC *vc = [[CJFlieLookUpVC alloc] initWithFileModel:actualFile];
+                [self.navigationController pushViewController:vc animated:YES];
+            }
+            else {
+                CJFileObjModel *model = [CJFileObjModel new];
+                
+                NSString *message = dic[kXMNMessageConfigurationFileKey];
+
+                NSDictionary *dict = [ChatBusiness jsonDataToDictionary:message];
+                model.fileSize = dict[@"filesize"];
+                model.filePath = dict[@"filelocalpath"];
+                model.fileUrl = dict[@"fileurl"];
+                model.name = dict[@"filename"];
+                model.fileSizefloat = [dict[@"filebytes"] floatValue];
+                
+                
+                if ([[NSFileManager defaultManager] fileExistsAtPath:[HomeFilePath stringByAppendingPathComponent:model.name]]) {
+                    model.filePath = [HomeFilePath stringByAppendingPathComponent:model.name];
+                }
+                    WeakSelf;
+                    CJFlieLookUpVC *vc = [[CJFlieLookUpVC alloc] initWithFileModel:model];
+                    vc.cancelBlock = ^(NSString *filePath){
+                        
+                        NSFileManager *fileManager = [NSFileManager defaultManager];
+                        if ( [[NSFileManager defaultManager] fileExistsAtPath:[HomeFilePath stringByAppendingPathComponent:model.name]]) {
+                            dic[kXMNMessageConfigurationFileStateKey] = @(2);
+                            
+                        }else {
+                            dic[kXMNMessageConfigurationFileStateKey] = @(0);
+                        }
+                        XMNChatFileMessageCell *cell = (XMNChatFileMessageCell *)messageCell;
+                        
+                        [cell setDownloadState:[dic[kXMNMessageConfigurationFileStateKey] integerValue]];
+//                        [weakSelf.tableView reloadData];
+                        
+                        
+                    };
+                    [self.navigationController pushViewController:vc animated:YES];
+//                }
+                
+                
+            }
+            
+            
+            
+        }
+            break;
         default:
             break;
     }
@@ -774,18 +1230,18 @@
         }
         else if ([ownerStr isEqualToString:@"3"])
         {
-
-            MessageDoubleTapViewController *messageVC = [[MessageDoubleTapViewController alloc] init];
-            messageVC.textStr = [message[kXMNMessageConfigurationTextKey] transferredMeaningWithEnter];
-            //        __weak  MessageDoubleTapViewController *weakVC = messageVC;
-            //        messageVC.tapMissBlock = ^{
-            //            [weakVC removeFromParentViewController];
-            //
-            //        };
             
-            messageVC.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
-            [self.navigationController presentViewController:messageVC animated:YES completion:nil];
-
+            //            MessageDoubleTapViewController *messageVC = [[MessageDoubleTapViewController alloc] init];
+            //            messageVC.textStr = [message[kXMNMessageConfigurationTextKey] transferredMeaningWithEnter];
+            //            //        __weak  MessageDoubleTapViewController *weakVC = messageVC;
+            //            //        messageVC.tapMissBlock = ^{
+            //            //            [weakVC removeFromParentViewController];
+            //            //
+            //            //        };
+            //
+            //            messageVC.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+            //            [self.navigationController presentViewController:messageVC animated:YES completion:nil];
+            
             if (![fireStr isEqualToString:@"LOCK"]) {
                 MessageDoubleTapViewController *messageVC = [[MessageDoubleTapViewController alloc] init];
                 messageVC.textStr = message[kXMNMessageConfigurationTextKey];
@@ -801,24 +1257,24 @@
                 //        UIWindow *keywindow = [[UIApplication sharedApplication] keyWindow];
                 //        [keywindow addSubview:messageVC.view];
             }
-
+            
             
         }
-
         
-//        MessageDoubleTapViewController *messageVC = [[MessageDoubleTapViewController alloc] init];
-//        messageVC.textStr = [message[kXMNMessageConfigurationTextKey] transferredMeaningWithEnter];
-////        __weak  MessageDoubleTapViewController *weakVC = messageVC;
-////        messageVC.tapMissBlock = ^{
-////            [weakVC removeFromParentViewController];
-////            
-////        };
-//        
-//        messageVC.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
-//        [self.navigationController presentViewController:messageVC animated:YES completion:nil];
-//
-////        UIWindow *keywindow = [[UIApplication sharedApplication] keyWindow];
-////        [keywindow addSubview:messageVC.view];
+        
+        //        MessageDoubleTapViewController *messageVC = [[MessageDoubleTapViewController alloc] init];
+        //        messageVC.textStr = [message[kXMNMessageConfigurationTextKey] transferredMeaningWithEnter];
+        ////        __weak  MessageDoubleTapViewController *weakVC = messageVC;
+        ////        messageVC.tapMissBlock = ^{
+        ////            [weakVC removeFromParentViewController];
+        ////
+        ////        };
+        //
+        //        messageVC.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+        //        [self.navigationController presentViewController:messageVC animated:YES completion:nil];
+        //
+        ////        UIWindow *keywindow = [[UIApplication sharedApplication] keyWindow];
+        ////        [keywindow addSubview:messageVC.view];
     }
     
 }
@@ -879,8 +1335,43 @@
 
         }
        
+    }else if (actionType == XMNChatMessageCellMenuActionTypeDelete) {
+        
+        NSArray *indexArray = [textField componentsSeparatedByString:@","];
+        if (![[[DBManager sharedManager] MessageDAO] deleteMessageForQid:[[indexArray firstObject] integerValue]]) {
+            [self showHint:@"删除失败"];
+            return;
+        }
+        NSInteger index = [[indexArray lastObject] integerValue];
+        
+        if (index == self.chatViewModel.dataArray.count-1) {
+            if (index != 0) {
+                NSDictionary *dict = self.chatViewModel.dataArray[index-1];
+                NSInteger qid = [[NSString stringWithFormat:@"%@",dict[kXMNMessageConfigurationQIDKey]] integerValue];
+                ICometModel *model = [[[DBManager sharedManager] MessageDAO] selectMessageByQid:qid];
+                [[[DBManager sharedManager] UserlistDAO] updateUserlist:model];
+                [[NSNotificationCenter defaultCenter] postNotificationName:ReloadChatGroupNameNotification object:nil];
+            }else {
+                [self XMNChatViewModelLoadNewData];
+                self.isDeleteLoadNewData = YES;
+//                NSDictionary *dict = [self.dataArray lastObject];
+//                NSInteger qid = [[NSString stringWithFormat:@"%@",dict[kXMNMessageConfigurationQIDKey]] integerValue];
+//                ICometModel *model = [[[DBManager sharedManager] MessageDAO] selectMessageByQid:qid];
+//                [[[DBManager sharedManager] UserlistDAO] updateUserlist:model];
+            }
+            
+        }
+        NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
+        
+        [self.chatViewModel.dataArray removeObjectAtIndex:index];
+        
+        //deleteRowAtIndexPath, withRowAnimation 此方法决定删除cell的动画样式
+        [self.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+        [self performSelector:@selector(reloadtableViewNoAnimation) withObject:nil afterDelay:0.1];
     }
-    
+}
+- (void)reloadtableViewNoAnimation {
+    [self.tableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationNone];
 }
 #pragma mark -
 #pragma mark 消息撤回
@@ -975,19 +1466,80 @@
 
 - (void)reloadAfterReceiveMessage:(NSDictionary *)message {
     
+    [ChatBusiness isMenuvisibleOfSystem];
     [self.tableView reloadData];
     NSIndexPath *indexPath = [NSIndexPath indexPathForRow:self.chatViewModel.messageCount - 1 inSection:0];
     [self.tableView scrollToRowAtIndexPath:indexPath atScrollPosition:UITableViewScrollPositionBottom animated:NO];
+}
+// 下拉加载
+- (void)XMNChatViewModelLoadNewData {
+    self.count++;
+    [self loadNewData];
 }
 
 #pragma mark - XMNAVAudioPlayerDelegate
 
 - (void)audioPlayerStateDidChanged:(XMNVoiceMessageState)audioPlayerState forIndex:(NSUInteger)index {
+    
+    NSUInteger count = self.dataArray.count;
+    if (index >= count) {
+        return;
+    }
     NSIndexPath *indexPath = [NSIndexPath indexPathForRow:index inSection:0];
     XMNChatVoiceMessageCell *voiceMessageCell = [self.tableView cellForRowAtIndexPath:indexPath];
     dispatch_async(dispatch_get_main_queue(), ^{
         [voiceMessageCell setVoiceMessageState:audioPlayerState];
     });
+    
+    NSMutableDictionary * dic =  self.dataArray[indexPath.row];
+    NSString * str = dic[kXMNMessageConfigurationFireKey];
+    
+    NSString * ownerStr = [NSString stringWithFormat:@"%@",dic[kXMNMessageConfigurationOwnerKey]];
+    
+    if (audioPlayerState == XMNVoiceMessageStateFinish||audioPlayerState == XMNVoiceMessageStateCancel) {
+        
+        if ([str containsString:@"LOCK"]){
+            if (![ownerStr isEqualToString:@"2"]) {
+                
+                voiceMessageCell.fireMessageLockVI.hidden = YES;
+                voiceMessageCell.fireMessageTimeLabel.hidden = NO;
+                
+                ICometModel * model = [[[DBManager sharedManager]MessageDAO]selectMessageByQid:[dic[kXMNMessageConfigurationQIDKey]integerValue]];
+                [[[DBManager sharedManager]MessageDAO]updateMsgfireUserlist:model.msGid fire:@"UNLOCK"];
+                [self messageFirelForQid:model];
+                
+                if (![_selectIndexArray containsObject:model.msGid])
+                {
+                    [_selectIndexArray addObject:model.msGid];
+                }
+                
+                dic[kXMNMessageConfigurationFireKey] = @"UNLOCK";
+                
+                voiceMessageCell.fireMessageTimeLabel.text = [NSString stringWithFormat:@"6"];
+                dic[kXMNMessageConfigurationTimerStrKey] = [NSString stringWithFormat:@"6"];
+                
+                [[[DBManager sharedManager]MessageDAO]updateMsgTimeUserlist:model.msGid fire:[NSString stringWithFormat:@"6"]];
+                
+                [self.dataArray replaceObjectAtIndex:indexPath.row withObject:dic];
+                [timer countDownWithTableView:_tableView dataSource:self.dataArray];
+                
+                [self.tableView reloadData];
+            }
+        }
+    }
+    else if (audioPlayerState == XMNVoiceMessageStatePlaying)
+    {
+        if ([str containsString:@"LOCK"])
+        {
+            voiceMessageCell.fireMessageLockVI.hidden = NO;
+            voiceMessageCell.fireMessageTimeLabel.hidden = YES ;
+            voiceMessageCell.fireMessageTimeLabel.text = [NSString stringWithFormat:@"60"];
+            dic[kXMNMessageConfigurationTimerStrKey] = [NSString stringWithFormat:@"60"];
+            
+            [self.dataArray replaceObjectAtIndex:indexPath.row withObject:dic];
+            [timer countDownWithTableView:_tableView dataSource:self.dataArray];
+        }
+    }
 }
 
 #pragma mark - Private Methods
@@ -1032,38 +1584,66 @@
 
 #pragma mark - Getters
 
-- (UITableView *)tableView{
+- (ChatTableView *)tableView{
     if (!_tableView) {
-        _tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height - kMinHeight) style:UITableViewStylePlain];
-        _tableView.contentInset = UIEdgeInsetsMake(66, 0, 0, 0);
+        _tableView = [[ChatTableView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height - kMinHeight) style:UITableViewStylePlain];
+        _tableView.contentInset = UIEdgeInsetsMake(33, 0, 0, 0);
         _tableView.delegate = self.chatViewModel;
         _tableView.dataSource = self.chatViewModel;
         [_tableView registerXMNChatMessageCellClass];
         _tableView.backgroundColor = self.view.backgroundColor;
         _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
 //        self.tableView.mj_header=[MJRefreshNormalHeader headerWithRefreshingTarget:self refreshingAction:@selector(loadNewData)];
-        __weak typeof(self) weakSelf = self;
-        MJRefreshNormalHeader *refreshHeader = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
-            weakSelf.count++;
-            [weakSelf loadNewData];
-        }];
-        _tableView.mj_header = refreshHeader;
+//        __weak typeof(self) weakSelf = self;
+//        MJRefreshNormalHeader *refreshHeader = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+//            weakSelf.count++;
+//            [weakSelf loadNewData];
+//        }];
+//        _tableView.mj_header = refreshHeader;
+        _headView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 40)];
+        _headView.backgroundColor = [UIColor clearColor];
+        
+        _activity = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhite];
+        _activity.color = zBlackColor;
+        [_headView addSubview:_activity];
+        _activity.frame = CGRectMake(_headView.frame.size.width/2-10, _headView.frame.size.height/2-10, 20, 20);
+        
+        _tableView.tableHeaderView = _headView;
+        _headView.hidden = YES;
         }
     return _tableView;
 }
-
+- (void)startRefreshing {
+   
+    _tableView.contentInset = UIEdgeInsetsMake(66, 0, 0, 0);
+    _headView.hidden = NO;
+    [_activity startAnimating];
+    self.chatViewModel.isRefresh = YES;
+}
+- (void)endRefreshing {
+    [_activity stopAnimating];
+    _headView.hidden = YES;
+    [UIView animateWithDuration:0.5 animations:^{
+        _tableView.contentInset = UIEdgeInsetsMake(33, 0, 0, 0);
+    }];
+    self.chatViewModel.isRefresh = NO;
+}
 # pragma to_do
 -(void)loadNewData{
     
     if (_isExistTimeout == YES) {
-         [self.tableView.mj_header endRefreshing];
+       //  [self.tableView.mj_header endRefreshing];
+        [self endRefreshing];
         return;
     }
-    
+    NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
+    NSString *chatId = [user objectForKey:@"chatId"];
+    [self startRefreshing];
     self.page=[[[DBManager sharedManager] MessageDAO] getSelectMessagesCount:self.chatType];
-    
+    //等待1s
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)),
+    dispatch_get_main_queue(), ^{
     if (self.count > self.page) {
-        
 //            __block NSUInteger msgStateIndex;
             NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
             NSString *token = [[NSUserDefaults standardUserDefaults] objectForKey:@"token"];
@@ -1144,9 +1724,10 @@
                         //放在ChatBusiness处理
                         [ChatBusiness getHistoryReloadView:dict chatModel:iModel];
                         
-                            //if (![dict[kXMNMessageConfigurationFireKey] isEqualToString:@"READ"]) {
-                                [messageArray addObject:dict];
-                          //  }
+                        if (![[[DBManager sharedManager] MessageDAO] selectMessageByMsgid:iModel.MSGID]) {
+                            [messageArray addObject:dict];
+                        }
+
                         
                         reversedArray=[[messageArray reverseObjectEnumerator]allObjects];
                         
@@ -1155,22 +1736,34 @@
                         [[XMNMessageStateManager shareManager] updateMessageSendState:XMNMessageSendSuccess forArray:reversedArray];
                     }
                     }
-                    [self.tableView.mj_header endRefreshing];
+                    //[self.tableView.mj_header endRefreshing];
                     NSRange range=NSMakeRange(0,reversedArray.count);
                     NSIndexSet *set=[NSIndexSet indexSetWithIndexesInRange:range];
                     NSUInteger count = self.dataArray.count + 1;
                     
                     [self.dataArray insertObjects:reversedArray atIndexes:set];
+                    
+                     [timer countDownWithTableView:_tableView dataSource:self.dataArray];
+                    
                     [self.tableView reloadData];
-                    
-                    
-                    if (count > 3) {
-                        [self scrollToRow:NO row:count];
+                    [self endRefreshing];
+                    if (self.isDeleteLoadNewData) {
+                        if (self.dataArray.count > 0) {
+                            NSDictionary *dict = [self.dataArray lastObject];
+                            NSInteger qid = [[NSString stringWithFormat:@"%@",dict[kXMNMessageConfigurationQIDKey]] integerValue];
+                            ICometModel *model = [[[DBManager sharedManager] MessageDAO] selectMessageByQid:qid];
+                            [[[DBManager sharedManager] UserlistDAO] updateUserlist:model];
+                            self.isDeleteLoadNewData = NO;
+                            [[NSNotificationCenter defaultCenter] postNotificationName:ReloadChatGroupNameNotification object:nil];
+                        }else {
+                            [[[DBManager sharedManager] UserlistDAO] deleteUserlist:chatId];
+                            [[NSNotificationCenter defaultCenter] postNotificationName:ReloadChatGroupNameNotification object:nil];
+                        }
                     }
-                    [self scrollToRow:NO row:count];
                 }
             } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-              [self.tableView.mj_header endRefreshing];
+                [self endRefreshing];
+             // [self.tableView.mj_header endRefreshing];
             }];
         
         }else{
@@ -1195,23 +1788,41 @@
           //  if (![dict[kXMNMessageConfigurationFireKey] isEqualToString:@"READ"]) {
                 [msgArray addObject:dict];
           //  }
+            
+            
             reversedArray=[[msgArray reverseObjectEnumerator]allObjects];
             
             [[XMNMessageStateManager shareManager] updateMessageSendState:XMNMessageSendSuccess forArray:reversedArray];
         }
             
-        [self.tableView.mj_header endRefreshing];
-        NSRange range=NSMakeRange(0,reversedArray.count);
-        NSIndexSet *set=[NSIndexSet indexSetWithIndexesInRange:range];
-        NSUInteger count = self.dataArray.count + 1;
-        [self.dataArray insertObjects:reversedArray atIndexes:set];
-        [self.tableView reloadData];
-        
-        [self scrollToRow:NO row:count];
+      //  [self.tableView.mj_header endRefreshing];
+            NSRange range=NSMakeRange(0,reversedArray.count);
+            NSIndexSet *set=[NSIndexSet indexSetWithIndexesInRange:range];
+            NSUInteger count = self.dataArray.count + 1;
+            [self.dataArray insertObjects:reversedArray atIndexes:set];
+            
+            [timer countDownWithTableView:_tableView dataSource:self.dataArray];
+            
+            [self.tableView reloadData];
+            [self endRefreshing];
+            if (self.isDeleteLoadNewData) {
+                if (self.dataArray.count > 0) {
+                    NSDictionary *dict = [self.dataArray lastObject];
+                    NSInteger qid = [[NSString stringWithFormat:@"%@",dict[kXMNMessageConfigurationQIDKey]] integerValue];
+                    ICometModel *model = [[[DBManager sharedManager] MessageDAO] selectMessageByQid:qid];
+                    [[[DBManager sharedManager] UserlistDAO] updateUserlist:model];
+                    self.isDeleteLoadNewData = NO;
+                    [[NSNotificationCenter defaultCenter] postNotificationName:ReloadChatGroupNameNotification object:nil];
+                }else {
+                    [[[DBManager sharedManager] UserlistDAO] deleteUserlist:chatId];
+                    [[NSNotificationCenter defaultCenter] postNotificationName:ReloadChatGroupNameNotification object:nil];
+                }
+                
+            }
             
     }
     
-   
+   });
 }
 
 
@@ -1256,6 +1867,9 @@
         }
         
         NSMutableArray *dbArray = (NSMutableArray *)[messageDAO selectMessages:chatType maxQid:maxQid page:self.count];
+        if (dbArray.count == 0) {
+            [self XMNChatViewModelLoadNewData];
+        }else {
         NSArray *uploadingArray = [uploadingSQ selectUploading];
         NSArray *tempArray = [NSArray arrayWithArray:dbArray];
         for (int j = 0; j < uploadingArray.count; j++) {
@@ -1269,26 +1883,25 @@
             }
         }
         
-        //添加发送失败的消息
-        MessageResendSQ *messageRendSQ = [[DBManager sharedManager] messageResendSQ];
-        NSArray *failMessageArray = [messageRendSQ selectMessage];
-        failMessageArray = [[failMessageArray reverseObjectEnumerator]allObjects];
-        if (failMessageArray) {
-            for (int j = 0; j < failMessageArray.count; j++) {
-                ICometModel *model1 = failMessageArray[j];
-                for (int i = 0; i < tempArray.count; i++) {
-                    ICometModel *model2 = dbArray[i];
-                    if (model2.qid == model1.qid) {
-                        [dbArray insertObject:model1 atIndex:i];
-                        break;
-                    }
-                }
-            }
-        }
+//        //添加发送失败的消息
+//        MessageResendSQ *messageRendSQ = [[DBManager sharedManager] messageResendSQ];
+//        NSArray *failMessageArray = [messageRendSQ selectMessage];
+//        failMessageArray = [[failMessageArray reverseObjectEnumerator]allObjects];
+//        if (failMessageArray) {
+//            for (int j = 0; j < failMessageArray.count; j++) {
+//                ICometModel *model1 = failMessageArray[j];
+//                for (int i = 0; i < tempArray.count; i++) {
+//                    ICometModel *model2 = dbArray[i];
+//                    if (model2.qid == model1.qid) {
+//                        [dbArray insertObject:model1 atIndex:i];
+//                        break;
+//                    }
+//                }
+//            }
+//        }
         
         ICometModel *lastModel = [dbArray lastObject];
-        ZEBLog(@"1----------%@",dbArray);
-        self.qid = lastModel.qid;
+                self.qid = lastModel.qid;
         // 将数据库中的消息记录信息数组转换成显示到界面上的数组
         for (ICometModel *iModel in dbArray) {
            // if (![iModel.FIRE isEqualToString:@"READ"]) {
@@ -1310,6 +1923,8 @@
            
             }
         [_dataArray addObjectsFromArray:reversedArray];
+        
+        }
     }
     
     return _dataArray;
@@ -1417,7 +2032,6 @@
 
 
 
-
 // 处理扫描的字符串
 -(void)handelURLString:(NSString *)string
 {
@@ -1426,7 +2040,10 @@
         QRCodelWebController *web = [[QRCodelWebController alloc] init];
         web.title = @"扫描结果";
         web.detailURL = string;
-        [self.browser.navigationController pushViewController:web animated:YES];
+        
+        [self.navigationController pushViewController:web animated:YES];
+        self.navigationController.navigationBar.hidden = NO;
+        
         
     }else {
         
@@ -1436,7 +2053,8 @@
             NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
             if ([dic[@"key"] isEqualToString:alarm]) {
                 UserInfoViewController *userInfoController = [[UserInfoViewController alloc] init];
-                [self.browser.navigationController pushViewController:userInfoController animated:YES];
+                [self.navigationController pushViewController:userInfoController animated:YES];
+                self.navigationController.navigationBar.hidden = NO;
             }else {
 
                 UserDesInfoController *userCon = [[UserDesInfoController alloc] init];
@@ -1450,8 +2068,8 @@
                 }
                 userCon.cgType = Code;
 //                self.browser.navigationController.navigationBar.hidden = NO;
-                [self.browser.navigationController pushViewController:userCon animated:YES];
-                
+                [self.navigationController pushViewController:userCon animated:YES];
+                self.navigationController.navigationBar.hidden = NO;
                 
             }
             
@@ -1468,15 +2086,18 @@
             }else if (self.cType == SearchC) {
                 
             }
-            [self.browser.navigationController pushViewController:groupCon animated:YES];
+            [self.navigationController pushViewController:groupCon animated:YES];
+            self.navigationController.navigationBar.hidden = NO;
             
         }else {
             QRCodelWebController *web = [[QRCodelWebController alloc] init];
             web.title = @"扫描结果";
             web.codeStr = string;
-            [self.browser.navigationController pushViewController:web animated:YES];
+            [self.navigationController pushViewController:web animated:YES];
+            self.navigationController.navigationBar.hidden = NO;
         }
     }
+    
     
 }
 
@@ -1545,7 +2166,8 @@
 -(void)sendImageClick:(UITapGestureRecognizer *)ges
 {
     NearestImage *img = ges.view;
-    [self chatBar:self.chatBar sendPictures:@[img.img.image]];
+    UIImage *image = [img.img.image compressionImageToDataMaxFileSize:300];
+    [self chatBar:self.chatBar sendPictures:@[image] withType:self.fireMessageType];
     [img removeFromSuperview];
 }
 
@@ -1583,68 +2205,86 @@
             [_dataArray removeObject:dic];
         }
     }
+    [timer countDownWithTableView:_tableView dataSource:_dataArray];
+    
     [self.tableView reloadData];
 }
-
-//按钮变成倒计时
--(void)getTimeoutWith:(XMNChatMessageCell*)messageCell withMSGID:(NSString *)string withInfo:(NSString*)info withModel:(ICometModel*)model
-{
+#pragma mark -
+#pragma mark 格式化图片数组
+- (NSArray *)getImageArray:(NSArray *)arr {
     
-    if (![_selectIndexArray containsObject:model.msGid]) {
-        
-        XMNChatMessageCell * messageSelectCell = [_selectLabelDic objectForKey:model.msGid];
-        
-        [_selectIndexArray addObject:model.msGid];
-        
-        int a = info.length;
-        __block int timeout ;
-        if (a>18) {
-            timeout = 11+(a-18)/2;
-        }
-        else
-        {
-            timeout = 11;
-        }
-        
-        dispatch_queue_t queue = dispatch_queue_create(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-        dispatch_source_t _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0,queue);
-        dispatch_source_set_timer(_timer,dispatch_walltime(NULL, 0),1.0*NSEC_PER_SEC, 0);
-        dispatch_source_set_event_handler(_timer, ^{
-            if(timeout<=0)
-            {
-                dispatch_source_cancel(_timer);
+    NSMutableArray *tempArr = [NSMutableArray array];
+    for (id what in arr) {
+        if ([what isKindOfClass:[NSString class]]) {
+            NSString *string = (NSString *)what;
+            NSMutableDictionary *parm = [NSMutableDictionary dictionary];
+            if ([string containsString:@"?type=1"]) {
+                NSArray *arr = [string componentsSeparatedByString:@"?"];
+                NSString *parameterString = [arr lastObject];
+                NSArray *sizeArr = [parameterString componentsSeparatedByString:@"&"];
+                [parm setObject:[arr firstObject] forKey:@"originalUrl"];
+                [parm setObject:string forKey:@"thumbnailUrl"];
+                for (NSString *str in sizeArr) {
+                    if ([str containsString:@"size"]) {
+                        [parm setObject:[str substringFromIndex:5] forKey:@"size"];
+                        break;
+                    }
+                }
                 
-                 _isExistTimeout = NO;
-                
-                [[[DBManager sharedManager]MessageDAO]updateMsgfireUserlist:model.msGid fire:@"READ"];
-                [[[DBManager sharedManager]MessageDAO]updateMsgTimeUserlist:model.msGid fire:@""];
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    
-                    [_selectIndexArray removeObject:model.msGid];
-                    // [[NSNotificationCenter defaultCenter]postNotificationName:@"showtimeout" object:nil];
-                    //timeout = 0;
-                   
-                    [self refreshUI:nil];
-                });
-            }else{
-                
-                _isExistTimeout = YES;
-                
-                 [[[DBManager sharedManager]MessageDAO]updateMsgTimeUserlist:model.msGid fire:[NSString stringWithFormat:@"%d",timeout]];
-                
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    
-                    messageSelectCell.fireMessageTimeLabel.text = [NSString stringWithFormat:@"%d",timeout];
-                   
-                  //  [self refreshUI:nil];
-                });
-                
-                timeout--;
+            }else {
+                [parm setObject:string forKey:@"thumbnailUrl"];
             }
-        });
-        dispatch_resume(_timer);
+            [tempArr addObject:parm];
+        }else if ([what isKindOfClass:[UIImage class]]){
+            [tempArr addObject:(UIImage *)what];
+        }
+        
     }
+    return tempArr;
+}
+
+#pragma  mark ------ 点名
+- (void)gotoCallRoll
+{
+    CreateCollCallViewController * callRoll = [[CreateCollCallViewController alloc]init];
+    callRoll.teamUserListArray = self.memberDataArray;
+    [self.navigationController pushViewController:callRoll animated:YES];
+ }
+
+#pragma mark -
+#pragma mark 请求群好友列表数据
+- (void)httpGetGroupMemberInfo {
     
+    NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
+    NSString *chatId = [user objectForKey:@"chatId"];
+    
+    NSString *alarm = [[NSUserDefaults standardUserDefaults] objectForKey:@"alarm"];
+    NSString *token = [[NSUserDefaults standardUserDefaults] objectForKey:@"token"];
+    NSString *urlString = [NSString stringWithFormat:FriendsLise_URL,alarm,@"3",chatId,token];
+    
+    ZEBLog(@"%@",urlString);
+    
+    [HYBNetworking getWithUrl:urlString refreshCache:YES success:^(id response) {
+        GroupMemberBaseModel *baseModel = [GroupMemberBaseModel getInfoWithData:response];
+        [self.memberDataArray removeAllObjects];
+        [self.memberDataArray addObjectsFromArray:baseModel.results];
+        if (self.memberDataArray.count != 0) {
+            [self gotoCallRoll];
+        }else
+        {
+            [self showHint:@"群成员获取失败"];
+        }
+        
+    } fail:^(NSError *error) {
+        [self showHint:@"群成员请求失败"];
+    }];
+}
+
+- (NSMutableArray *)memberDataArray {
+    if (_memberDataArray == nil) {
+        _memberDataArray = [NSMutableArray array];
+    }
+    return _memberDataArray;
 }
 
 @end

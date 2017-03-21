@@ -19,14 +19,17 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.08 beta</string>
+	<string>2.00 beta</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>201612291745</string>
+	<string>201703171600</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>iosamap</string>
+		<string>comgooglemaps</string>
+		<string>baidumap</string>
+		<string>qqmap</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>

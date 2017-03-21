@@ -83,7 +83,8 @@
            // [imageView  imageGetCacheForAlarm:model.alarm forUrl:model.headpic];
              [imageView  sd_setImageWithURL:[NSURL URLWithString:model.headpic]];
             imageView.layer.masksToBounds = YES;
-            imageView.layer.cornerRadius = 31/2;
+//            imageView.layer.cornerRadius = 31/2;
+             imageView.layer.cornerRadius = 6;
             [_praiseScrollview addSubview:imageView];
         }
     }

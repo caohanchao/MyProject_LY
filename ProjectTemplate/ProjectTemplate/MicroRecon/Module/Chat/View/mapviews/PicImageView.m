@@ -25,6 +25,13 @@
     }
     return self;
 }
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self createUI];
+    }
+    return self;
+}
 - (void)createUI {
     
     self.bgView = [[UIImageView alloc] initWithFrame:self.bounds];
@@ -51,6 +58,10 @@
         make.left.equalTo(self.bgView.mas_right).offset(-7);
         make.top.equalTo(self.bgView.mas_top).offset(-7);
     }];
+}
+- (void)setPicUrl:(NSString *)picUrl {
+    _picUrl = picUrl;
+    [self.bgView sd_setImageWithURL:[NSURL URLWithString:_picUrl] placeholderImage:[LZXHelper buttonImageFromColor:[UIColor groupTableViewBackgroundColor]]];
 }
 - (void)setDelhidden:(BOOL)delhidden {
     _delhidden = delhidden;

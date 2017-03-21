@@ -65,13 +65,13 @@
 }
 - (NSArray *)imageDataSource {
     if (!_imageDataSource) {
-        _imageDataSource = @[@"vd_kkNum",@"vd_shbNum",@"vd_fx",@"vd_speed",@"vd_carzht",@"vd_chdNum"];
+        _imageDataSource = @[@"vd_kkNum",@"vd_chdNum",@"vd_chepai",@"vd_cheshen",@"vd_type",@"vd_carzht"];
     }
     return _imageDataSource;
 }
 - (NSArray *)titleDataSource {
     if (!_titleDataSource) {
-        _titleDataSource = @[@"卡口编号",@"设备编号",@"行驶方向",@"车辆速度",@"行驶状态",@"车道编号"];
+        _titleDataSource = @[@"卡口名称",@"车道编号",@"车牌颜色",@"车身颜色",@"车辆类型",@"行驶状态"];
     }
     return _titleDataSource;
 }

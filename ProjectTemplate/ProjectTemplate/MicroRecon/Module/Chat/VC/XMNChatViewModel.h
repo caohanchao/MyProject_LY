@@ -17,7 +17,7 @@
 - (void)reloadAfterReceiveMessage:(NSDictionary *)message;
 - (void)messageSendStateChanged:(XMNMessageSendState)sendState  withProgress:(CGFloat)progress forIndex:(NSUInteger)index;
 - (void)messageReadStateChanged:(XMNMessageReadState)readState withProgress:(CGFloat)progress forIndex:(NSUInteger)index;
-
+- (void)XMNChatViewModelLoadNewData;
 
 @end
 
@@ -31,7 +31,7 @@
 @property (nonatomic, weak) NSMutableArray *dataArray;
 
 @property (weak, nonatomic) XMChatBar *chatBar;
-
+@property (nonatomic, assign) BOOL  isRefresh;
 
 - (instancetype)initWithParentVC:(UIViewController<XMNChatMessageCellDelegate> *)parentVC;
 

@@ -30,7 +30,7 @@
     UploadModel *model = [MTLJSONAdapter modelOfClass:[UploadModel class]
                                       fromJSONDictionary:dict
                                                    error:nil];
-    
+    ZEBLog(@"-------%@",dict);
     return model;
 }
 

@@ -367,45 +367,62 @@ float _lastFollowContentOffset;
         
     } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable response)
      {
-         if ([model.ispraise isEqualToString:@"0"])
+         NSDictionary *dict = [NSJSONSerialization JSONObjectWithData:response
+                                                              options:NSJSONReadingMutableContainers error:nil];
+         
+         if ([dict[@"resultcode"] isEqualToString:@"0"])
          {
-             model.praisenum  = [NSString stringWithFormat:@"%d",[model.praisenum intValue]+1];
-             model.ispraise = @"1";
-             
-             [[[DBManager sharedManager] postListSQ]updataPostList:model];
-             [[[DBManager sharedManager] followPostListSQ]updataFollowPostList:model];
-             [[[DBManager sharedManager] privacyPostListSQ]updataPrivacyPostList:model];
-             [[[DBManager sharedManager] userPostInfoSQ]updataUserPostInfo:model];
-             _modelArray = [[[DBManager sharedManager] followPostListSQ]  selectFollowPostList];
-             
-             [[NSNotificationCenter defaultCenter] postNotificationName:AllPostNotification object:nil];
-            // [[NSNotificationCenter defaultCenter] postNotificationName:FollowPostNotification object:nil];
-             [[NSNotificationCenter defaultCenter] postNotificationName:PrivacyPostNotification object:nil];
-             
-             [self.tableView reloadData];
-             
-             [self showHint:@"点赞成功"];
-         }
-         else
+             if ([model.ispraise isEqualToString:@"0"])
+             {
+                 model.praisenum  = [NSString stringWithFormat:@"%d",[model.praisenum intValue]+1];
+                 model.ispraise = @"1";
+                 
+                 [[[DBManager sharedManager] postListSQ]updataPostList:model];
+                 [[[DBManager sharedManager] followPostListSQ]updataFollowPostList:model];
+                 [[[DBManager sharedManager] privacyPostListSQ]updataPrivacyPostList:model];
+                 [[[DBManager sharedManager] userPostInfoSQ]updataUserPostInfo:model];
+                 _modelArray = [[[DBManager sharedManager] followPostListSQ]  selectFollowPostList];
+                 
+                 [[NSNotificationCenter defaultCenter] postNotificationName:AllPostNotification object:nil];
+                 // [[NSNotificationCenter defaultCenter] postNotificationName:FollowPostNotification object:nil];
+                 [[NSNotificationCenter defaultCenter] postNotificationName:PrivacyPostNotification object:nil];
+                 
+                 [self.tableView reloadData];
+                 
+                 [self showHint:@"点赞成功"];
+             }
+             else
+             {
+                 model.praisenum  = [NSString stringWithFormat:@"%d",[model.praisenum intValue]-1];
+                 model.ispraise = @"0";
+                 
+                 [[[DBManager sharedManager] postListSQ]updataPostList:model];
+                 [[[DBManager sharedManager] followPostListSQ]updataFollowPostList:model];
+                 [[[DBManager sharedManager] privacyPostListSQ]updataPrivacyPostList:model];
+                 [[[DBManager sharedManager] userPostInfoSQ]updataUserPostInfo:model];
+                 _modelArray = [[[DBManager sharedManager] followPostListSQ]  selectFollowPostList];
+                 
+                 [[NSNotificationCenter defaultCenter] postNotificationName:AllPostNotification object:nil];
+                 // [[NSNotificationCenter defaultCenter] postNotificationName:FollowPostNotification object:nil];
+                 [[NSNotificationCenter defaultCenter] postNotificationName:PrivacyPostNotification object:nil];
+                 
+                 [self.tableView reloadData];
+                 
+                 [self showHint:@"取消成功"];
+                 
+             }
+         }else
          {
-             model.praisenum  = [NSString stringWithFormat:@"%d",[model.praisenum intValue]-1];
-             model.ispraise = @"0";
-             
-             [[[DBManager sharedManager] postListSQ]updataPostList:model];
-             [[[DBManager sharedManager] followPostListSQ]updataFollowPostList:model];
-             [[[DBManager sharedManager] privacyPostListSQ]updataPrivacyPostList:model];
-             [[[DBManager sharedManager] userPostInfoSQ]updataUserPostInfo:model];
-             _modelArray = [[[DBManager sharedManager] followPostListSQ]  selectFollowPostList];
-             
-             [[NSNotificationCenter defaultCenter] postNotificationName:AllPostNotification object:nil];
-            // [[NSNotificationCenter defaultCenter] postNotificationName:FollowPostNotification object:nil];
-             [[NSNotificationCenter defaultCenter] postNotificationName:PrivacyPostNotification object:nil];
-             
-             [self.tableView reloadData];
-             
-             [self showHint:@"取消成功"];
-             
+             if ([model.ispraise isEqualToString:@"0"])
+             {
+                 [self showHint:@"点赞失败"];
+             }
+             else
+             {
+                 [self showHint:@"取消失败"];
+             }
          }
+         
      } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
         // [self showHint:@"点赞失败了，看看网络吧！"];
      }];

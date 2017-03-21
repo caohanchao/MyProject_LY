@@ -399,7 +399,6 @@
         NSString *sql = @"select * from tb_PersonnelInformation where PI_alarm = ? and PI_isfriend = ?";
         FMResultSet *rs = [db executeQuery:sql,alarm,@"YES"];
         if ([rs next]) {//查看是否存在 下条记录 如果存在 肯定 数据库中有记录
-            
             ret = YES;
         }else{
             

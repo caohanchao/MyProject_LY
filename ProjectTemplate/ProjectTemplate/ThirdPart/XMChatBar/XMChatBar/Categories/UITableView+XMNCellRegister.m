@@ -16,8 +16,9 @@
 #import "XMNChatLocationMessageCell.h"
 #import "XMNChatVideoMessageCell.h"
 #import "XMNChatReleaseTaskMessageCell.h"
-
-
+#import "XMNChatEmotionsMessageCell.h"
+#import "XMNChatFireImageMessageCell.h"
+#import "XMNChatFileMessageCell.h"
 @implementation UITableView (XMNCellRegister)
 
 - (void)registerXMNChatMessageCellClass {
@@ -55,6 +56,21 @@
     [self registerClass:[XMNChatReleaseTaskMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerSelf_ReleaseTaskMessage_GroupCell"];
     //[self registerClass:[XMNChatReleaseTaskMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerOther_ReleaseTaskMessage_SingleCell"];
     [self registerClass:[XMNChatReleaseTaskMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerOther_ReleaseTaskMessage_GroupCell"];
+    
+    [self registerClass:[XMNChatEmotionsMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerSelf_EmotionsMessage_GroupCell"];
+    [self registerClass:[XMNChatEmotionsMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerSelf_EmotionsMessage_SingleCell"];
+    [self registerClass:[XMNChatEmotionsMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerOther_EmotionsMessage_GroupCell"];
+    [self registerClass:[XMNChatEmotionsMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerOther_EmotionsMessage_SingleCell"];
+    
+    [self registerClass:[XMNChatFireImageMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerSelf_FireImageMessage_GroupCell"];
+    [self registerClass:[XMNChatFireImageMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerSelf_FireImageMessage_SingleCell"];
+    [self registerClass:[XMNChatFireImageMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerOther_FireImageMessage_GroupCell"];
+    [self registerClass:[XMNChatFireImageMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerOther_FireImageMessage_SingleCell"];
+    
+    [self registerClass:[XMNChatFileMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerSelf_FilesMessage_GroupCell"];
+    [self registerClass:[XMNChatFileMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerSelf_FilesMessage_SingleCell"];
+    [self registerClass:[XMNChatFileMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerOther_FilesMessage_GroupCell"];
+    [self registerClass:[XMNChatFileMessageCell class] forCellReuseIdentifier:@"XMNChatMessageCell_OwnerOther_FilesMessage_SingleCell"];
 }
 
 @end

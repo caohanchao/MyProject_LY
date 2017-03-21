@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+   emojinj.plist
+   ALYEmotionsKeyBoardView
+
+   Created by zeb－Apple on 17/2/27.
+   Copyright (c) 2017年 RenSihao. All rights reserved.
+-->
+<plist version="1.0">
+    <array>
+        <dict>
+            <key>iconUrl</key>
+            <string>daowei</string>
+            <key>content</key>
+            <string>到位</string>
+        </dict>
+        <dict>
+            <key>iconUrl</key>
+            <string>dipizi</string>
+            <key>content</key>
+            <string>地皮子</string>
+        </dict>
+        <dict>
+            <key>iconUrl</key>
+            <string>hami</string>
+            <key>content</key>
+            <string>哈米</string>
+        </dict>
+        <dict>
+            <key>iconUrl</key>
+            <string>hanjin</string>
+            <key>content</key>
+            <string>焊紧</string>
+        </dict>
+        <dict>
+            <key>iconUrl</key>
+            <string>chepizi</string>
+            <key>content</key>
+            <string>车皮子</string>
+        </dict>
+        <dict>
+            <key>iconUrl</key>
+            <string>peng</string>
+            <key>content</key>
+            <string>砰</string>
+        </dict>
+        <dict>
+            <key>iconUrl</key>
+            <string>penzi</string>
+            <key>content</key>
+            <string>喷子</string>
+        </dict>
+        <dict>
+            <key>iconUrl</key>
+            <string>qifan</string>
+            <key>content</key>
+            <string>起反</string>
+        </dict>
+        <dict>
+            <key>iconUrl</key>
+            <string>sanzhangpai</string>
+            <key>content</key>
+            <string>三张牌</string>
+        </dict>
+        <dict>
+            <key>iconUrl</key>
+            <string>shua</string>
+            <key>content</key>
+            <string>刷</string>
+        </dict>
+        <dict>
+            <key>iconUrl</key>
+            <string>suo</string>
+            <key>content</key>
+            <string>锁</string>
+        </dict>
+        <dict>
+            <key>iconUrl</key>
+            <string>waima</string>
+            <key>content</key>
+            <string>外码</string>
+        </dict>
+        <dict>
+            <key>iconUrl</key>
+            <string>xiachazi</string>
+            <key>content</key>
+            <string>下叉子</string>
+        </dict>
+    </array>
+</plist>

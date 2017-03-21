@@ -14,4 +14,6 @@
 @property (nonatomic, copy) NSString *time;
 @property (nonatomic, copy) NSString *bayonetName;
 
+@property (nonatomic, assign) NSInteger index;
+
 @end

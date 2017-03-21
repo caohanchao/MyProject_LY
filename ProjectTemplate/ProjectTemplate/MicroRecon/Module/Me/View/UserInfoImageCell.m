@@ -48,8 +48,10 @@
     _titleLabel.text = _titleStr;
     if ([_titleStr isEqualToString:@"头像"]) {
         _imageView.layer.masksToBounds = YES;
-        _imageView.layer.cornerRadius = _imageView.frame.size.width/2;
-       //[_imageView sd_setImageWithURL:[NSURL URLWithString:_imageStr] placeholderImage:nil];
+//        _imageView.layer.cornerRadius = _imageView.frame.size.width/2;
+
+        _imageView.layer.cornerRadius = 6;
+        //[_imageView sd_setImageWithURL:[NSURL URLWithString:_imageStr] placeholderImage:nil];
         [_imageView imageGetCacheForAlarm:alarm forUrl:_imageStr];
         UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(click:)];
         [_imageView addGestureRecognizer:tap];
@@ -73,8 +75,8 @@
         _titleLabel.frame = CGRectMake(LeftMargin, 15, 120, 40);
         _imageView.frame = CGRectMake(kScreen_Width-LeftMargin-70, 10, 50, 50);
         _imageView.layer.masksToBounds = YES;
-        _imageView.layer.cornerRadius = _imageView.frame.size.width/2;
-        
+//        _imageView.layer.cornerRadius = _imageView.frame.size.width/2;
+        _imageView.layer.cornerRadius = 5;
     }else if ([_titleStr isEqualToString:@"我的二维码"]) {
     
         _titleLabel.frame = CGRectMake(LeftMargin, 5, 120, 35);

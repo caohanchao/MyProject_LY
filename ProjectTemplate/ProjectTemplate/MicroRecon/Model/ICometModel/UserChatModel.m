@@ -53,13 +53,14 @@
              @"HEADPIC"     :@"HEADPIC",
              @"TYPE"        :@"TYPE",
              @"CMD"     :@"CMD",
+             @"ATALARM" :@"ATALARM",
              @"MSGID"       :@"MSGID",
-             @"TIME"        :@"TIME",
+             @"beginTime"        :@"TIME",
              @"SNAME"       :@"SNAME",
              @"GPS"       :@"GPS",
              @"QID"       :@"QID",
              @"MSG"        :@"MSG",
-             @"FIRE"        :@"FIRE"
+//             @"FIRE"        :@"FIRE"
              };
 
 

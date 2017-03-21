@@ -17,13 +17,13 @@
 #define groupNamePlaceholder @"请输入任务名称"
 #define LeftMargin 0
 
-@interface CreateTaskViewController ()<AddGroupMemberControllerDelegate, UITextFieldDelegate> {
+@interface CreateTaskViewController ()<AddGroupMemberControllerDelegate> {
     UIScrollView *_scrollerView;
     UIButton *_commitBtn;
 }
 
 
-@property (nonatomic, strong) UITextField *taskNameField;
+@property (nonatomic, weak) UITextField *taskNameField;
 @property (nonatomic, strong) UILabel *taskDesLabel;
 
 @end
@@ -74,11 +74,11 @@
     
     UILabel *line2 = [CHCUI createLabelWithbackGroundColor:LineColor textAlignment:NSTextAlignmentLeft font:ZEBFont(10) textColor:zWhiteColor text:@""];
     
-    self.taskNameField = [[UITextField alloc] init];
+    self.taskNameField = self.textField;
     self.taskNameField.placeholder = groupNamePlaceholder;
     self.taskNameField.backgroundColor = [UIColor whiteColor];
     self.taskNameField.returnKeyType=UIReturnKeyDone;
-    self.taskNameField.delegate=self;
+    //self.taskNameField.delegate=self;
     self.taskNameField.tintColor = [UIColor redColor];
     [self.taskNameField becomeFirstResponder];
     self.taskNameField.font =[UIFont systemFontOfSize:14];
@@ -389,6 +389,45 @@
     [textField resignFirstResponder];
     return YES;
 }
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    NSString *string1 = [NSString stringWithFormat:@"%@%@", textField.text, string];
+    if (string1.length > TITLE_MAXLENGTH){
+        [self showloadingError:@"字数不能大于14!"];
+        return NO;
+    }
+    if ([[[UITextInputMode currentInputMode]primaryLanguage] isEqualToString:@"emoji"])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    if ([NSString containEmoji:string])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    return YES;
+}
+
+//- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+//    NSString *string1 = [NSString stringWithFormat:@"%@%@", textField.text, string];
+//    if (string1.length > TITLE_MAXLENGTH){
+//        [self showloadingError:@"字数不能大于14!"];
+//        return NO;
+//    }
+//    if ([[[UITextInputMode currentInputMode]primaryLanguage] isEqualToString:@"emoji"])
+//    {
+//        [self showloadingError:@"输入格式有误!"];
+//        return NO;
+//    }
+//    if ([NSString stringContainsEmoji:string])
+//    {
+//        [self showloadingError:@"输入格式有误!"];
+//        return NO;
+//    }
+//    return YES;
+//}
+
 #pragma mark -
 #pragma mark 任务介绍
 - (void)taskDesTap {
@@ -460,7 +499,7 @@
     }else {
         usercount = usercount+1;
     }
-    if (![NSString stringContainsEmoji:self.taskNameField.text]) {
+    if (![NSString containEmoji:self.taskNameField.text]) {
         [self showloadingName:@"正在提交"];
         [[HttpsManager sharedManager] post:PublishTaskURL parameters:param progress:^(NSProgress * _Nonnull progress) {
             

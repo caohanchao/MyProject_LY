@@ -21,4 +21,5 @@
 - (void)transactionInsertSuspectAlllist:(NSArray *)array;
 // 根据workid查询任务
 - (SuspectlistModel *)selectSuspectByWorkId:(NSString *)workId;
+- (NSMutableArray *)selectAllSuspects;
 @end

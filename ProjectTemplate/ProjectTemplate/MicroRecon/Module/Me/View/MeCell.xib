@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="11201" systemVersion="15G1004" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="11762" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11161"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11757"/>
         <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -12,30 +15,34 @@
             <rect key="frame" x="0.0" y="0.0" width="320" height="78"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
             <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
-                <frame key="frameInset" width="320" height="77"/>
+                <rect key="frame" x="0.0" y="0.0" width="320" height="77"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="yYx-Lw-unG">
+                        <rect key="frame" x="13" y="9" width="60" height="60"/>
                         <constraints>
                             <constraint firstAttribute="height" constant="60" id="9Ud-nw-AqY"/>
                             <constraint firstAttribute="width" constant="60" id="OPI-t7-Mqy"/>
                         </constraints>
                     </imageView>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="cl9-PR-OzE">
+                        <rect key="frame" x="85" y="14.5" width="40" height="19.5"/>
                         <fontDescription key="fontDescription" type="system" pointSize="16"/>
                         <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <nil key="highlightedColor"/>
                     </label>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="警号：" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Etq-nz-WSF">
+                        <rect key="frame" x="85" y="41.5" width="37" height="14.5"/>
                         <fontDescription key="fontDescription" type="system" pointSize="12"/>
                         <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <nil key="highlightedColor"/>
                     </label>
                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="UiL-95-Ed2">
+                        <rect key="frame" x="290" y="28" width="20" height="24"/>
                         <constraints>
-                            <constraint firstAttribute="width" constant="22" id="sob-Oz-5by"/>
+                            <constraint firstAttribute="width" constant="20" id="sob-Oz-5by"/>
                         </constraints>
-                        <state key="normal" title="Button" image="qrcode_small"/>
+                        <state key="normal" title="Button" image="qrcode_small-1"/>
                         <connections>
                             <action selector="show2Code:" destination="KGk-i7-Jjw" eventType="touchUpInside" id="pNo-Ec-EtO"/>
                         </connections>
@@ -44,13 +51,13 @@
                 <constraints>
                     <constraint firstItem="yYx-Lw-unG" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leadingMargin" constant="5" id="2Ly-ev-Adk"/>
                     <constraint firstItem="yYx-Lw-unG" firstAttribute="centerY" secondItem="H2p-sc-9uM" secondAttribute="centerY" id="5YP-dg-jYo"/>
-                    <constraint firstItem="UiL-95-Ed2" firstAttribute="trailing" secondItem="H2p-sc-9uM" secondAttribute="trailingMargin" id="BmX-bn-TCr"/>
+                    <constraint firstItem="UiL-95-Ed2" firstAttribute="trailing" secondItem="H2p-sc-9uM" secondAttribute="trailingMargin" constant="-2" id="BmX-bn-TCr"/>
                     <constraint firstItem="Etq-nz-WSF" firstAttribute="top" secondItem="cl9-PR-OzE" secondAttribute="bottom" constant="7.5" id="JsO-6A-ze9"/>
-                    <constraint firstItem="UiL-95-Ed2" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" constant="24" id="UCs-g7-fzT"/>
                     <constraint firstItem="cl9-PR-OzE" firstAttribute="leading" secondItem="yYx-Lw-unG" secondAttribute="trailing" constant="12" id="eAD-cS-ely"/>
                     <constraint firstItem="Etq-nz-WSF" firstAttribute="leading" secondItem="yYx-Lw-unG" secondAttribute="trailing" constant="12" id="oD2-6m-spA"/>
-                    <constraint firstAttribute="bottomMargin" secondItem="UiL-95-Ed2" secondAttribute="bottom" constant="24" id="rmX-NW-iJe"/>
+                    <constraint firstAttribute="bottomMargin" secondItem="UiL-95-Ed2" secondAttribute="bottom" constant="17" id="rmX-NW-iJe"/>
                     <constraint firstItem="cl9-PR-OzE" firstAttribute="centerY" secondItem="H2p-sc-9uM" secondAttribute="centerY" constant="-14.5" id="sFh-uT-tFx"/>
+                    <constraint firstItem="UiL-95-Ed2" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="topMargin" constant="20" id="t7q-zD-e0R"/>
                 </constraints>
             </tableViewCellContentView>
             <connections>
@@ -63,6 +70,6 @@
         </tableViewCell>
     </objects>
     <resources>
-        <image name="qrcode_small" width="20" height="20"/>
+        <image name="qrcode_small-1" width="20" height="20"/>
     </resources>
 </document>

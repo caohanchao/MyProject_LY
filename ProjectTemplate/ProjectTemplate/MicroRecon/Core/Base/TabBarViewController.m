@@ -14,12 +14,18 @@
 #import "MeViewController.h"
 #import "ChatLogic.h"
 #import "CUrlServer.h"
-#import "Hotfix.h"
 #import "AccountLogic.h"
 #import "LoginViewController.h"
 #import "CallHelpViewController.h"
+#import "UITabBar+badge.h"
 
-@interface TabBarViewController ()
+@interface TabBarViewController () {
+    ChatListViewController *_chatVC;
+    ContactViewController *_contactVC;
+    ApplicationViewController *_appVC;
+    MeViewController *_meVC;
+    CallHelpViewController *_callHelp;
+}
 
 
 @end
@@ -77,28 +83,29 @@ UINavigationController * NavInTabbar(UIViewController * vc, NSString * imgName, 
     [super viewDidLoad];
     
 
-    [Hotfix httpJSPatch];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didLoginFromOtherDevice) name:DidLoginFromOtherDeviceNotification object:nil];
     
     [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(getCUrlServer) name:AllMessageReloadNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(showRedLabel:) name:tabbarShowRedLabel object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(hiddenRedLabel:) name:tabbarHiddenRedLabel object:nil];
 //    UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPress:)];
 //    [self.view addGestureRecognizer:longPress];
     
-    ChatListViewController * chatVC = [[ChatListViewController alloc] init];
-    ContactViewController * contactVC = [[ContactViewController alloc] init];
-    ApplicationViewController * appVC = [[ApplicationViewController alloc] init];
-    MeViewController * meVC = [[MeViewController alloc] init];
-    CallHelpViewController *callHelp = [[CallHelpViewController alloc] init];
+    _chatVC = [[ChatListViewController alloc] init];
+    _contactVC = [[ContactViewController alloc] init];
+    _appVC = [[ApplicationViewController alloc] init];
+    _meVC = [[MeViewController alloc] init];
+    _callHelp = [[CallHelpViewController alloc] init];
 //    chatVC.title = @"消息";
 //    contactVC.title = @"通讯录";
 //    appVC.title = @"应用";
 //    meVC.title = @"我";
     self.viewControllers = @[
-                             NavInTabbar(chatVC    , @"gmsg"        , @"bmsg"       ),
-                             NavInTabbar(contactVC , @"glook"     , @"blook"    ),
-                             NavInTabbar(callHelp   , @"gbsb"       , @"gbsb"),
-                             NavInTabbar(appVC     , @"gapp" , @"bapp"),
-                             NavInTabbar(meVC      , @"gme"          , @"bme"         )];
+                             NavInTabbar(_chatVC    , @"gmsg"        , @"bmsg"       ),
+                             NavInTabbar(_contactVC , @"glook"     , @"blook"    ),
+                             NavInTabbar(_callHelp   , @"gbsb"       , @"gbsb"),
+                             NavInTabbar(_appVC     , @"gapp" , @"bapp"),
+                             NavInTabbar(_meVC      , @"gme"          , @"bme"         )];
 //        self.viewControllers = @[
 //                                 NavInTabbar(chatVC    , @"news_n"        , @"news_s"       ),
 //                                 NavInTabbar(contactVC , @"contact_n"     , @"contact_s"    ),
@@ -113,7 +120,9 @@ UINavigationController * NavInTabbar(UIViewController * vc, NSString * imgName, 
          item.imageInsets = UIEdgeInsetsMake(offset, 0, -offset, 0);
             //[item setTitlePositionAdjustment:UIOffsetMake(0, -4)];
     }
+   
 }
+
 #pragma mark - didLoginFromOtherDevice
 - (void)didLoginFromOtherDevice {
     
@@ -152,6 +161,16 @@ UINavigationController * NavInTabbar(UIViewController * vc, NSString * imgName, 
     }
     
     
+}
+// 显示红点
+- (void)showRedLabel:(NSNotification *)notification {
+    
+    [self.tabBar showBadgeOnItemIndex:[notification.object integerValue]];
+}
+// 隐藏红点
+- (void)hiddenRedLabel:(NSNotification *)notification {
+    
+    [self.tabBar hideBadgeOnItemIndex:[notification.object integerValue]];
 }
 //- (void)longPress:(UILongPressGestureRecognizer *)longPress {
 //    

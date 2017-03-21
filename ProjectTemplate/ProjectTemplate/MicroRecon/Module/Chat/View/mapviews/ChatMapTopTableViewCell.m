@@ -29,7 +29,9 @@
     return self;
 }
 - (void)createUI {
-    _imageView = [[UIImageView alloc] initWithCornerRadiusAdvance:32/2 rectCornerType:UIRectCornerAllCorners];
+//    _imageView = [[UIImageView alloc] initWithCornerRadiusAdvance:32/2 rectCornerType:UIRectCornerAllCorners];
+    
+     _imageView = [[UIImageView alloc] initWithCornerRadiusAdvance:6 rectCornerType:UIRectCornerAllCorners];
     _imageView.frame = CGRectMake(0, 0, 32, 32);
    _imageView.contentMode = UIViewContentModeScaleAspectFill;
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tap:)];

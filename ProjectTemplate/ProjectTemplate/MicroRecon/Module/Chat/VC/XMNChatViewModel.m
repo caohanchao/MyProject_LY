@@ -21,7 +21,15 @@
 #import "UITableView+FDTemplateLayoutCell.h"
 #import "XMNChatMessageCell+XMNCellIdentifier.h"
 
-@interface XMNChatViewModel () <XMNChatServerDelegate>
+@interface XMNChatViewModel () <XMNChatServerDelegate>{
+    
+    CGFloat contentOffsetY;
+    
+    CGFloat oldContentOffsetY;
+    
+    CGFloat newContentOffsetY;
+    
+}
 
 @property (nonatomic, weak) UIViewController<XMNChatMessageCellDelegate> *parentVC;
 @property (nonatomic, strong) id<XMNChatServer> chatServer;
@@ -61,6 +69,8 @@
     messageCell.messageReadState = [[XMNMessageStateManager shareManager] messageReadStateForIndex:indexPath.row];
     messageCell.messageSendState = [[XMNMessageStateManager shareManager] messageSendStateForIndex:indexPath.row];
     messageCell.delegate = self.parentVC;
+    messageCell.index = indexPath.row;
+    
     
     if ([message[kXMNMessageConfigurationSendStateKey] integerValue] == XMNMessageSendFail) {
         messageCell.messageSendState = XMNMessageSendFail;
@@ -111,9 +121,56 @@
     if ([UIMenuController sharedMenuController].isMenuVisible) {
         [[UIMenuController sharedMenuController] setMenuVisible:NO animated:YES];
     }
-    
+    contentOffsetY = scrollView.contentOffset.y;
 }
 
+-(void)scrollViewDidScroll:(UIScrollView *)scrollView
+{
+    if (scrollView.contentOffset.y<=0  && _isRefresh==NO)
+    {
+        newContentOffsetY = scrollView.contentOffset.y;
+//        if (newContentOffsetY > oldContentOffsetY && oldContentOffsetY > contentOffsetY) {  // 向上滚动
+//            NSLog(@"up");
+//        } else if (newContentOffsetY < oldContentOffsetY && oldContentOffsetY < contentOffsetY) { // 向下滚动
+//            NSLog(@"down");
+//        } else {
+//            NSLog(@"dragging");
+//        }
+    
+        if (scrollView.dragging) {  // 拖拽
+
+            NSLog(@"scrollView.dragging");
+
+            NSLog(@"contentOffsetY: %f", contentOffsetY);
+            
+            NSLog(@"newContentOffsetY: %f", scrollView.contentOffset.y);
+            
+            if ((scrollView.contentOffset.y - contentOffsetY) > 10.0f) {  // 向上拖拽
+  
+            } else if ((contentOffsetY - scrollView.contentOffset.y) > 10.0f) {   // 向下拖拽
+                
+                _isRefresh = YES;
+                
+                if (_delegate && [_delegate respondsToSelector:@selector(XMNChatViewModelLoadNewData)]) {
+                    [_delegate XMNChatViewModelLoadNewData];
+                }
+            } else {
+ 
+            }
+            
+        }
+    }
+}
+// 完成拖拽(滚动停止时调用此方法，手指离开屏幕前)
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
+
+{
+    // NSLog(@"scrollViewDidEndDragging");
+    
+    oldContentOffsetY = scrollView.contentOffset.y;
+    
+}
 #pragma mark - XMNChatServerDelegate
 
 - (void)recieveMessage:(NSDictionary *)message {

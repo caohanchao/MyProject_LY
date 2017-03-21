@@ -11,6 +11,10 @@
 @interface CallHelpTopTableViewCell : UITableViewCell
 
 
-@property (nonatomic, weak) UIImage *image;
+//@property (nonatomic, weak) UIImage *image;
 
+@property (strong, nonatomic) NSArray *userArr;
+
+@property (assign, nonatomic) NSInteger row;
+@property (nonatomic, copy) void(^userImageBlock)();
 @end

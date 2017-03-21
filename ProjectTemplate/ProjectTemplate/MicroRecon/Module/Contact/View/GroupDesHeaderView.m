@@ -58,6 +58,11 @@
     
     CGFloat margin = 70;
     CGFloat leftMargin = 40;
+    
+    if (self.width == iPhone5_W) {
+        leftMargin = 20;
+        margin = 50;
+    }
     CGFloat topMargin = 20;
     CGFloat widthh = (kScreenWidth-leftMargin*2 - margin*3)/4;
     CGFloat heightt = widthh;
@@ -113,8 +118,14 @@
         titleArray = @[@"群公告",@"群文件",@"群图片",@"集合圈",@"更多"];
     }
     
+    
+    
     CGFloat margin = 70;
     CGFloat leftMargin = 40;
+    if (self.width == iPhone5_W) {
+        leftMargin = 20;
+        margin = 50;
+    }
     CGFloat topMargin = 20;
     CGFloat widthh = (kScreenWidth-leftMargin*2 - margin*3)/4;
     CGFloat heightt = widthh;
@@ -210,7 +221,8 @@
             btn.frame = CGRectMake(margin + (btnHeight+margin)*(i%5), 45+TopMargin + (btnHeight +TopMargin + 15)*(i/5), btnHeight, btnHeight);
             UILabel *nameLabel = [[UILabel alloc] initWithFrame:CGRectMake(minX(btn), maxY(btn), width(btn.frame), 15)];
             btn.layer.masksToBounds = YES;
-            btn.layer.cornerRadius = btnHeight/2;
+//            btn.layer.cornerRadius = btnHeight/2;
+            btn.layer.cornerRadius = 6;
             btn.contentMode = UIViewContentModeScaleAspectFill;
             btn.userInteractionEnabled = YES;
         

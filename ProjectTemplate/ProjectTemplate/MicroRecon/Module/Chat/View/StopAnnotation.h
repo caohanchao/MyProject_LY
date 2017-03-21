@@ -22,4 +22,9 @@
 @property (nonatomic, copy) NSString *alarm;
 
 @property (nonatomic, assign) BOOL isBig;
+
+
+@property (nonatomic, assign) BOOL writePAth; // 是否是绘制轨迹
+
+
 @end

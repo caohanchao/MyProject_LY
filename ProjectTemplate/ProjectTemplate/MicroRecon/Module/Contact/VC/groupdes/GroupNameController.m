@@ -146,6 +146,22 @@
 
 - (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text {
 
+    NSString *string = [NSString stringWithFormat:@"%@%@", textView.text, text];
+    if (string.length > TITLE_MAXLENGTH){
+        [self showloadingError:@"字数不能大于14!"];
+        return NO;
+    }
+    if ([[[textView textInputMode] primaryLanguage] isEqualToString:@"emoji"])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+    if ([NSString containEmoji:text])
+    {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
+
     return YES;
 }
 

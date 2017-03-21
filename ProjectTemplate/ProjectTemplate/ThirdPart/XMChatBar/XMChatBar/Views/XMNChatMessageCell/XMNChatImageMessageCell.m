@@ -8,7 +8,10 @@
 
 #import "XMNChatImageMessageCell.h"
 #import <SDWebImage/UIImageView+WebCache.h>
-#import "Masonry.h"
+#import "UIImageView+CornerRadius.h"
+
+static BOOL SDImageCacheOldShouldDecompressImages = YES;
+static BOOL SDImagedownloderOldShouldDecompressImages = YES;
 
 @interface XMNChatImageMessageCell ()
 
@@ -32,6 +35,7 @@
 @end
 
 @implementation XMNChatImageMessageCell
+
 
 #pragma mark - Override Methods
 
@@ -91,7 +95,7 @@
 #pragma mark - Public Methods
 
 - (void)setup {
-    
+   
     [self.messageContentV addSubview:self.messageImageView];
     [self.messageContentV addSubview:self.messageProgressView];
     [self.messageContentV addSubview:self.loadingView];
@@ -107,7 +111,7 @@
     }
     
     id image = data[kXMNMessageConfigurationImageKey];
-    
+
     if ([image isKindOfClass:[UIImage class]]) {
         self.messageImageView.image = image;
         self.messageImageView.contentMode = UIViewContentModeScaleAspectFill;
@@ -126,22 +130,55 @@
     }
     
 }
+- (void)setSDWebImage {
 
+    SDImageCache *canche = [SDImageCache sharedImageCache];
+    SDImageCacheOldShouldDecompressImages = canche.shouldDecompressImages;
+    canche.shouldDecompressImages = NO;
+    
+    
+    SDWebImageDownloader *downloder = [SDWebImageDownloader sharedDownloader];
+    SDImagedownloderOldShouldDecompressImages = downloder.shouldDecompressImages;
+    downloder.shouldDecompressImages = NO;
+    
 
+}
 - (void)setImageWithURL:(NSString *)imageUrl{
     
-    NSRange range = [imageUrl rangeOfString:@"?"];
-    if (range.length > 0) {
-        imageUrl = [imageUrl substringToIndex:range.location];
+    NSString *originalUrl = @"";
+    if ([imageUrl containsString:@"?type=1"]) {
+        NSArray *arr = [imageUrl componentsSeparatedByString:@"?"];
+        originalUrl = [arr firstObject];
+        if (self.messageOwner == XMNMessageOwnerSelf) {
+            if ([self hasDownLoad:originalUrl]) {
+                imageUrl = originalUrl;
+                [self setSDWebImage];
+            }
+//            imageUrl = originalUrl;
+        }else {
+            if ([self hasDownLoad:originalUrl]) {
+                imageUrl = originalUrl;
+                [self setSDWebImage];
+            }
+        }
+        
     }
     [self.messageImageView sd_setImageWithURL:[NSURL URLWithString:imageUrl] placeholderImage:[UIImage imageNamed:@"default_image"] completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType, NSURL *imageURL) {
         [self.loadingView stopAnimating];
+       // [[SDImageCache sharedImageCache] setValue:nil forKey:@"memCache"];
         self.messageImageView.image = image;
         self.messageImageView.contentMode = UIViewContentModeScaleAspectFill;
     }];
 //    [self.messageImageView sd_setImageWithURL:[NSURL URLWithString:imageUrl] placeholderImage:[UIImage imageNamed:@"default_image"]];
 }
-
+- (BOOL)hasDownLoad:(NSString *)originalUrl {
+    BOOL ret = NO;
+    SDWebImageManager *manager = [SDWebImageManager sharedManager];
+    if ([manager cachedImageExistsForURL:[NSURL URLWithString:[manager cacheKeyForURL:[NSURL URLWithString:originalUrl]]]]) {
+        ret = YES;
+    }
+    return ret;
+}
 
 #pragma mark - Setters
 
@@ -150,7 +187,7 @@
     //通知主线程刷新
     dispatch_async(dispatch_get_main_queue(), ^{
         [self setMessageSendState:XMNMessageSendStateSending];
-        [self.messageProgressView setFrame:CGRectMake(0, 0, self.messageImageView.bounds.size.width, self.messageImageView.bounds.size.height * (1 - uploadProgress))];
+        [self.messageProgressView setFrame:CGRectMake(2.5, 2.5, self.messageImageView.bounds.size.width-5, self.messageImageView.bounds.size.height * (1 - uploadProgress)-5)];
         [self.messageProgressLabel setText:[NSString stringWithFormat:@"%.0f%%",uploadProgress * 100]];
     });
     
@@ -174,9 +211,7 @@
 - (UIImageView *)messageImageView {
     
     if (!_messageImageView) {
-        _messageImageView = [[UIImageView alloc] init];
-        _messageImageView.layer.cornerRadius = 12;
-        _messageImageView.layer.masksToBounds = YES;
+        _messageImageView = [[UIImageView alloc] initWithCornerRadiusAdvance:5 rectCornerType:UIRectCornerAllCorners];
         _messageImageView.contentMode = UIViewContentModeScaleAspectFill;
         
     }
@@ -209,5 +244,12 @@
     
     return _loadingView;
 }
-
+-(void)dealloc {
+    SDImageCache *canche = [SDImageCache sharedImageCache];
+    canche.shouldDecompressImages = SDImageCacheOldShouldDecompressImages;
+    
+    SDWebImageDownloader *downloder = [SDWebImageDownloader sharedDownloader];
+    downloder.shouldDecompressImages = SDImagedownloderOldShouldDecompressImages;
+    
+}
 @end

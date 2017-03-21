@@ -122,10 +122,11 @@
         UIImageView *phoneNumView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Register_phoneNum"]];
         phoneNumView.frame = CGRectMake(12, 0, 20, 20);
         _phoneNumField.leftView = phoneNumView;
+        _phoneNumField.keyboardType = UIKeyboardTypeASCIICapable;
         _phoneNumField.font = font();
         _phoneNumField.placeholder = @"请输入手机号";
         [_phoneNumField setValue:CHCHexColor(@"a6a6a6") forKeyPath:@"placeholderLabel.textColor"];
-
+        _phoneNumField.returnKeyType = UIReturnKeyNext;
         _phoneNumField.leftViewMode = UITextFieldViewModeAlways;
         _phoneNumField.delegate =self;
     }
@@ -141,7 +142,9 @@
         testNumView.frame = CGRectMake(12, 0, 20, 20);
 //        testNumView.backgroundColor =[UIColor redColor];
         _testNumField.leftView = testNumView;
+        _testNumField.keyboardType = UIKeyboardTypeASCIICapable;
         _testNumField.placeholder = @"请输入验证码";
+        _testNumField.returnKeyType = UIReturnKeyNext;
         [_testNumField setValue:CHCHexColor(@"a6a6a6") forKeyPath:@"placeholderLabel.textColor"];
         _testNumField.font = font();
         _testNumField.leftViewMode = UITextFieldViewModeAlways;
@@ -194,6 +197,7 @@
     if (!_passWordNumField) {
         
         _passWordNumField = [[CHCTextField alloc] init];
+        _passWordNumField.keyboardType = UIKeyboardTypeASCIICapable;
         _passWordNumField.backgroundColor = [UIColor whiteColor];
 
         if (_vcType == Frist_RegisterVC) {
@@ -210,7 +214,7 @@
         _passWordNumField.leftView = passNumView;
         _passWordNumField.leftViewMode =UITextFieldViewModeAlways;
         _passWordNumField.delegate =self;
-        
+        _passWordNumField.returnKeyType = UIReturnKeyGo;
         
         _eyeBtn = [UIButton buttonWithType:UIButtonTypeCustom];
         [_eyeBtn setImage:[UIImage imageNamed:@"Register_eye_down"] forState:UIControlStateNormal];
@@ -329,14 +333,21 @@
 ////    nvc.information = dict;
 //    [self.navigationController pushViewController:nvc animated:YES];
 
+//    [self testPhoneNum];
 //
-    if (![LZXHelper isMobileNumber:_phoneNumField.text]) {
+    //手机号是否为空
+    if ([[LZXHelper isNullToString:self.phoneNumField.text] isEqualToString:@""]) {
+        [self showHint:@"请输入手机号码"];
+        return;
+    }
+    //手机号是否合法
+    if (![LZXHelper isMobileNumber:self.phoneNumField.text]) {
         [self showHint:@"请输入正确的手机号"];
         return;
     }
+    
     if (![LZXHelper validatePassWord:_passWordNumField.text]) {
         [self showHint:@"密码格式错误,请重新输入密码"];
-        
         return;
     }
     
@@ -411,19 +422,24 @@
     [self.testNumField resignFirstResponder];
 }
 
+
+//- (void)testPhoneNum {
+//    //手机号是否为空
+//    if ([[LZXHelper isNullToString:self.phoneNumField.text] isEqualToString:@""]) {
+//        [self showHint:@"请输入手机号码"];
+//        return;
+//    }
+//    //手机号是否合法
+//    if (![LZXHelper isMobileNumber:self.phoneNumField.text]) {
+//        [self showHint:@"请输入正确的手机号"];
+//        return;
+//    }
+//}
+
 - (void)testNumClick {
     
     [self textFieldrResignFirstResponder];
-    //手机号是否为空
-    if ([[LZXHelper isNullToString:self.phoneNumField.text] isEqualToString:@""]) {
-        [self showHint:@"请输入手机号码"];
-        return;
-    }
-    //手机号是否合法
-    if (![LZXHelper isMobileNumber:self.phoneNumField.text]) {
-        [self showHint:@"请输入正确的手机号"];
-        return;
-    }
+    
     
 //    self.testBtn.selected = !_testBtn.selected;
     [self requestTestNum];
@@ -499,6 +515,18 @@
 
 // 请求验证码
 - (void)requestTestNum {
+    
+//    [self testPhoneNum];
+    //手机号是否为空
+    if ([[LZXHelper isNullToString:self.phoneNumField.text] isEqualToString:@""]) {
+        [self showHint:@"请输入手机号码"];
+        return;
+    }
+    //手机号是否合法
+    if (![LZXHelper isMobileNumber:self.phoneNumField.text]) {
+        [self showHint:@"请输入正确的手机号"];
+        return;
+    }
     
     self.phoneNum =  self.phoneNumField.text;
     
@@ -580,7 +608,25 @@
     [self.view endEditing:YES];
 }
 
-- (void)textFieldShouldReturn {
+#pragma mark - UITextFieldDelegate
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField{
+    if (textField == self.phoneNumField) {
+//        [self testPhoneNum];
+        [self.testNumField becomeFirstResponder];
+    }
+    else if (textField == self.testNumField) {
+        [self.passWordNumField becomeFirstResponder];
+    }
+    else if (textField == self.passWordNumField) {
+//        [self.passwordField becomeFirstResponder];
+        [self textFieldReturn];
+    }
+    return YES;
+}
+
+
+- (void)textFieldReturn {
     
     if (![self.phoneNumField.text isEqualToString:@""]&&![self.testNumField.text isEqualToString:@""]&&![self.passWordNumField.text isEqualToString:@""]) {
         self.nextBtn.backgroundColor = zBlueColor;
@@ -606,6 +652,11 @@
 - (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
     
     [self textfieldObserverWithAllMessage];
+    
+    if ([NSString containEmoji:string]) {
+        [self showloadingError:@"输入格式有误!"];
+        return NO;
+    }
     return YES;
     
 }

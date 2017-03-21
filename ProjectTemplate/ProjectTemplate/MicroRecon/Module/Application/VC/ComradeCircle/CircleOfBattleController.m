@@ -274,13 +274,15 @@
     iconImgView.layer.borderWidth = 1;
     iconImgView.layer.borderColor = [zWhiteColor CGColor];
     iconImgView.layer.masksToBounds = YES;
-    iconImgView.layer.cornerRadius = 60/2;
+//    iconImgView.layer.cornerRadius = 60/2;
+    iconImgView.layer.cornerRadius = 6;
     [headerView addSubview:iconImgView];
     
     UIButton * iconBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     iconBtn.frame = iconImgView.frame;
     iconBtn.layer.masksToBounds = YES;
-    iconBtn.layer.cornerRadius = 30;
+//    iconBtn.layer.cornerRadius = 30;
+    iconBtn.layer.cornerRadius = 6;
     [iconBtn addTarget:self action:@selector(ownIconBtnClick) forControlEvents:UIControlEventTouchUpInside];
     [headerView addSubview:iconBtn];
     

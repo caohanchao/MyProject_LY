@@ -149,37 +149,44 @@
 
 - (void)loadingAudio {
     
-    if ([_audioStr hasPrefix:@"http"] || [_audioStr hasPrefix:@"https"]) {
-        //1.检查URLString是本地文件还是网络文件
-        NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
-        NSString *chatId = [user objectForKey:@"chatId"];
-        NSURL *filePath = [ZEBCache audioCacheUrlString:_audioStr chatId:chatId];
-        if ([LZXHelper isUrlExist:filePath]) {
-            NSInteger time = [ChatBusiness durationWithVideo:filePath];
-           // NSString *time1 = [[NSString stringWithFormat:@"%ld",time] getMMSSFromSS];
-            self.timeLabel.text = [NSString stringWithFormat:@"%ld”", time];
-            self.audioUrl = filePath;
-        }else {
-        __weak typeof(self) weakSelf = self;
-        [[HttpsManager sharedManager] downloadAudio:_audioStr progress:^(NSProgress * _Nonnull progress) {
-            
-        } destination:^NSURL * _Nonnull(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull reponse) {
-            weakSelf.messageIndicatorV.hidden = NO;
-            weakSelf.audioImageView.hidden = YES;
-            [weakSelf.messageIndicatorV startAnimating];
-            return targetPath;
-        } completionHandler:^(NSURLResponse * _Nonnull reponse, NSURL * _Nullable filePath, NSError * _Nullable error) {
-            weakSelf.messageIndicatorV.hidden = YES;
-            weakSelf.audioImageView.hidden = NO;
-            [weakSelf.messageIndicatorV stopAnimating];
-            weakSelf.audioUrl = filePath;
-            NSInteger time = [ChatBusiness durationWithVideo:filePath];
-            //NSString *time1 = [[NSString stringWithFormat:@"%ld",time] getMMSSFromSS];
-            weakSelf.timeLabel.text = [NSString stringWithFormat:@"%ld”", time];
-            
-        }];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        if ([_audioStr hasPrefix:@"http"] || [_audioStr hasPrefix:@"https"]) {
+            //1.检查URLString是本地文件还是网络文件
+            NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
+            NSString *chatId = [user objectForKey:@"chatId"];
+            NSURL *filePath = [ZEBCache audioCacheUrlString:_audioStr chatId:chatId];
+            if ([LZXHelper isUrlExist:filePath]) {
+                NSInteger time = [ChatBusiness durationWithVideo:filePath];
+                // NSString *time1 = [[NSString stringWithFormat:@"%ld",time] getMMSSFromSS];
+                dispatch_sync(dispatch_get_main_queue(), ^{
+                   self.timeLabel.text = [NSString stringWithFormat:@"%ld”", time];
+                });
+                
+                self.audioUrl = filePath;
+            }else {
+                __weak typeof(self) weakSelf = self;
+                [[HttpsManager sharedManager] downloadAudio:_audioStr progress:^(NSProgress * _Nonnull progress) {
+                    
+                } destination:^NSURL * _Nonnull(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull reponse) {
+                    weakSelf.messageIndicatorV.hidden = NO;
+                    weakSelf.audioImageView.hidden = YES;
+                    [weakSelf.messageIndicatorV startAnimating];
+                    return targetPath;
+                } completionHandler:^(NSURLResponse * _Nonnull reponse, NSURL * _Nullable filePath, NSError * _Nullable error) {
+                    weakSelf.messageIndicatorV.hidden = YES;
+                    weakSelf.audioImageView.hidden = NO;
+                    [weakSelf.messageIndicatorV stopAnimating];
+                    weakSelf.audioUrl = filePath;
+                    NSInteger time = [ChatBusiness durationWithVideo:filePath];
+                    //NSString *time1 = [[NSString stringWithFormat:@"%ld",time] getMMSSFromSS];
+                    weakSelf.timeLabel.text = [NSString stringWithFormat:@"%ld”", time];
+                    
+                }];
+            }
         }
-    }
+        
+    });
+   
 }
 - (void)playAudio:(UITapGestureRecognizer *)recognizer {
     if (_delegate && [_delegate respondsToSelector:@selector(audioViewPlayAudio:index:audio:)]) {

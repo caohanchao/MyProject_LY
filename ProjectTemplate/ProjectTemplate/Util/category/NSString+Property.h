@@ -13,4 +13,5 @@
 @property (nonatomic, copy) NSString *myId;
 @property (nonatomic, copy) NSString *open;
 
+@property (nonatomic, copy) NSString *name;
 @end

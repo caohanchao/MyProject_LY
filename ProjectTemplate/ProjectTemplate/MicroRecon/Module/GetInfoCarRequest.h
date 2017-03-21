@@ -49,5 +49,6 @@
  @return YES or NO   YES:大于一周   NO:小于一周
  */
 + (BOOL)isInOneWeekCompareWithStartTime:(nonnull NSString *)startTime WithEndTime:(nonnull NSString *)endTime Formatter:(nonnull NSDateFormatter *)formatter ;
-
+//比较两个日期的大小  日期格式为2016-08-14 08：46
++ (NSInteger)compareDate:(nonnull NSString*)aDate withDate:(nonnull NSString*)bDate;
 @end

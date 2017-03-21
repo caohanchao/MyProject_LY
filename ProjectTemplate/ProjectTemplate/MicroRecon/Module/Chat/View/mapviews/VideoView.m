@@ -32,6 +32,16 @@
     }
     return self;
 }
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        
+        [self setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
+        [self createUI];
+        
+    }
+    return self;
+}
 - (void)createUI {
     
     self.userInteractionEnabled = NO;
@@ -108,56 +118,65 @@
     return _videoImageView;
 }
 - (void)loadingVideo {
+    
     NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
     NSString *chatId = [user objectForKey:@"chatId"];
     NSURL *filePath = [ZEBCache videoCacheUrlString:self.videoStr chatId:chatId];
-    if ([LZXHelper isUrlExist:filePath]) {
-        self.messageIndicatorV.hidden = YES;
-        [self.messageIndicatorV stopAnimating];
-        self.userInteractionEnabled = YES;
-        self.videoImageView.image = [self firstFrameWithVideoURL:filePath];
-        self.filePath=filePath;
-    }else {
-    __weak typeof(self) weakSelf = self;
-    [[HttpsManager sharedManager] download:self.videoStr progress:^(NSProgress * _Nonnull progress) {
-        
-        
-    } destination:^NSURL * _Nonnull(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull reponse) {
-        
-        return targetPath;
-    } completionHandler:^(NSURLResponse * _Nonnull reponse, NSURL * _Nullable filePath, NSError * _Nullable error) {
-        weakSelf.messageIndicatorV.hidden = YES;
-        [weakSelf.messageIndicatorV stopAnimating];
-        weakSelf.userInteractionEnabled = YES;
-        weakSelf.videoImageView.image = [self firstFrameWithVideoURL:filePath];
-        weakSelf.filePath=filePath;
-        
-    }];
-    }
-}
-#pragma mark - Video Methods
-- (UIImage *)firstFrameWithVideoURL:(NSURL *)url {
-    if (!url) {
-        return nil;
-    }
-    // 获取视频第一帧
-    NSDictionary *opts = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:NO] forKey:AVURLAssetPreferPreciseDurationAndTimingKey];
-    AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:url options:opts];
     
-    AVAssetImageGenerator *generator = [AVAssetImageGenerator assetImageGeneratorWithAsset:urlAsset];
-    generator.appliesPreferredTrackTransform = YES;
-    NSError *error = nil;
-    CGImageRef imageRef = [generator copyCGImageAtTime:CMTimeMake(0, 10) actualTime:NULL error:&error];
-    if (error == nil)
-    {
-        return [UIImage imageWithCGImage:imageRef];
+        if ([LZXHelper isUrlExist:filePath]) {
+                self.messageIndicatorV.hidden = YES;
+                [self.messageIndicatorV stopAnimating];
+                self.userInteractionEnabled = YES;
+                [self firstFrameWithVideoURL:filePath];
+                self.filePath=filePath;
+        }else {
+            __weak typeof(self) weakSelf = self;
+            [[HttpsManager sharedManager] download:self.videoStr progress:^(NSProgress * _Nonnull progress) {
+                
+                
+            } destination:^NSURL * _Nonnull(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull reponse) {
+                
+                return targetPath;
+            } completionHandler:^(NSURLResponse * _Nonnull reponse, NSURL * _Nullable filePath, NSError * _Nullable error) {
+                weakSelf.messageIndicatorV.hidden = YES;
+                [weakSelf.messageIndicatorV stopAnimating];
+                weakSelf.userInteractionEnabled = YES;
+                [self firstFrameWithVideoURL:filePath];
+                weakSelf.filePath=filePath;
+                
+            }];
+        }
+    
     }
-    return nil;
+#pragma mark - Video Methods
+- (void)firstFrameWithVideoURL:(NSURL *)url {
+    if (!url) {
+        return;
+    }
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        // 获取视频第一帧
+        NSDictionary *opts = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:NO] forKey:AVURLAssetPreferPreciseDurationAndTimingKey];
+        AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:url options:opts];
+        
+        AVAssetImageGenerator *generator = [AVAssetImageGenerator assetImageGeneratorWithAsset:urlAsset];
+        generator.appliesPreferredTrackTransform = YES;
+        NSError *error = nil;
+        CGImageRef imageRef = [generator copyCGImageAtTime:CMTimeMake(0, 10) actualTime:NULL error:&error];
+        if (error == nil)
+        {
+            dispatch_sync(dispatch_get_main_queue(), ^{
+            self.videoImageView.image =  [UIImage imageWithCGImage:imageRef];
+            });
+            
+        }
+
+    });
+    
 }
 - (void)playVideo:(UITapGestureRecognizer *)recognizer {
     
-    if (_delegate && [_delegate respondsToSelector:@selector(videoView:index:)]) {
-        [_delegate videoView:self index:self.index];
+    if (_delegate && [_delegate respondsToSelector:@selector(videoView:index:videlUrl:)]) {
+        [_delegate videoView:self index:self.index videlUrl:self.videoStr];
     }
 }
 //- (void)deleteMine:(UILongPressGestureRecognizer *)longPressGes {

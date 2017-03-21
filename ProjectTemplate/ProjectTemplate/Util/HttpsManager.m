@@ -8,6 +8,7 @@
 
 #import "HttpsManager.h"
 #import <AVFoundation/AVFoundation.h>
+#import "UIImage+Property.h"
 
 @interface HttpsManager()
 
@@ -86,6 +87,32 @@
              // 请求失败
              failureBlock(task, error);
          }];
+    
+}
+- (void)downloadImage:(NSString *)urlString
+        progress:(void(^)(NSProgress * _Nonnull progress)) progressBlock
+     destination:(nonnull NSURL *_Nonnull(^)(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull reponse)) destinationBlock
+completionHandler:(void(^)(NSURLResponse * _Nonnull reponse, NSURL * _Nullable filePath, NSError * _Nullable error)) completionHandlerBlock
+{
+    NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    
+    AFURLSessionManager *manager = [[AFURLSessionManager alloc]initWithSessionConfiguration:configuration];
+    NSURL *url = [NSURL URLWithString:urlString];
+    
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    
+    NSURLSessionDownloadTask *downloadTask = [manager downloadTaskWithRequest:request progress:nil destination:^NSURL *(NSURL *targetPath,NSURLResponse *response) {
+
+        NSURL *filePath = [ZEBCache originalImageCacheUrlStringUrl:urlString];
+        return filePath;
+        
+    } completionHandler:^(NSURLResponse *response,NSURL *filePath, NSError *error) {
+        //此处已经在主线程了
+        NSLog(@"*****************  Download filePath %@  *********************", filePath);
+        completionHandlerBlock(response, filePath, error);
+    }];
+    
+    [downloadTask resume];
     
 }
 
@@ -178,7 +205,36 @@ completionHandler:(void(^)(NSURLResponse * _Nonnull reponse, NSURL * _Nullable f
         failureBlock(task, error);
     }];
 }
-
+// 聊天发送图片
+- (NSURLSessionUploadTask *)uploadImage:(UIImage *)image progress:(void(^)(NSProgress * _Nonnull progress)) progressBlock success:(void(^)(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse, UIImage * _Nullable theImage))successBlock failure:(void(^)(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error))failureBlock
+{
+    NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
+    NSString *username = [user objectForKey:@"alarm"];
+    NSDictionary *paramDict = @{@"token" : @"xxx", @"alarm" : username, @"action" : @"uploadfile"};
+    NSString *urlString =  Upload_File_URL;
+   return  [self.httpSessionManager POST:urlString parameters:paramDict constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
+        
+        NSDateFormatter * formatter = [[NSDateFormatter alloc ] init];
+        [formatter setDateFormat:@"YYYYMMddhhmmssSSS"];
+        NSString *date =  [formatter stringFromDate:[NSDate date]];
+        NSString *timeLocal = [[NSString alloc] initWithFormat:@"%@.jpg", date];
+        // 拼接数据到请求体中
+        NSData *data = image.imageData;
+        [formData appendPartWithFileData:data name:@"fileName" fileName:timeLocal mimeType:@"image/jpeg"];
+    } progress:^(NSProgress * _Nonnull progress) {
+        progressBlock(progress);
+    } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+        //请求成功
+        NSString *str = [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding];
+        str = [str stringByReplacingOccurrencesOfString:@"\\/" withString:@"/"];
+        NSData *data = [str dataUsingEncoding:NSUTF8StringEncoding];
+        successBlock(task, data, image);
+        
+    } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+        //请求失败
+        failureBlock(task, error);
+    }];
+}
 - (void)uploadFile:(NSString *)filePath progress:(void(^)(NSProgress * _Nonnull progress)) progressBlock success:(void(^)(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse))successBlock failure:(void(^)(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error))failureBlock
 {
     NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
@@ -205,6 +261,33 @@ completionHandler:(void(^)(NSURLResponse * _Nonnull reponse, NSURL * _Nullable f
         failureBlock(task, error);
     }];
 }
+
+- (void)uploadFilesWithURL:(NSString *)fileURL  withFileName:(NSString *)fileName progress:(void(^)(NSProgress * _Nonnull progress)) progressBlock success:(void(^)(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse))successBlock failure:(void(^)(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error))failureBlock {
+    NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
+    NSString *username = [user objectForKey:@"alarm"];
+    NSDictionary *paramDict = @{@"token" : @"xxx", @"alarm" : username, @"action" : @"uploadfile"};
+    NSString *urlString = Upload_File_URL;
+    [self.httpSessionManager POST:urlString parameters:paramDict constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
+        
+        NSDateFormatter * formatter = [[NSDateFormatter alloc ] init];
+        [formatter setDateFormat:@"YYYYMMddhhmmssSSS"];
+        NSString *date =  [formatter stringFromDate:[NSDate date]];
+//        NSString *fileName = [NSString stringWithFormat:@"%@.amr", date];
+        // 拼接数据到请求体中
+        [formData appendPartWithFileURL:[NSURL fileURLWithPath:fileURL] name:@"fileName" fileName:fileName mimeType:@"image/png/file" error:nil];
+    } progress:^(NSProgress * _Nonnull progress) {
+        progressBlock(progress);
+    } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+        //请求成功
+        NSString *str = [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding];
+        str = [str stringByReplacingOccurrencesOfString:@"\\/" withString:@"/"];
+        NSData *data = [str dataUsingEncoding:NSUTF8StringEncoding];
+        successBlock(task, data);
+    } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+        failureBlock(task, error);
+    }];
+}
+
 - (void)uploadTwo:(UIImage *)image progress:(void(^)(NSProgress * _Nonnull progress)) progressBlock success:(void(^)(NSURLSessionDataTask * _Nonnull task, id  _Nullable reponse))successBlock failure:(void(^)(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error))failureBlock
 {
     NSUserDefaults *user = [NSUserDefaults standardUserDefaults];
@@ -365,8 +448,6 @@ completionHandler:(void(^)(NSURLResponse * _Nonnull reponse, NSURL * _Nullable f
         }];
     }
 }
-
-
 + (AFNetworkReachabilityStatus)AFNetworkStatus{
     
     //1.创建网络监测者

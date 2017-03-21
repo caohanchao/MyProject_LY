@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface ZLPhotoActionSheet : UIView
 
 @property (nonatomic, weak) UIViewController *sender;
-
+@property (nonatomic, assign) BOOL isSelectOriginalPhoto; // 是否原图
 /** 最大选择数 default is 10 */
 @property (nonatomic, assign) NSInteger maxSelectCount;
 

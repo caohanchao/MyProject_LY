@@ -16,6 +16,8 @@
 @property(nonatomic,strong)UILabel *dateLabel;
 @property(nonatomic,strong)UILabel *momentLabel;
 
+@property (nonatomic, strong) UILabel *kknumLabel;
+
 @property (nonatomic, strong) UILabel *LaneNumberLabel;
 @property (nonatomic, strong) UILabel *bayonetNameLabel;
 @property (nonatomic, strong) CBAutoScrollLabel *rollLabel;
@@ -26,7 +28,7 @@
 @property (nonatomic, copy) NSString *LaneNumber;// 车道编号
 @property (nonatomic, copy) NSString *bayonetName;// 车道编号
 @property (nonatomic, copy) NSString *iconUrl; // 图片url
-
+@property (nonatomic, copy) NSString *kknum; // 经过次数
 
 @property (nonatomic, weak) VdResultModel *model;
 @end
